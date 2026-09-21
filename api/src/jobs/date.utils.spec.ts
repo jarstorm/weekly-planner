@@ -2,24 +2,47 @@ import { currentWeekStart, dowInTimezone, isWithinWindow } from './date.utils';
 
 describe('date.utils', () => {
   describe('isWithinWindow', () => {
-    it('is true right at the target time', () => {
+    // Ventana hacia adelante [ahora, ahora+15min) — simula un tick de cron
+    // en una marca fija (:00/:15/:30/:45). Ver el comentario en date.utils.ts:
+    // con una ventana simétrica, una hora que no cae en múltiplo de 15
+    // dispararía en dos ticks consecutivos (recordatorio duplicado).
+
+    it('is true right at the target time (tick lands exactly on target)', () => {
       const now = new Date('2026-09-18T08:00:00Z'); // viernes 10:00 en Europe/Madrid (UTC+2 en verano)
       expect(isWithinWindow(now, 'Europe/Madrid', '10:00')).toBe(true);
     });
 
-    it('is true a few minutes inside the window', () => {
-      const now = new Date('2026-09-18T08:10:00Z'); // 10:10 Madrid
-      expect(isWithinWindow(now, 'Europe/Madrid', '10:00')).toBe(true);
+    it('is true for a target later in the same bucket', () => {
+      const now = new Date('2026-09-18T08:00:00Z'); // tick a las 10:00 Madrid
+      expect(isWithinWindow(now, 'Europe/Madrid', '10:14')).toBe(true); // 10:14, dentro del bucket [10:00,10:15)
     });
 
-    it('is false outside the window', () => {
-      const now = new Date('2026-09-18T08:20:00Z'); // 10:20 Madrid, ventana de 15 min
-      expect(isWithinWindow(now, 'Europe/Madrid', '10:00')).toBe(false);
+    it('is false for a target already past (previous bucket)', () => {
+      const now = new Date('2026-09-18T08:15:00Z'); // tick a las 10:15 Madrid
+      expect(isWithinWindow(now, 'Europe/Madrid', '10:00')).toBe(false); // ya lo capturó el tick anterior
+    });
+
+    it('is false for a target not due yet (next bucket)', () => {
+      const now = new Date('2026-09-18T08:00:00Z'); // tick a las 10:00 Madrid
+      expect(isWithinWindow(now, 'Europe/Madrid', '10:15')).toBe(false); // le toca al próximo tick
+    });
+
+    it('a target not aligned to 15 min fires on exactly one of the two nearby ticks', () => {
+      const target = '10:07';
+      const tickBefore = new Date('2026-09-18T08:00:00Z'); // 10:00 Madrid
+      const tickAfter = new Date('2026-09-18T08:15:00Z'); // 10:15 Madrid
+      expect(isWithinWindow(tickBefore, 'Europe/Madrid', target)).toBe(true);
+      expect(isWithinWindow(tickAfter, 'Europe/Madrid', target)).toBe(false);
     });
 
     it('respects a different timezone than UTC/Madrid', () => {
-      const now = new Date('2026-09-18T15:05:00Z'); // 10:05 en America/Bogota (UTC-5, sin DST)
-      expect(isWithinWindow(now, 'America/Bogota', '10:00')).toBe(true);
+      const now = new Date('2026-09-18T15:00:00Z'); // 10:00 en America/Bogota (UTC-5, sin DST)
+      expect(isWithinWindow(now, 'America/Bogota', '10:05')).toBe(true);
+    });
+
+    it('wraps around midnight', () => {
+      const now = new Date('2026-09-18T21:50:00Z'); // 23:50 Madrid
+      expect(isWithinWindow(now, 'Europe/Madrid', '00:02')).toBe(true); // 00:02 del día siguiente
     });
   });
 

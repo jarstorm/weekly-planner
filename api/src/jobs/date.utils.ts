@@ -1,5 +1,10 @@
 // Compara "ahora" (en el timezone del equipo) contra reminder_dow/reminder_time
-// o cutoff_time, con una ventana de 15 minutos (el cron corre cada 15 min).
+// o cutoff_time. El cron corre cada 15 min, en marcas fijas (:00/:15/:30/:45) —
+// la ventana es "hacia adelante" ([ahora, ahora+15min)), no ±15min simétrica.
+// Con una ventana simétrica, una hora configurada que no cae justo en un
+// múltiplo de 15 (p. ej. 10:07) queda dentro de DOS ticks consecutivos y el
+// recordatorio se manda dos veces — el bucket hacia adelante hace que cada
+// hora objetivo caiga en un único tick, sin necesitar tabla de idempotencia.
 export function isWithinWindow(now: Date, timezone: string, targetTime: string, windowMinutes = 15): boolean {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: timezone,
@@ -14,7 +19,8 @@ export function isWithinWindow(now: Date, timezone: string, targetTime: string, 
   const [targetHour, targetMinute] = targetTime.split(':').map(Number);
   const targetTotal = targetHour * 60 + targetMinute;
 
-  return Math.abs(nowMinutes - targetTotal) < windowMinutes;
+  const diff = (targetTotal - nowMinutes + 1440) % 1440;
+  return diff < windowMinutes;
 }
 
 export function dowInTimezone(now: Date, timezone: string): number {
