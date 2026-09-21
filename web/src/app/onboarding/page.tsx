@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { api, ApiError, Team } from '@/lib/api';
+import { api, ApiError, ChannelName, Team } from '@/lib/api';
 
 const DOW_LABELS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
@@ -15,7 +15,7 @@ export default function OnboardingPage() {
   // datos del equipo
   const [name, setName] = useState('');
   const [companyContext, setCompanyContext] = useState('');
-  const [deliveryChannel, setDeliveryChannel] = useState<'email' | 'whatsapp'>('email');
+  const [deliveryChannel, setDeliveryChannel] = useState<ChannelName>('email');
   const [deliveryTarget, setDeliveryTarget] = useState('');
   const [reminderDow, setReminderDow] = useState(5);
   const [reminderTime, setReminderTime] = useState('10:00');
@@ -23,7 +23,7 @@ export default function OnboardingPage() {
 
   // alta de miembros, una vez el equipo existe
   const [memberName, setMemberName] = useState('');
-  const [memberChannel, setMemberChannel] = useState<'email' | 'whatsapp'>('email');
+  const [memberChannel, setMemberChannel] = useState<ChannelName>('email');
   const [memberContact, setMemberContact] = useState('');
   const [members, setMembers] = useState<string[]>([]);
 
@@ -81,9 +81,10 @@ export default function OnboardingPage() {
           </label>
           <label>
             Canal de entrega del informe
-            <select value={deliveryChannel} onChange={(e) => setDeliveryChannel(e.target.value as 'email' | 'whatsapp')}>
+            <select value={deliveryChannel} onChange={(e) => setDeliveryChannel(e.target.value as ChannelName)}>
               <option value="email">Email</option>
               <option value="whatsapp">WhatsApp</option>
+              <option value="telegram">Telegram</option>
             </select>
           </label>
           <label>
@@ -132,9 +133,10 @@ export default function OnboardingPage() {
         </label>
         <label>
           Canal
-          <select value={memberChannel} onChange={(e) => setMemberChannel(e.target.value as 'email' | 'whatsapp')}>
+          <select value={memberChannel} onChange={(e) => setMemberChannel(e.target.value as ChannelName)}>
             <option value="email">Email</option>
             <option value="whatsapp">WhatsApp</option>
+            <option value="telegram">Telegram</option>
           </select>
         </label>
         <label>

@@ -27,6 +27,15 @@ El patrón estándar de Supabase (cliente en el navegador con la `anon key`, pro
 
 Dos clientes de Supabase conviven en `SupabaseService` (`api/src/supabase/supabase.service.ts`): `db` (con `service_role`, para todas las tablas) y `authClient` (con `anon key`, solo para las llamadas de Auth — `signUp`/`signInWithPassword`/`getUser`, que es el uso previsto de esa key).
 
+### 0.2 Sustituciones temporales de MVP: Telegram en vez de WhatsApp, Groq en vez de Claude
+
+El producto sigue apuntando a **WhatsApp + Claude** (ver `docs/mvp-resumen-semanal-equipos.md`, secciones 3-5 y 10) — eso no cambia. Pero verificar una empresa en Meta Business Manager tarda días y la cuenta de Anthropic todavía no está disponible, así que mientras tanto el MVP se desarrolla y prueba con dos sustitutos gratuitos y sin fricción de alta:
+
+- **Telegram en vez de WhatsApp.** `TelegramChannel` (`api/src/channels/telegram.channel.ts`) implementa la misma interfaz `Channel` que `WhatsappChannel` — se registra igual en `ChannelsService`, tiene su propio webhook (`POST /api/webhooks/telegram`, sin el paso de verificación `hub.challenge` de Meta; el alta del webhook se hace una vez llamando a `https://api.telegram.org/bot<TOKEN>/setWebhook?url=<url pública>`). Se crea el bot hablando con **@BotFather** en Telegram — sin cuenta de empresa, sin plantillas aprobadas, token al instante. Diferencia a tener en cuenta: `contact` para Telegram es el `chat_id` numérico, no un teléfono, y solo se consigue después de que esa persona le escriba `/start` al bot (Telegram no permite que el bot inicie la conversación, al revés que WhatsApp). Quitar Telegram cuando WhatsApp esté verificado es borrar `telegram.channel.ts`, sacarlo del registry y del `check` de `schema.sql` — nada en `jobs/` cambia, es exactamente el escenario para el que se diseñó la interfaz `Channel` (sección 3.1).
+- **Groq en vez de la API de Claude.** `AggregateService.generateReport()` llama a `https://api.groq.com/openai/v1/chat/completions` (formato compatible con OpenAI) en vez de `api.anthropic.com`. Cuenta gratis en console.groq.com, sin tarjeta. El prompt (`buildPrompt()`, literal de la sección 10 del doc de producto) no cambia nada — solo cambia a qué URL/formato se manda. Modelo usado: `openai/gpt-oss-120b` (revisar `GROQ_MODEL` si Groq cambia su catálogo — ya pasó una vez durante el desarrollo, los modelos de este proveedor rotan). Volver a Claude cuando la cuenta de Anthropic esté lista es cambiar el bloque de `fetch` de este único método, nada más se entera.
+
+Ninguna de las dos sustituciones toca `jobs/`, `teams/`, `checkins/` ni el resto del dominio — quedaron aisladas exactamente donde ya estaban pensadas para aislarse.
+
 ---
 
 ## 1. Qué hace falta crear antes de tocar código
@@ -34,14 +43,16 @@ Dos clientes de Supabase conviven en `SupabaseService` (`api/src/supabase/supaba
 | Cuenta / servicio | Para qué | Coste al arrancar |
 |---|---|---|
 | **Supabase** (supabase.com) | Base de datos, autenticación de usuarios, cron interno | Gratis (plan Free) |
-| **Cuenta de Anthropic / API key** (console.anthropic.com) | Generar el informe semanal con IA | Pago por uso, céntimos al mes a esta escala |
+| **Cuenta de Anthropic / API key** (console.anthropic.com) | Generar el informe semanal con IA — canal definitivo | Pago por uso, céntimos al mes a esta escala |
+| ~~**Groq** (console.groq.com)~~ | *Temporal* mientras no hay cuenta de Anthropic (ver 0.2) | Gratis |
 | **Resend** (resend.com) | Enviar los recordatorios e informes por email | Gratis hasta 3.000 emails/mes |
-| **Meta Business Manager** + número de WhatsApp | Canal WhatsApp (recordatorio + informe) | Gratis la cuenta; los mensajes cuestan céntimos por envío |
+| **Meta Business Manager** + número de WhatsApp | Canal WhatsApp (recordatorio + informe) — canal definitivo | Gratis la cuenta; los mensajes cuestan céntimos por envío |
+| ~~**Bot de Telegram** (@BotFather)~~ | *Temporal* mientras no está verificado WhatsApp Business (ver 0.2) | Gratis, alta instantánea |
 | **Stripe** | Cobrar la suscripción mensual | Gratis, solo comisión por cobro (~1,5% + 0,25€) |
 | **Dominio propio** | Credibilidad, email desde tu propio dominio | ~1€/mes |
 | **Vercel o Netlify** (para el frontend) | Hosting del panel web | Gratis en esta fase |
 
-**Verificación de WhatsApp Business:** esto es lo que más tarda (puede llevar varios días), así que conviene iniciarlo pronto aunque el desarrollo empiece por email. Hace falta: una empresa verificable en Meta Business Manager, un número de teléfono que no esté ya en un WhatsApp personal, y — para mandar el recordatorio (mensaje que abre la conversación) — una plantilla de mensaje aprobada por Meta.
+**Verificación de WhatsApp Business:** esto es lo que más tarda (puede llevar varios días), así que conviene iniciarlo pronto aunque el desarrollo use Telegram/email mientras tanto. Hace falta: una empresa verificable en Meta Business Manager, un número de teléfono que no esté ya en un WhatsApp personal, y — para mandar el recordatorio (mensaje que abre la conversación) — una plantilla de mensaje aprobada por Meta.
 
 ---
 
@@ -52,13 +63,14 @@ Dos clientes de Supabase conviven en `SupabaseService` (`api/src/supabase/supaba
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=       # todas las tablas — bypasea RLS, la autorización la hace el backend (ver 0.1)
 SUPABASE_ANON_KEY=               # solo para las llamadas de Auth (signUp/signInWithPassword/getUser)
-ANTHROPIC_API_KEY=
-ANTHROPIC_MODEL=                 # revisar el identificador de modelo vigente
+GROQ_API_KEY=                    # temporal en vez de Anthropic (ver sección 0.2) — console.groq.com
+GROQ_MODEL=                      # openai/gpt-oss-120b — Groq rota su catálogo, revisar si da 404 model_not_found
 RESEND_API_KEY=
 RESEND_FROM=
 WHATSAPP_PHONE_NUMBER_ID=
 WHATSAPP_ACCESS_TOKEN=
 WHATSAPP_VERIFY_TOKEN=
+TELEGRAM_BOT_TOKEN=              # temporal en vez de WhatsApp (ver sección 0.2) — @BotFather en Telegram
 STRIPE_SECRET_KEY=
 PORT=3001
 APP_BASE_URL=                    # URL pública del frontend (Next.js) — CORS y links en emails
@@ -87,13 +99,13 @@ weekly-feedback/
       config/            → ConfigModule, variables de entorno centralizadas
       supabase/          → SupabaseModule/Service (cliente service_role + cliente anon para auth, ver 0.1)
       auth/              → AuthModule: register/login/logout/me, AuthGuard, cookie httpOnly wf_session
-      channels/          → interfaz común + un provider por canal (email.channel.ts, whatsapp.channel.ts, [futuro] slack.channel.ts) + ChannelsService (dispatcher)
+      channels/          → interfaz común + un provider por canal (email.channel.ts, whatsapp.channel.ts, telegram.channel.ts [temporal, ver 0.2], [futuro] slack.channel.ts) + ChannelsService (dispatcher)
       teams/             → TeamsModule (equipos y miembros, protegido por AuthGuard): controller + service
       checkins/          → CheckinsModule: controller + service
       reports/           → ReportsModule: histórico de informes (GET /api/reports?teamId=)
-      aggregate/         → AggregateModule/Service (llamada a la IA)
+      aggregate/         → AggregateModule/Service (llamada a la IA — Groq temporal, ver 0.2)
       jobs/              → ReminderJob, ReportJob (@nestjs/schedule, Cron)
-      webhooks/          → WebhooksController (entrada de whatsapp/slack)
+      webhooks/          → WhatsappWebhookController, TelegramWebhookController (entrada de mensajes)
       app.module.ts, main.ts
   web/                                  # frontend Next.js/TypeScript
     src/
@@ -125,7 +137,7 @@ Esto es intencional, no sobre-ingeniería: la interfaz ya la fuerza tener dos ca
 
 Cada punto se construye, se prueba, y solo entonces se pasa al siguiente. Los primeros puntos no necesitan frontend ni WhatsApp — se prueban con `curl` o Postman contra el backend.
 
-**Estado actual:** paso 5 (envío de email) **verificado con Resend real** — `EmailChannel.send()` mandó un mensaje de verdad a una bandeja real, código tal cual está en el repo, sin atajos. El resto de los pasos 2 a 11 está escrito y compila, pero sin probar contra servicios reales todavía — falta Supabase (para poder correr `schema.sql`, paso 1, y probar el resto de punta a punta) y Anthropic. El paso 0 (n8n) y el paso 12 (WhatsApp real) siguen sin empezar.
+**Estado actual:** paso 5 (envío de email, con Resend) y paso 7 (generación del informe con IA, con Groq — sustituto temporal de Anthropic, ver sección 0.2) **verificados con servicios reales**, código tal cual está en el repo, sin atajos. El resto de los pasos 2 a 11 está escrito y compila, pero sin probar todavía — falta Supabase (para poder correr `schema.sql`, paso 1, y probar el resto de punta a punta). El paso 0 (n8n) sigue sin empezar; el paso 12 (WhatsApp real) puede probarse ya mismo con Telegram como sustituto (sección 0.2) en cuanto haya un bot de @BotFather.
 
 0. **Prototipo de mensajería en n8n (desechable)** — montar a mano, sin base de datos ni backend todavía, un workflow n8n que: mande un mensaje de WhatsApp (o email) de prueba, reciba la respuesta por webhook, y la deje ver en un nodo. Objetivo único: validar credenciales (Meta/WhatsApp Cloud API o Resend), formato del payload y, si es WhatsApp, que la plantilla de mensaje está aprobada — antes de escribir una sola línea del backend real. *Hecho cuando:* llega un mensaje de prueba real y su respuesta se recibe en n8n. En ese momento se anota en `docs/notas-flujo-mensajeria.md` lo aprendido (payloads, IDs de plantilla, headers) y se apaga n8n — no pasa a producción (ver sección 0 de este documento).
 

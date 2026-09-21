@@ -55,18 +55,22 @@ Bloqueos de semanas anteriores para detectar recurrencia:
 ${input.pastBlockers.join('\n') || '(ninguno registrado)'}`;
   }
 
+  // Groq en vez de la API de Claude — temporal de MVP mientras la cuenta de
+  // Anthropic no está disponible (ver docs/especificaciones-tecnicas.md,
+  // sección 0.2). Endpoint compatible con el formato de OpenAI; cuando haya
+  // API key de Anthropic, esto vuelve a la llamada a api.anthropic.com sin
+  // tocar el resto del servicio (buildPrompt, AggregateInput, etc. no cambian).
   async generateReport(input: AggregateInput): Promise<string> {
-    const apiKey = this.config.get<string>('ANTHROPIC_API_KEY');
-    const model = this.config.get<string>('ANTHROPIC_MODEL') ?? 'claude-sonnet-5';
+    const apiKey = this.config.get<string>('GROQ_API_KEY');
+    const model = this.config.get<string>('GROQ_MODEL') ?? 'openai/gpt-oss-120b';
     if (!apiKey) {
-      throw new Error('ANTHROPIC_API_KEY no configurada');
+      throw new Error('GROQ_API_KEY no configurada');
     }
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
+        Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -78,10 +82,10 @@ ${input.pastBlockers.join('\n') || '(ninguno registrado)'}`;
 
     if (!res.ok) {
       const body = await res.text();
-      throw new Error(`Anthropic API respondió ${res.status}: ${body}`);
+      throw new Error(`Groq API respondió ${res.status}: ${body}`);
     }
 
     const json = await res.json();
-    return json.content?.[0]?.text ?? '';
+    return json.choices?.[0]?.message?.content ?? '';
   }
 }

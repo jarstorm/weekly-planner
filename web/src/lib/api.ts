@@ -1,5 +1,7 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3001/api';
 
+export type ChannelName = 'email' | 'whatsapp' | 'telegram';
+
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
     super(message);
@@ -37,7 +39,7 @@ export const api = {
 
   createTeam: (data: Partial<Team>) => request<Team>('/teams', { method: 'POST', body: JSON.stringify(data) }),
 
-  addMember: (teamId: string, data: { name: string; channel: 'email' | 'whatsapp'; contact: string }) =>
+  addMember: (teamId: string, data: { name: string; channel: ChannelName; contact: string }) =>
     request(`/teams/${teamId}/members`, { method: 'POST', body: JSON.stringify(data) }),
 
   listReports: (teamId: string) => request<Report[]>(`/reports?teamId=${teamId}`),
@@ -47,7 +49,7 @@ export interface Team {
   id: string;
   name: string;
   company_context: string;
-  delivery_channel: 'email' | 'whatsapp';
+  delivery_channel: ChannelName;
   delivery_target: string;
   reminder_dow: number;
   reminder_time: string;

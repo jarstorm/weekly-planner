@@ -9,8 +9,8 @@ export class CreateTeamDto {
   company_context?: string;
 
   @IsOptional()
-  @IsIn(['email', 'whatsapp'])
-  delivery_channel?: 'email' | 'whatsapp';
+  @IsIn(['email', 'whatsapp', 'telegram'])
+  delivery_channel?: 'email' | 'whatsapp' | 'telegram';
 
   @IsOptional()
   @IsString()

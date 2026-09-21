@@ -8,4 +8,4 @@ export interface Channel {
   parseIncoming(payload: unknown): IncomingMessage;
 }
 
-export type ChannelName = 'email' | 'whatsapp';
+export type ChannelName = 'email' | 'whatsapp' | 'telegram';

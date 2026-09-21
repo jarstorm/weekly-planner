@@ -13,7 +13,7 @@ describe('AggregateService', () => {
     jest.restoreAllMocks();
   });
 
-  it('throws if ANTHROPIC_API_KEY is missing', async () => {
+  it('throws if GROQ_API_KEY is missing', async () => {
     const service = new AggregateService(fakeConfig({}));
     await expect(
       service.generateReport({
@@ -23,18 +23,18 @@ describe('AggregateService', () => {
         membersWithoutResponse: [],
         pastBlockers: [],
       }),
-    ).rejects.toThrow('ANTHROPIC_API_KEY');
+    ).rejects.toThrow('GROQ_API_KEY');
   });
 
-  it('sends the prompt built from mvp-resumen-semanal-equipos.md, sección 10, to the Anthropic API', async () => {
+  it('sends the prompt built from mvp-resumen-semanal-equipos.md, sección 10, to the Groq API', async () => {
     const fetchMock = jest.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ content: [{ text: 'informe generado' }] }),
+      json: async () => ({ choices: [{ message: { content: 'informe generado' } }] }),
     });
     global.fetch = fetchMock as unknown as typeof fetch;
 
     const service = new AggregateService(
-      fakeConfig({ ANTHROPIC_API_KEY: 'sk-test', ANTHROPIC_MODEL: 'claude-sonnet-5' }),
+      fakeConfig({ GROQ_API_KEY: 'gsk-test', GROQ_MODEL: 'openai/gpt-oss-120b' }),
     );
 
     const result = await service.generateReport({
@@ -51,11 +51,11 @@ describe('AggregateService', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
     const [url, options] = fetchMock.mock.calls[0];
-    expect(url).toBe('https://api.anthropic.com/v1/messages');
-    expect(options.headers['x-api-key']).toBe('sk-test');
+    expect(url).toBe('https://api.groq.com/openai/v1/chat/completions');
+    expect(options.headers.Authorization).toBe('Bearer gsk-test');
 
     const body = JSON.parse(options.body);
-    expect(body.model).toBe('claude-sonnet-5');
+    expect(body.model).toBe('openai/gpt-oss-120b');
     const prompt = body.messages[0].content as string;
     expect(prompt).toContain('Studio Creativo');
     expect(prompt).toContain('Lanzamos la v2 en octubre');
@@ -64,14 +64,14 @@ describe('AggregateService', () => {
     expect(prompt).toContain('Marta lleva 2 semanas esperando feedback');
   });
 
-  it('throws with the response body when the Anthropic API errors', async () => {
+  it('throws with the response body when the Groq API errors', async () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: false,
       status: 500,
       text: async () => 'server error',
     }) as unknown as typeof fetch;
 
-    const service = new AggregateService(fakeConfig({ ANTHROPIC_API_KEY: 'sk-test' }));
+    const service = new AggregateService(fakeConfig({ GROQ_API_KEY: 'gsk-test' }));
 
     await expect(
       service.generateReport({
@@ -81,6 +81,6 @@ describe('AggregateService', () => {
         membersWithoutResponse: [],
         pastBlockers: [],
       }),
-    ).rejects.toThrow('Anthropic API respondió 500');
+    ).rejects.toThrow('Groq API respondió 500');
   });
 });
