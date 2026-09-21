@@ -89,6 +89,12 @@
     "historyTitle": "Histórico de informes",
     "noReports": "Todavía no hay informes generados para este equipo.",
     "weekOf": "Semana del {date}",
-    "reportPending": "(pendiente de generar)"
+    "reportPending": "(pendiente de generar)",
+    "currentWeekTitle": "Esta semana",
+    "noMembers": "No hay miembros en este equipo todavía.",
+    "notResponded": "sin responder",
+    "downloadPdf": "Descargar PDF",
+    "downloadConversations": "Descargar conversaciones",
+    "downloadAllConversations": "Descargar todas las conversaciones"
   }
 }

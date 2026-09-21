@@ -364,6 +364,31 @@ button[type='button']:hover {
   color: var(--color-brand);
 }
 
+.member-status-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.member-status-list li {
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.member-status-list li.responded {
+  background: var(--color-primary-50);
+  color: var(--color-primary-700);
+  border: 1px solid var(--color-primary-200);
+}
+.member-status-list li.not-responded {
+  background: var(--color-neutral-100);
+  color: var(--color-neutral-600);
+  border: 1px solid var(--color-border);
+}
+
 @media (max-width: 480px) {
   .page {
     padding: 1.5rem 1rem 3rem;

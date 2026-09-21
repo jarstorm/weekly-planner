@@ -162,6 +162,18 @@ El esquema de base de datos (`supabase/schema.sql`) ya está escrito: tablas `or
 
 Probado en navegador de punta a punta en ambos idiomas: landing, registro, alta de equipo (con los labels de día de la semana traducidos), dashboard — incluido el cambio de idioma en caliente con el switcher.
 
+### 3.3 El dashboard muestra quién respondió y quién no, y permite descargar
+
+Pedido explícito: el responsable del equipo (el único que entra al panel — ver el punto siguiente) tiene que poder ver, tanto de la semana en curso como de cada informe pasado, qué miembros contestaron y cuáles no; y descargar tanto el informe (PDF) como las conversaciones completas.
+
+- `GET /api/checkins/status?teamId=&weekStart=` (`CheckinsService.statusForTeamWeek`) — un array con cada miembro activo del equipo y si respondió esa semana, calculado sobre `members` + `checkins`, no sobre lo que dice el texto del informe (más fiable: el modelo podría formatear distinto la línea de "no respondió", el join no falla nunca). El dashboard lo usa dos veces: para la semana en curso (calculada en el propio navegador, solo para este widget — la fuente de verdad de semanas cerradas sigue siendo `report.week_start`) y para cada informe del histórico.
+- `GET /api/checkins/export?teamId=&weekStart=` — conversaciones completas en texto plano, descargable. Sin `weekStart` trae el historial entero del equipo; con `weekStart`, solo esa semana. `Content-Disposition: attachment`, así que un simple `<a href>` alcanza — no hace falta fetch+blob en el frontend, la cookie de sesión viaja igual en la navegación (SameSite=Lax cubre navegación top-level).
+- `GET /api/reports/:id/pdf` — el mismo PDF que se manda automáticamente por `ReportJob` (sección 0.5), pero regenerado al vuelo a partir de `content_markdown` cuando el jefe lo pide desde el panel, no un binario guardado aparte.
+
+### 3.4 Los empleados no tienen cuenta ni acceso al panel
+
+Esto ya era así, no es un cambio: solo se registra/loguea quien da de alta el equipo (el responsable, dueño de la `organization`). Los miembros (`members`) no tienen fila en Supabase Auth, ni password, ni sesión — interactúan únicamente por WhatsApp/Telegram/email, de forma conversacional, nunca entran a `/app`. `AuthGuard` protege todo lo que hay bajo `/api/teams`, `/api/checkins` y `/api/reports`; no existe ningún login para miembros porque no hace falta — no hay nada en el panel que un empleado necesite ver o hacer.
+
 ### 3.1 Conectores de canal — preparado para añadir Slack sin tocar el resto
 
 Slack queda fuera del MVP, pero `email` y `whatsapp` se construyen desde el día uno detrás de la misma interfaz, para que añadir un canal nuevo más adelante sea solo sumar un archivo, no tocar `jobs/` ni la lógica de negocio:

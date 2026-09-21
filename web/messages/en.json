@@ -89,6 +89,12 @@
     "historyTitle": "Report history",
     "noReports": "No reports generated for this team yet.",
     "weekOf": "Week of {date}",
-    "reportPending": "(pending)"
+    "reportPending": "(pending)",
+    "currentWeekTitle": "This week",
+    "noMembers": "No members in this team yet.",
+    "notResponded": "no response yet",
+    "downloadPdf": "Download PDF",
+    "downloadConversations": "Download conversations",
+    "downloadAllConversations": "Download all conversations"
   }
 }

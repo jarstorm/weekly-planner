@@ -43,6 +43,17 @@ export const api = {
     request(`/teams/${teamId}/members`, { method: 'POST', body: JSON.stringify(data) }),
 
   listReports: (teamId: string) => request<Report[]>(`/reports?teamId=${teamId}`),
+
+  checkinStatus: (teamId: string, weekStart: string) =>
+    request<CheckinStatus[]>(`/checkins/status?teamId=${teamId}&weekStart=${weekStart}`),
+
+  // Descargas (PDF del informe, export de conversaciones): navegación de
+  // navegador directa a la API, no fetch — la cookie de sesión viaja igual
+  // (SameSite=Lax cubre navegación top-level) y así el navegador maneja la
+  // descarga solo, sin armar un blob a mano en el front.
+  reportPdfUrl: (reportId: string) => `${API_BASE}/reports/${reportId}/pdf`,
+  conversationsExportUrl: (teamId: string, weekStart?: string) =>
+    `${API_BASE}/checkins/export?teamId=${teamId}${weekStart ? `&weekStart=${weekStart}` : ''}`,
 };
 
 export interface Team {
@@ -63,4 +74,16 @@ export interface Report {
   content_markdown: string | null;
   generated_at: string | null;
   delivered_at: string | null;
+}
+
+export interface CheckinStatus {
+  memberId: string;
+  memberName: string;
+  channel: ChannelName;
+  responded: boolean;
+  doneText: string | null;
+  nextText: string | null;
+  blockerText: string | null;
+  rawText: string | null;
+  receivedAt: string | null;
 }
