@@ -2,7 +2,9 @@
   "Nav": {
     "login": "Log in",
     "createAccount": "Sign up",
-    "logout": "Log out"
+    "logout": "Log out",
+    "dashboard": "Dashboard",
+    "newTeam": "New team"
   },
   "Channel": {
     "email": "Email",
@@ -24,8 +26,11 @@
     "description": "Every week we ask each person on your team three short things — what they did, what they'll do next, whether they're blocked — over WhatsApp or email. We turn the answers into a single narrative report, ready to read in 30 seconds.",
     "cta": "Sign up",
     "howItWorksTitle": "How it works",
+    "step1Title": "Set the reminder",
     "step1": "Set up your team and choose the reminder day/time.",
+    "step2Title": "Everyone replies",
     "step2": "Each person replies once a week, on the channel they already use.",
+    "step3Title": "You get the report",
     "step3": "You get a single report, grouped by project, with blockers and priorities.",
     "pricingTitle": "Pricing",
     "planTeam": "Team plan",
@@ -93,6 +98,9 @@
     "currentWeekTitle": "This week",
     "noMembers": "No members in this team yet.",
     "notResponded": "no response yet",
+    "statMembers": "Members",
+    "statResponded": "Responded",
+    "statPending": "Pending",
     "downloadPdf": "Download PDF",
     "downloadConversations": "Download conversations",
     "downloadAllConversations": "Download all conversations"

@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { AlertCircle } from 'lucide-react';
 import { useRouter, Link } from '@/i18n/navigation';
 import { api, ApiError } from '@/lib/api';
+import { BrandMark } from '@/components/BrandMark';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -28,26 +30,34 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="page">
-      <div className="card card-narrow">
-        <h1>{t('title')}</h1>
-        <form onSubmit={handleSubmit}>
-          <label>
-            {t('email')}
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          </label>
-          <label>
-            {t('password')}
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-          </label>
-          {error && <p role="alert">{error}</p>}
-          <button type="submit" disabled={loading}>
-            {loading ? t('submitLoading') : t('submit')}
-          </button>
-        </form>
-        <p>
-          {t('noAccount')} <Link href="/register">{t('registerLink')}</Link>
-        </p>
+    <main className="auth-page">
+      <div className="auth-wrap">
+        <BrandMark />
+        <div className="card">
+          <h1>{t('title')}</h1>
+          <form onSubmit={handleSubmit}>
+            <label>
+              {t('email')}
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </label>
+            <label>
+              {t('password')}
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            </label>
+            {error && (
+              <p role="alert">
+                <AlertCircle size={16} />
+                {error}
+              </p>
+            )}
+            <button type="submit" disabled={loading}>
+              {loading ? t('submitLoading') : t('submit')}
+            </button>
+          </form>
+          <p>
+            {t('noAccount')} <Link href="/register">{t('registerLink')}</Link>
+          </p>
+        </div>
       </div>
     </main>
   );

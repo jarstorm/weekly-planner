@@ -1,5 +1,6 @@
 'use client';
 
+import { Globe } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { usePathname } from '@/i18n/navigation';
 import { Link } from '@/i18n/navigation';
@@ -15,6 +16,7 @@ export function LocaleSwitcher() {
 
   return (
     <span className="locale-switcher">
+      <Globe size={14} />
       {LOCALES.map((l, i) => (
         <span key={l.code}>
           {i > 0 && ' · '}

@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { CheckCircle2 } from 'lucide-react';
 import { useRouter } from '@/i18n/navigation';
 import { api, ApiError, ChannelName, Team } from '@/lib/api';
+import { AppShell } from '@/components/AppShell';
 
 const DOW_KEYS = ['0', '1', '2', '3', '4', '5', '6'] as const;
 
@@ -72,7 +74,7 @@ export default function OnboardingPage() {
 
   if (!team) {
     return (
-      <main className="page">
+      <AppShell>
         <h1>{t('createTeamTitle')}</h1>
         <div className="card">
         <form onSubmit={handleCreateTeam}>
@@ -120,18 +122,20 @@ export default function OnboardingPage() {
           </button>
         </form>
         </div>
-      </main>
+      </AppShell>
     );
   }
 
   return (
-    <main className="page">
+    <AppShell>
       <h1>{t('membersTitle', { teamName: team.name })}</h1>
       <div className="card">
       {members.length > 0 && (
         <ul className="member-list">
           {members.map((m, i) => (
-            <li key={i}>{m}</li>
+            <li key={i}>
+              <CheckCircle2 size={14} /> {m}
+            </li>
           ))}
         </ul>
       )}
@@ -161,6 +165,6 @@ export default function OnboardingPage() {
       <button type="button" onClick={() => router.push('/app')}>
         {t('finish')}
       </button>
-    </main>
+    </AppShell>
   );
 }

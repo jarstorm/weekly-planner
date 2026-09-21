@@ -2,7 +2,9 @@
   "Nav": {
     "login": "Entrar",
     "createAccount": "Crear cuenta",
-    "logout": "Salir"
+    "logout": "Salir",
+    "dashboard": "Panel",
+    "newTeam": "Nuevo equipo"
   },
   "Channel": {
     "email": "Email",
@@ -24,8 +26,11 @@
     "description": "Cada semana le preguntamos a cada persona de tu equipo tres cosas cortas — qué hizo, qué hará, si tiene algún bloqueo — por WhatsApp o email. Con las respuestas armamos un único informe narrativo, listo para leer en 30 segundos.",
     "cta": "Crear cuenta",
     "howItWorksTitle": "Cómo funciona",
+    "step1Title": "Configurá el recordatorio",
     "step1": "Das de alta tu equipo y elegís día/hora del recordatorio.",
+    "step2Title": "Cada uno responde",
     "step2": "Cada persona responde una vez por semana, en el canal que ya usa.",
+    "step3Title": "Recibís el informe",
     "step3": "Recibís un informe único, agrupado por proyecto, con bloqueos y prioridades.",
     "pricingTitle": "Precios",
     "planTeam": "Plan Equipo",
@@ -93,6 +98,9 @@
     "currentWeekTitle": "Esta semana",
     "noMembers": "No hay miembros en este equipo todavía.",
     "notResponded": "sin responder",
+    "statMembers": "Miembros",
+    "statResponded": "Respondieron",
+    "statPending": "Pendientes",
     "downloadPdf": "Descargar PDF",
     "downloadConversations": "Descargar conversaciones",
     "downloadAllConversations": "Descargar todas las conversaciones"

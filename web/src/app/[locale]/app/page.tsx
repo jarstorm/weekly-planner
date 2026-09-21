@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { CheckCircle2, Circle, Download, FileText, Users } from 'lucide-react';
 import { useRouter, Link } from '@/i18n/navigation';
 import { api, ApiError, CheckinStatus, Report, Team } from '@/lib/api';
-import { LocaleSwitcher } from '@/components/LocaleSwitcher';
+import { AppShell } from '@/components/AppShell';
 
 // Lunes de "esta semana" en el navegador del que mira el panel — solo para
 // el widget de estado en vivo. La fuente de verdad para semanas pasadas es
@@ -26,7 +27,8 @@ function ResponseStatusList({ status }: { status: CheckinStatus[] }) {
     <ul className="member-status-list">
       {status.map((s) => (
         <li key={s.memberId} className={s.responded ? 'responded' : 'not-responded'}>
-          {s.responded ? '✓' : '✗'} {s.memberName}
+          {s.responded ? <CheckCircle2 size={14} /> : <Circle size={14} />}
+          {s.memberName}
           {!s.responded && <span className="muted-link"> · {t('notResponded')}</span>}
         </li>
       ))}
@@ -34,10 +36,46 @@ function ResponseStatusList({ status }: { status: CheckinStatus[] }) {
   );
 }
 
+function ResponseRate({ status }: { status: CheckinStatus[] }) {
+  const t = useTranslations('Dashboard');
+  if (status.length === 0) return null;
+  const responded = status.filter((s) => s.responded).length;
+  const pct = Math.round((responded / status.length) * 100);
+  return (
+    <>
+      <div className="stats-row">
+        <div className="stat-card">
+          <span className="stat-icon"><Users size={18} /></span>
+          <div>
+            <div className="stat-value">{status.length}</div>
+            <div className="stat-label">{t('statMembers')}</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <span className="stat-icon"><CheckCircle2 size={18} /></span>
+          <div>
+            <div className="stat-value">{responded}</div>
+            <div className="stat-label">{t('statResponded')}</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <span className="stat-icon"><Circle size={18} /></span>
+          <div>
+            <div className="stat-value">{status.length - responded}</div>
+            <div className="stat-label">{t('statPending')}</div>
+          </div>
+        </div>
+      </div>
+      <div className="progress-track">
+        <div className="progress-fill" style={{ width: `${pct}%` }} />
+      </div>
+    </>
+  );
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const t = useTranslations('Dashboard');
-  const tNav = useTranslations('Nav');
   const [teams, setTeams] = useState<Team[] | null>(null);
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
   const [reports, setReports] = useState<Report[]>([]);
@@ -85,36 +123,37 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTeamId]);
 
-  async function handleLogout() {
-    await api.logout();
-    router.push('/login');
+  if (error) {
+    return (
+      <AppShell>
+        <p role="alert">{error}</p>
+      </AppShell>
+    );
   }
-
-  if (error) return <main className="page"><p role="alert">{error}</p></main>;
-  if (teams === null) return <main className="page"><p>{t('loading')}</p></main>;
+  if (teams === null) {
+    return (
+      <AppShell>
+        <p>{t('loading')}</p>
+      </AppShell>
+    );
+  }
 
   if (teams.length === 0) {
     return (
-      <main className="page">
+      <AppShell>
         <h1>{t('title')}</h1>
         <div className="card">
           <p>{t('noTeams')}</p>
           <Link className="btn btn-primary" href="/app/onboarding">{t('createFirstTeam')}</Link>
         </div>
-      </main>
+      </AppShell>
     );
   }
 
   return (
-    <main className="page">
+    <AppShell>
       <div className="topbar">
         <h1 style={{ margin: 0 }}>{t('title')}</h1>
-        <div className="hero-actions" style={{ marginTop: 0 }}>
-          <LocaleSwitcher />
-          <button type="button" onClick={handleLogout}>
-            {tNav('logout')}
-          </button>
-        </div>
       </div>
 
       <label>
@@ -129,10 +168,12 @@ export default function DashboardPage() {
       </label>
 
       <h2>{t('currentWeekTitle')}</h2>
+      <ResponseRate status={currentWeekStatus} />
       <div className="card">
         <ResponseStatusList status={currentWeekStatus} />
         {currentWeekStatus.length === 0 && <p>{t('noMembers')}</p>}
         <a className="btn btn-secondary" href={api.conversationsExportUrl(selectedTeamId)}>
+          <Download size={16} />
           {t('downloadAllConversations')}
         </a>
       </div>
@@ -146,9 +187,11 @@ export default function DashboardPage() {
               <strong>{t('weekOf', { date: r.week_start })}</strong>
               <div className="hero-actions" style={{ marginTop: 0 }}>
                 <a className="btn btn-secondary" href={api.reportPdfUrl(r.id)}>
+                  <FileText size={15} />
                   {t('downloadPdf')}
                 </a>
                 <a className="btn btn-secondary" href={api.conversationsExportUrl(selectedTeamId, r.week_start)}>
+                  <Download size={15} />
                   {t('downloadConversations')}
                 </a>
               </div>
@@ -158,6 +201,6 @@ export default function DashboardPage() {
           </li>
         ))}
       </ul>
-    </main>
+    </AppShell>
   );
 }

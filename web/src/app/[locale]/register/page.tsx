@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { AlertCircle } from 'lucide-react';
 import { useRouter, Link } from '@/i18n/navigation';
 import { api, ApiError } from '@/lib/api';
+import { BrandMark } from '@/components/BrandMark';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -29,36 +31,44 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="page">
-      <div className="card card-narrow">
-        <h1>{t('title')}</h1>
-        <form onSubmit={handleSubmit}>
-          <label>
-            {t('orgName')}
-            <input type="text" value={orgName} onChange={(e) => setOrgName(e.target.value)} required />
-          </label>
-          <label>
-            {t('email')}
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          </label>
-          <label>
-            {t('password')}
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={8}
-              required
-            />
-          </label>
-          {error && <p role="alert">{error}</p>}
-          <button type="submit" disabled={loading}>
-            {loading ? t('submitLoading') : t('submit')}
-          </button>
-        </form>
-        <p>
-          {t('haveAccount')} <Link href="/login">{t('loginLink')}</Link>
-        </p>
+    <main className="auth-page">
+      <div className="auth-wrap">
+        <BrandMark />
+        <div className="card">
+          <h1>{t('title')}</h1>
+          <form onSubmit={handleSubmit}>
+            <label>
+              {t('orgName')}
+              <input type="text" value={orgName} onChange={(e) => setOrgName(e.target.value)} required />
+            </label>
+            <label>
+              {t('email')}
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </label>
+            <label>
+              {t('password')}
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                minLength={8}
+                required
+              />
+            </label>
+            {error && (
+              <p role="alert">
+                <AlertCircle size={16} />
+                {error}
+              </p>
+            )}
+            <button type="submit" disabled={loading}>
+              {loading ? t('submitLoading') : t('submit')}
+            </button>
+          </form>
+          <p>
+            {t('haveAccount')} <Link href="/login">{t('loginLink')}</Link>
+          </p>
+        </div>
       </div>
     </main>
   );
