@@ -353,6 +353,17 @@ button[type='button']:hover {
   color: var(--color-text-muted);
 }
 
+.locale-switcher {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin-right: 0.25rem;
+}
+.locale-switcher strong {
+  color: var(--color-brand);
+}
+
 @media (max-width: 480px) {
   .page {
     padding: 1.5rem 1rem 3rem;

@@ -118,12 +118,29 @@ weekly-feedback/
       webhooks/          → WhatsappWebhookController, TelegramWebhookController (entrada de mensajes)
       app.module.ts, main.ts
   web/                                  # frontend Next.js/TypeScript
+    messages/          → es.json, en.json (diccionarios de next-intl, ver sección 3.2)
     src/
-      app/               → login/, register/, onboarding/, page.tsx (dashboard) — App Router
+      i18n/              → routing.ts, navigation.ts, request.ts (config de next-intl)
+      middleware.ts      → detección/enrutado de locale
+      components/        → LocaleSwitcher.tsx y demás componentes compartidos
+      app/[locale]/      → page.tsx (landing), login/, register/, app/ (dashboard + onboarding, autenticado) — App Router
       lib/api.ts         → cliente HTTP al backend (fetch con credentials: 'include', nunca supabase-js — ver sección 0.1)
 ```
 
 El esquema de base de datos (`supabase/schema.sql`) ya está escrito: tablas `organizations` (la cuenta que paga, con su plan — equipo/organización/custom — y sus límites), `teams`, `members`, `checkins`, `reports`, con seguridad por fila (RLS) para que cada responsable solo vea sus propios equipos y, si tiene el resumen ejecutivo activado, el consolidado de su organización (ver `docs/mvp-resumen-semanal-equipos.md`, sección 6.4 y 11).
+
+### 3.2 Frontend: rutas públicas vs. autenticadas, e i18n (ES/EN)
+
+`/` es la landing pública (marketing, precios, CTA); `/app` es el dashboard autenticado y `/app/onboarding` el alta de equipo — separado de la landing para que login/registro puedan redirigir a un espacio claramente "detrás del login", sin mezclar contenido de venta con la aplicación.
+
+**Multi-idioma (ES/EN):** fuera del alcance del MVP según el roadmap del documento de producto (sección 15) — se adelantó igual porque se pidió explícitamente durante el desarrollo, no porque haya demanda de un cliente real. Implementado con `next-intl`:
+- `src/i18n/routing.ts` define los locales (`es` por defecto, `en`) con `localePrefix: 'as-needed'` — español sin prefijo (`/login`), inglés prefijado (`/en/login`). Así las URLs que ya se habían probado en español no cambian.
+- `src/middleware.ts` detecta el idioma (cookie `NEXT_LOCALE` si ya eligió antes, si no `Accept-Language` del navegador) y redirige/reescribe.
+- Todas las cadenas de texto de la UI viven en `messages/es.json` y `messages/en.json`, organizadas por página (`Landing`, `Login`, `Register`, `Onboarding`, `Dashboard`) más `Nav`/`Channel`/`Day` compartidos — nada de texto hardcodeado en los componentes.
+- `src/components/LocaleSwitcher.tsx` es el selector ES·EN que aparece en cada página; usa el `Link` de `src/i18n/navigation.ts` (no el de `next/navigation`) para no perder el idioma actual al navegar entre páginas.
+- Añadir un tercer idioma es: nuevo `messages/<locale>.json` con las mismas claves, sumarlo a `routing.ts`, y una entrada más en `LOCALES` de `LocaleSwitcher.tsx`.
+
+Probado en navegador de punta a punta en ambos idiomas: landing, registro, alta de equipo (con los labels de día de la semana traducidos), dashboard — incluido el cambio de idioma en caliente con el switcher.
 
 ### 3.1 Conectores de canal — preparado para añadir Slack sin tocar el resto
 

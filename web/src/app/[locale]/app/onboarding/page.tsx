@@ -1,13 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useRouter } from '@/i18n/navigation';
 import { api, ApiError, ChannelName, Team } from '@/lib/api';
 
-const DOW_LABELS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+const DOW_KEYS = ['0', '1', '2', '3', '4', '5', '6'] as const;
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const t = useTranslations('Onboarding');
+  const tChannel = useTranslations('Channel');
+  const tDay = useTranslations('Day');
   const [team, setTeam] = useState<Team | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -43,7 +47,7 @@ export default function OnboardingPage() {
       });
       setTeam(created);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudo crear el equipo');
+      setError(err instanceof ApiError ? err.message : t('createTeamError'));
     } finally {
       setLoading(false);
     }
@@ -60,7 +64,7 @@ export default function OnboardingPage() {
       setMemberName('');
       setMemberContact('');
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudo añadir el miembro');
+      setError(err instanceof ApiError ? err.message : t('addMemberError'));
     } finally {
       setLoading(false);
     }
@@ -69,50 +73,50 @@ export default function OnboardingPage() {
   if (!team) {
     return (
       <main className="page">
-        <h1>Alta de equipo</h1>
+        <h1>{t('createTeamTitle')}</h1>
         <div className="card">
         <form onSubmit={handleCreateTeam}>
           <label>
-            Nombre del equipo
+            {t('teamName')}
             <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
           </label>
           <label>
-            Contexto de la empresa (opcional)
+            {t('companyContext')}
             <textarea value={companyContext} onChange={(e) => setCompanyContext(e.target.value)} />
           </label>
           <label>
-            Canal de entrega del informe
+            {t('deliveryChannel')}
             <select value={deliveryChannel} onChange={(e) => setDeliveryChannel(e.target.value as ChannelName)}>
-              <option value="email">Email</option>
-              <option value="whatsapp">WhatsApp</option>
-              <option value="telegram">Telegram</option>
+              <option value="email">{tChannel('email')}</option>
+              <option value="whatsapp">{tChannel('whatsapp')}</option>
+              <option value="telegram">{tChannel('telegram')}</option>
             </select>
           </label>
           <label>
-            Destino del informe (email o teléfono)
+            {t('deliveryTarget')}
             <input type="text" value={deliveryTarget} onChange={(e) => setDeliveryTarget(e.target.value)} required />
           </label>
           <label>
-            Día del recordatorio
+            {t('reminderDow')}
             <select value={reminderDow} onChange={(e) => setReminderDow(Number(e.target.value))}>
-              {DOW_LABELS.map((label, i) => (
-                <option key={i} value={i}>
-                  {label}
+              {DOW_KEYS.map((key, i) => (
+                <option key={key} value={i}>
+                  {tDay(key)}
                 </option>
               ))}
             </select>
           </label>
           <label>
-            Hora del recordatorio
+            {t('reminderTime')}
             <input type="time" value={reminderTime} onChange={(e) => setReminderTime(e.target.value)} required />
           </label>
           <label>
-            Hora de corte
+            {t('cutoffTime')}
             <input type="time" value={cutoffTime} onChange={(e) => setCutoffTime(e.target.value)} required />
           </label>
           {error && <p role="alert">{error}</p>}
           <button type="submit" disabled={loading}>
-            {loading ? 'Creando...' : 'Crear equipo'}
+            {loading ? t('createTeamSubmitLoading') : t('createTeamSubmit')}
           </button>
         </form>
         </div>
@@ -122,7 +126,7 @@ export default function OnboardingPage() {
 
   return (
     <main className="page">
-      <h1>Miembros de {team.name}</h1>
+      <h1>{t('membersTitle', { teamName: team.name })}</h1>
       <div className="card">
       {members.length > 0 && (
         <ul className="member-list">
@@ -133,29 +137,29 @@ export default function OnboardingPage() {
       )}
       <form onSubmit={handleAddMember}>
         <label>
-          Nombre
+          {t('memberName')}
           <input type="text" value={memberName} onChange={(e) => setMemberName(e.target.value)} required />
         </label>
         <label>
-          Canal
+          {t('memberChannel')}
           <select value={memberChannel} onChange={(e) => setMemberChannel(e.target.value as ChannelName)}>
-            <option value="email">Email</option>
-            <option value="whatsapp">WhatsApp</option>
-            <option value="telegram">Telegram</option>
+            <option value="email">{tChannel('email')}</option>
+            <option value="whatsapp">{tChannel('whatsapp')}</option>
+            <option value="telegram">{tChannel('telegram')}</option>
           </select>
         </label>
         <label>
-          Contacto (email o teléfono +34...)
+          {t('memberContact')}
           <input type="text" value={memberContact} onChange={(e) => setMemberContact(e.target.value)} required />
         </label>
         {error && <p role="alert">{error}</p>}
         <button type="submit" disabled={loading}>
-          {loading ? 'Añadiendo...' : 'Añadir miembro'}
+          {loading ? t('addMemberSubmitLoading') : t('addMemberSubmit')}
         </button>
       </form>
       </div>
       <button type="button" onClick={() => router.push('/app')}>
-        Terminar
+        {t('finish')}
       </button>
     </main>
   );

@@ -1,0 +1,94 @@
+{
+  "Nav": {
+    "login": "Entrar",
+    "createAccount": "Crear cuenta",
+    "logout": "Salir"
+  },
+  "Channel": {
+    "email": "Email",
+    "whatsapp": "WhatsApp",
+    "telegram": "Telegram"
+  },
+  "Day": {
+    "0": "Domingo",
+    "1": "Lunes",
+    "2": "Martes",
+    "3": "Miércoles",
+    "4": "Jueves",
+    "5": "Viernes",
+    "6": "Sábado"
+  },
+  "Landing": {
+    "title": "WeeklyFeedback",
+    "tagline": "El resumen semanal que tu equipo ya no tiene que escribir, y que tú ya no tienes que resumir.",
+    "description": "Cada semana le preguntamos a cada persona de tu equipo tres cosas cortas — qué hizo, qué hará, si tiene algún bloqueo — por WhatsApp o email. Con las respuestas armamos un único informe narrativo, listo para leer en 30 segundos.",
+    "cta": "Crear cuenta",
+    "howItWorksTitle": "Cómo funciona",
+    "step1": "Das de alta tu equipo y elegís día/hora del recordatorio.",
+    "step2": "Cada persona responde una vez por semana, en el canal que ya usa.",
+    "step3": "Recibís un informe único, agrupado por proyecto, con bloqueos y prioridades.",
+    "pricingTitle": "Precios",
+    "planTeam": "Plan Equipo",
+    "planTeamPrice": "49€/mes",
+    "planTeamDesc": "Un equipo, hasta 20 personas.",
+    "planOrg": "Plan Organización",
+    "planOrgPrice": "149€/mes",
+    "planOrgDesc": "Hasta 5 equipos, resumen ejecutivo opcional.",
+    "priceNote": "Precios sin IVA. Sin permanencia, cancelable en cualquier momento."
+  },
+  "Login": {
+    "title": "Entrar",
+    "email": "Email",
+    "password": "Contraseña",
+    "submit": "Entrar",
+    "submitLoading": "Entrando...",
+    "noAccount": "¿No tenés cuenta?",
+    "registerLink": "Registrate",
+    "error": "No se pudo entrar"
+  },
+  "Register": {
+    "title": "Crear cuenta",
+    "orgName": "Nombre de la empresa/equipo",
+    "email": "Email",
+    "password": "Contraseña",
+    "submit": "Crear cuenta",
+    "submitLoading": "Creando...",
+    "haveAccount": "¿Ya tenés cuenta?",
+    "loginLink": "Entrá",
+    "error": "No se pudo registrar"
+  },
+  "Onboarding": {
+    "createTeamTitle": "Alta de equipo",
+    "teamName": "Nombre del equipo",
+    "companyContext": "Contexto de la empresa (opcional)",
+    "deliveryChannel": "Canal de entrega del informe",
+    "deliveryTarget": "Destino del informe (email o teléfono)",
+    "reminderDow": "Día del recordatorio",
+    "reminderTime": "Hora del recordatorio",
+    "cutoffTime": "Hora de corte",
+    "createTeamSubmit": "Crear equipo",
+    "createTeamSubmitLoading": "Creando...",
+    "createTeamError": "No se pudo crear el equipo",
+    "membersTitle": "Miembros de {teamName}",
+    "memberName": "Nombre",
+    "memberChannel": "Canal",
+    "memberContact": "Contacto (email o teléfono +34...)",
+    "addMemberSubmit": "Añadir miembro",
+    "addMemberSubmitLoading": "Añadiendo...",
+    "addMemberError": "No se pudo añadir el miembro",
+    "finish": "Terminar"
+  },
+  "Dashboard": {
+    "title": "WeeklyFeedback",
+    "loading": "Cargando...",
+    "loadError": "No se pudo cargar el panel",
+    "reportsLoadError": "No se pudieron cargar los informes",
+    "noTeams": "Todavía no tenés ningún equipo.",
+    "createFirstTeam": "Dar de alta tu primer equipo",
+    "teamLabel": "Equipo",
+    "historyTitle": "Histórico de informes",
+    "noReports": "Todavía no hay informes generados para este equipo.",
+    "weekOf": "Semana del {date}",
+    "reportPending": "(pendiente de generar)"
+  }
+}

@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useRouter, Link } from '@/i18n/navigation';
 import { api, ApiError } from '@/lib/api';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const t = useTranslations('Register');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [orgName, setOrgName] = useState('');
@@ -20,7 +22,7 @@ export default function RegisterPage() {
       await api.register({ email, password, orgName });
       router.push('/app/onboarding');
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudo registrar');
+      setError(err instanceof ApiError ? err.message : t('error'));
     } finally {
       setLoading(false);
     }
@@ -29,18 +31,18 @@ export default function RegisterPage() {
   return (
     <main className="page">
       <div className="card card-narrow">
-        <h1>Crear cuenta</h1>
+        <h1>{t('title')}</h1>
         <form onSubmit={handleSubmit}>
           <label>
-            Nombre de la empresa/equipo
+            {t('orgName')}
             <input type="text" value={orgName} onChange={(e) => setOrgName(e.target.value)} required />
           </label>
           <label>
-            Email
+            {t('email')}
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </label>
           <label>
-            Contraseña
+            {t('password')}
             <input
               type="password"
               value={password}
@@ -51,11 +53,11 @@ export default function RegisterPage() {
           </label>
           {error && <p role="alert">{error}</p>}
           <button type="submit" disabled={loading}>
-            {loading ? 'Creando...' : 'Crear cuenta'}
+            {loading ? t('submitLoading') : t('submit')}
           </button>
         </form>
         <p>
-          ¿Ya tenés cuenta? <a href="/login">Entrá</a>
+          {t('haveAccount')} <Link href="/login">{t('loginLink')}</Link>
         </p>
       </div>
     </main>

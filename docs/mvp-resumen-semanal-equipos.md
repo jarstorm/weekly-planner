@@ -151,7 +151,7 @@ Técnicamente esto es una segunda llamada a la IA, con los informes de equipo ya
 - Integraciones "pull" con GitHub, Trello, Jira, Asana (enriquecimiento automático sin que nadie escriba nada).
 - Personalización de las preguntas por equipo.
 - Detección de sentimiento / alertas automáticas al responsable si hay un bloqueo grave.
-- Multi-idioma (catalán, inglés, portugués) para abrir mercado.
+- Multi-idioma (catalán, inglés, portugués) para abrir mercado — **el frontend ya tiene ES/EN** (se adelantó fuera de este orden porque se pidió durante el desarrollo, no por demanda real; ver `docs/especificaciones-tecnicas.md`, sección 3.2). El contenido generado por IA (el informe en sí) sigue siendo solo en español — traducirlo también es lo que queda pendiente de este punto.
 - Analítica de tendencias más avanzada (velocidad del equipo, comparativa entre semanas).
 
 ---
