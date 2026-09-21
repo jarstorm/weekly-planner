@@ -36,7 +36,13 @@ export class AuthService {
       max_teams: 1,
       max_members_per_team: 20,
     });
-    if (orgError) throw orgError;
+    if (orgError) {
+      // Sin esto, un fallo acá deja un usuario de Auth huérfano (sin
+      // organization) que ya no se puede volver a registrar — "email ya
+      // registrado" en el próximo intento, sin ninguna cuenta usable detrás.
+      await this.supabase.db.auth.admin.deleteUser(created.user!.id);
+      throw orgError;
+    }
 
     return this.login({ email: dto.email, password: dto.password });
   }
