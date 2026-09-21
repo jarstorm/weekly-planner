@@ -54,6 +54,13 @@ export const api = {
   reportPdfUrl: (reportId: string) => `${API_BASE}/reports/${reportId}/pdf`,
   conversationsExportUrl: (teamId: string, weekStart?: string) =>
     `${API_BASE}/checkins/export?teamId=${teamId}${weekStart ? `&weekStart=${weekStart}` : ''}`,
+
+  // Formulario público de checkin (sección 3.5) — el token es la
+  // credencial, no hay sesión/cookie de por medio.
+  getCheckinForm: (token: string) =>
+    request<CheckinFormInfo>(`/checkins/form?token=${encodeURIComponent(token)}`),
+  submitCheckinForm: (token: string, data: { doneText?: string; nextText?: string; blockerText?: string }) =>
+    request('/checkins/form', { method: 'POST', body: JSON.stringify({ token, ...data }) }),
 };
 
 export interface Team {
@@ -74,6 +81,13 @@ export interface Report {
   content_markdown: string | null;
   generated_at: string | null;
   delivered_at: string | null;
+}
+
+export interface CheckinFormInfo {
+  memberName: string;
+  teamName: string;
+  weekStart: string;
+  alreadySubmitted: boolean;
 }
 
 export interface CheckinStatus {

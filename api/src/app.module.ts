@@ -11,6 +11,7 @@ import { AggregateModule } from './aggregate/aggregate.module';
 import { JobsModule } from './jobs/jobs.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { ReportsModule } from './reports/reports.module';
+import { CheckinFormModule } from './checkin-form/checkin-form.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ReportsModule } from './reports/reports.module';
     JobsModule,
     WebhooksModule,
     ReportsModule,
+    CheckinFormModule,
   ],
   controllers: [HealthController],
 })

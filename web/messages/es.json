@@ -104,5 +104,18 @@
     "downloadPdf": "Descargar PDF",
     "downloadConversations": "Descargar conversaciones",
     "downloadAllConversations": "Descargar todas las conversaciones"
+  },
+  "CheckinForm": {
+    "loading": "Cargando...",
+    "invalidLink": "Este enlace no es válido o ya expiró.",
+    "submitError": "No se pudo enviar la respuesta, probá de nuevo.",
+    "title": "Resumen semanal — {teamName}",
+    "greeting": "Hola {memberName} 👋 Contestá estas tres cosas cortas.",
+    "done": "¿Qué has hecho esta semana?",
+    "next": "¿Qué harás la semana que viene?",
+    "blocker": "¿Algo bloqueado o que necesites de alguien?",
+    "submit": "Enviar",
+    "submitting": "Enviando...",
+    "thanks": "¡Gracias, {memberName}! Ya quedó registrada tu respuesta de esta semana."
   }
 }

@@ -104,5 +104,18 @@
     "downloadPdf": "Download PDF",
     "downloadConversations": "Download conversations",
     "downloadAllConversations": "Download all conversations"
+  },
+  "CheckinForm": {
+    "loading": "Loading...",
+    "invalidLink": "This link is invalid or has expired.",
+    "submitError": "Could not submit your response, try again.",
+    "title": "Weekly check-in — {teamName}",
+    "greeting": "Hi {memberName} 👋 Answer these three short things.",
+    "done": "What did you do this week?",
+    "next": "What will you do next week?",
+    "blocker": "Anything blocked or that you need from someone?",
+    "submit": "Submit",
+    "submitting": "Submitting...",
+    "thanks": "Thanks, {memberName}! Your response for this week is recorded."
   }
 }

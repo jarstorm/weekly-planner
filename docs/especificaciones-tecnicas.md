@@ -100,6 +100,7 @@ WHATSAPP_PHONE_NUMBER_ID=
 WHATSAPP_ACCESS_TOKEN=
 WHATSAPP_VERIFY_TOKEN=
 TELEGRAM_BOT_TOKEN=              # temporal en vez de WhatsApp (ver sección 0.2) — @BotFather en Telegram
+CHECKIN_TOKEN_SECRET=            # string largo random — firma los links de /checkin/<token> (sección 3.5)
 STRIPE_SECRET_KEY=
 PORT=3001
 APP_BASE_URL=                    # URL pública del frontend (Next.js) — CORS y links en emails
@@ -130,8 +131,9 @@ weekly-feedback/
       auth/              → AuthModule: register/login/logout/me, AuthGuard, cookie httpOnly wf_session
       channels/          → interfaz común + un provider por canal (email.channel.ts, whatsapp.channel.ts, telegram.channel.ts [temporal, ver 0.2], [futuro] slack.channel.ts) + ChannelsService (dispatcher)
       teams/             → TeamsModule (equipos y miembros, protegido por AuthGuard): controller + service
-      checkins/          → CheckinsModule: controller + service
-      reports/           → ReportsModule: histórico de informes (GET /api/reports?teamId=)
+      checkins/          → CheckinsModule: controller + service (estado por semana, export de conversaciones — ver 3.3)
+      checkin-form/      → CheckinFormModule: formulario público /checkin/<token>, sin AuthGuard (ver 3.5)
+      reports/           → ReportsModule: histórico de informes (GET /api/reports?teamId=), descarga PDF
       aggregate/         → AggregateModule/Service (llamada a la IA — Groq temporal, ver 0.2)
       pdf/               → PdfService: markdown → PDF (pdfkit + marked, sin Chromium, ver 0.5)
       jobs/              → ReminderJob, ReportJob (@nestjs/schedule, Cron), blockers.utils.ts (recurrencia, ver 0.6)
@@ -143,7 +145,7 @@ weekly-feedback/
       i18n/              → routing.ts, navigation.ts, request.ts (config de next-intl)
       middleware.ts      → detección/enrutado de locale
       components/        → LocaleSwitcher.tsx y demás componentes compartidos
-      app/[locale]/      → page.tsx (landing), login/, register/, app/ (dashboard + onboarding, autenticado) — App Router
+      app/[locale]/      → page.tsx (landing), login/, register/, app/ (dashboard + onboarding, autenticado), checkin/[token]/ (formulario público, sin auth — ver 3.5) — App Router
       lib/api.ts         → cliente HTTP al backend (fetch con credentials: 'include', nunca supabase-js — ver sección 0.1)
 ```
 
@@ -173,6 +175,20 @@ Pedido explícito: el responsable del equipo (el único que entra al panel — v
 ### 3.4 Los empleados no tienen cuenta ni acceso al panel
 
 Esto ya era así, no es un cambio: solo se registra/loguea quien da de alta el equipo (el responsable, dueño de la `organization`). Los miembros (`members`) no tienen fila en Supabase Auth, ni password, ni sesión — interactúan únicamente por WhatsApp/Telegram/email, de forma conversacional, nunca entran a `/app`. `AuthGuard` protege todo lo que hay bajo `/api/teams`, `/api/checkins` y `/api/reports`; no existe ningún login para miembros porque no hace falta — no hay nada en el panel que un empleado necesite ver o hacer.
+
+### 3.5 Checkin por email: formulario con link único, no hay a qué "responder"
+
+Gap real encontrado durante el desarrollo: a diferencia de WhatsApp/Telegram, que son conversacionales (la persona responde al mismo chat), un email de recordatorio no tiene una vuelta natural — `EmailChannel.parseIncoming()` ni siquiera está implementado (sección 0.1 original del canal). Sin esto, un miembro con canal `email` no tenía ninguna forma de dejar su checkin salvo que el jefe se lo pasara a mano.
+
+Solución: cada recordatorio (`ReminderJob`, los tres canales, no solo email) incluye un link a un formulario público, `/checkin/<token>` en el frontend. El token es la credencial — no hay cuenta, no hay contraseña:
+
+- `CheckinFormService.buildLink()` firma un token stateless (HMAC-SHA256, `api/src/checkin-form/token.util.ts`) con `memberId` + `weekStart` — no hace falta guardar nada nuevo en la base de datos, ni tabla ni columna. `CHECKIN_TOKEN_SECRET` (cualquier string largo random) es la única pieza nueva de configuración.
+- `GET /api/checkins/form?token=` y `POST /api/checkins/form` (`CheckinFormModule`) — **sin `AuthGuard`**, a propósito: mismo criterio de confianza que los webhooks de mensajería (el token/número de teléfono ya resuelve quién es, no hace falta login). El `POST` reusa `CheckinsService.saveInternal()`, el mismo camino que usan los webhooks.
+- El formulario (`web/src/app/[locale]/checkin/[token]/page.tsx`) es una página pública, sin `AppShell` ni sesión — si el token ya tiene una respuesta guardada esa semana, muestra un mensaje de agradecimiento en vez del formulario (evita duplicar/pisar sin querer).
+
+**Bug real encontrado probando en navegador:** el formato inicial del token usaba `.` como separador (`<payload>.<firma>`), y el matcher del middleware de next-intl excluye del enrutado cualquier path con un punto (asumiendo que es un archivo estático — `.*\\..*` en `web/src/middleware.ts`), así que la URL del checkin devolvía 404 antes de llegar a la página. Cambiado el separador a `~`, que no forma parte del alfabeto base64url ni choca con esa regla. Hay un test (`token.util.spec.ts`) que falla si vuelve a colarse un punto en el token.
+
+Sin expiración todavía: el token es válido indefinidamente para esa semana concreta (no hay lógica que rechace un link viejo). Limitación conocida, aceptable para el MVP — si alguien reusa un link de hace un mes, el checkin quedaría atribuido a la semana original del token, no a la actual.
 
 ### 3.1 Conectores de canal — preparado para añadir Slack sin tocar el resto
 
