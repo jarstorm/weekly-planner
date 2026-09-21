@@ -162,7 +162,7 @@ Técnicamente esto es una segunda llamada a la IA, con los informes de equipo ya
 
 **Backend:** Node.js (Express o Fastify) o Python (FastAPI) — lo que te resulte más cómodo, ninguna de las dos añade complejidad real a este proyecto.
 
-**Base de datos y auth:** Supabase (Postgres + Auth + cron jobs vía `pg_cron` o Edge Functions programadas). Evita montar infraestructura propia para algo que en el MVP no necesita escalar.
+**Base de datos y auth:** Supabase (Postgres + Auth + cron jobs vía `pg_cron` o Edge Functions programadas). Evita montar infraestructura propia para algo que en el MVP no necesita escalar. El frontend no habla directo con Supabase — todo pasa por el backend, incluida la autenticación (ver `docs/especificaciones-tecnicas.md`, sección 0.1).
 
 **Canal WhatsApp:** WhatsApp Cloud API de Meta (directa) o un proveedor (BSP) como 360dialog, Twilio o WATI para simplificar el alta. Requiere verificar la empresa en Meta Business Manager y un número de teléfono dedicado. El coste es por mensaje y depende de la categoría (servicio/utilidad/marketing) y el país del destinatario — para un recordatorio semanal y su respuesta (mensajes de tipo "utilidad" dentro de la ventana de conversación de 24h) el coste por equipo y semana es mínimo, pero conviene confirmar la tarifa vigente en el momento de lanzar, porque Meta las revisa con frecuencia.
 

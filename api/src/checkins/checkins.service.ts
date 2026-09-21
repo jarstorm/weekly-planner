@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CreateCheckinDto } from './dto/create-checkin.dto';
 
@@ -6,7 +6,27 @@ import { CreateCheckinDto } from './dto/create-checkin.dto';
 export class CheckinsService {
   constructor(private readonly supabase: SupabaseService) {}
 
-  async saveManual(dto: CreateCheckinDto) {
+  // Endpoint manual (POST /api/checkins/manual, roadmap paso 5) — expuesto
+  // al dueño del equipo autenticado, así que valida que el team_id sea suyo
+  // antes de escribir.
+  async saveManual(organizationId: string, dto: CreateCheckinDto) {
+    const { data: team, error: teamError } = await this.supabase.db
+      .from('teams')
+      .select('id, organization_id')
+      .eq('id', dto.team_id)
+      .maybeSingle();
+    if (teamError) throw teamError;
+    if (!team) throw new NotFoundException('Equipo no encontrado');
+    if (team.organization_id !== organizationId) {
+      throw new ForbiddenException('Este equipo no pertenece a tu organización');
+    }
+    return this.saveInternal(dto);
+  }
+
+  // Sin chequeo de organización — usado por el webhook de WhatsApp, donde
+  // team_id/member_id ya vienen resueltos server-side a partir del número
+  // de teléfono que escribió (no hay input de usuario que falsificar).
+  async saveInternal(dto: CreateCheckinDto) {
     const { data, error } = await this.supabase.db
       .from('checkins')
       .upsert(dto, { onConflict: 'member_id,week_start' })

@@ -16,6 +16,17 @@ Se evaluó n8n (u otra herramienta no-code tipo Make/Zapier) como orquestador de
 **Excepción — prototipo desechable:** se permite usar n8n como banco de pruebas manual, solo en la Fase 0 (ver sección 4), para validar rápido que el envío/recepción por WhatsApp y email funciona de verdad (credenciales, plantillas aprobadas, formato de payload) antes de escribir el backend. No almacena datos de clientes reales ni queda corriendo en producción — cuando el flujo está validado, se apaga y la lógica se reimplementa en `services/channels/` (sección 3.1). Lo que se "porta" de n8n al backend no es el workflow en sí (no hay forma de convertir un workflow n8n en código Node automáticamente), sino lo que se aprendió montándolo: qué payload exacto espera la API de WhatsApp/Meta, qué plantilla de mensaje usar, cómo responde el webhook — eso se documenta en `docs/notas-flujo-mensajeria.md` mientras se prueba, y ese documento es lo que guía el `email.js`/`whatsapp.js` reales.
 - **El canal por empleado también resuelve sin n8n**: `members.channel` (`supabase/schema.sql`) es un campo por persona, no por equipo — cada miembro elige `email` o `whatsapp` al darlo de alta, independiente del canal de entrega del equipo (`teams.delivery_channel`, que es solo para el informe final al responsable). Mismo canal sirve para enviar la pregunta semanal y recibir la respuesta (es una conversación, no un formulario aparte). El worker del cron simplemente lee `channel` por miembro y llama a `email.js` o `whatsapp.js` — no hace falta lógica especial ni n8n para esto. Slack no está en el `check` del enum todavía porque está fuera del MVP (ver roadmap, sección 15 de `docs/mvp-resumen-semanal-equipos.md`); se añade cuando se implemente esa integración.
 
+### 0.1 Decisión: el frontend no habla directo con Supabase
+
+El patrón estándar de Supabase (cliente en el navegador con la `anon key`, protegido por RLS) se descartó a favor de que **todo** — auth incluida — pase por el backend NestJS:
+
+- **Frontend no tiene ninguna dependencia de `@supabase/supabase-js` ni conoce `SUPABASE_URL`.** Solo conoce `NEXT_PUBLIC_API_BASE_URL`. Toda la superficie de Supabase queda encapsulada en `api/`.
+- **Auth también pasa por el backend.** `POST /api/auth/register` y `POST /api/auth/login` usan Supabase Auth internamente (`SupabaseModule`, ver más abajo) y devuelven una cookie `httpOnly` propia (`wf_session`) con el access token — el navegador nunca ve ni maneja el token directamente, solo lo manda automáticamente en cada request. `GET /api/auth/me` resuelve la sesión.
+- **La autorización se hace en el backend, no en RLS.** Como el backend siempre consulta con la `service_role` key (que bypasea RLS), cada servicio (`TeamsService`, `CheckinsService`) filtra manualmente por `organization_id` del usuario autenticado (`AuthGuard` + `@CurrentUser()`) antes de leer o escribir. Las políticas RLS de `schema.sql` quedan como defensa en profundidad (por si algo llega a consultar Supabase directo en el futuro, p. ej. una Edge Function), pero no son el mecanismo de autorización real hoy.
+- **Por qué:** un solo punto de entrada (la API) simplifica el contrato con el frontend, evita duplicar lógica de autorización en dos sitios (RLS + backend), y deja abierta la puerta a cambiar de proveedor de datos/auth sin tocar el frontend.
+
+Dos clientes de Supabase conviven en `SupabaseService` (`api/src/supabase/supabase.service.ts`): `db` (con `service_role`, para todas las tablas) y `authClient` (con `anon key`, solo para las llamadas de Auth — `signUp`/`signInWithPassword`/`getUser`, que es el uso previsto de esa key).
+
 ---
 
 ## 1. Qué hace falta crear antes de tocar código
@@ -39,7 +50,8 @@ Se evaluó n8n (u otra herramienta no-code tipo Make/Zapier) como orquestador de
 ### `api/.env`
 ```
 SUPABASE_URL=
-SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_SERVICE_ROLE_KEY=       # todas las tablas — bypasea RLS, la autorización la hace el backend (ver 0.1)
+SUPABASE_ANON_KEY=               # solo para las llamadas de Auth (signUp/signInWithPassword/getUser)
 ANTHROPIC_API_KEY=
 ANTHROPIC_MODEL=                 # revisar el identificador de modelo vigente
 RESEND_API_KEY=
@@ -49,17 +61,15 @@ WHATSAPP_ACCESS_TOKEN=
 WHATSAPP_VERIFY_TOKEN=
 STRIPE_SECRET_KEY=
 PORT=3001
-APP_BASE_URL=
+APP_BASE_URL=                    # URL pública del frontend (Next.js) — CORS y links en emails
 ```
 
 ### `web/.env.local`
 ```
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
 NEXT_PUBLIC_API_BASE_URL=
 ```
 
-La `SUPABASE_SERVICE_ROLE_KEY` es solo para el backend (salta la seguridad por fila) — nunca debe llegar al frontend. El frontend usa la `anon key`, pensada para exponerse en el navegador.
+El frontend no tiene ninguna variable de Supabase — solo conoce la URL del backend (ver sección 0.1). Las dos keys de Supabase (`service_role` y `anon`) viven únicamente en `api/.env` y nunca llegan al navegador.
 
 ---
 
@@ -75,9 +85,10 @@ weekly-feedback/
   api/                                  # backend Node.js/TypeScript (NestJS)
     src/
       config/            → ConfigModule, variables de entorno centralizadas
-      supabase/          → SupabaseModule/Service (cliente con service_role key)
+      supabase/          → SupabaseModule/Service (cliente service_role + cliente anon para auth, ver 0.1)
+      auth/              → AuthModule: register/login/logout/me, AuthGuard, cookie httpOnly wf_session
       channels/          → interfaz común + un provider por canal (email.channel.ts, whatsapp.channel.ts, [futuro] slack.channel.ts) + ChannelsService (dispatcher)
-      teams/             → TeamsModule (equipos y miembros): controller + service
+      teams/             → TeamsModule (equipos y miembros, protegido por AuthGuard): controller + service
       checkins/          → CheckinsModule: controller + service
       aggregate/         → AggregateModule/Service (llamada a la IA)
       jobs/              → ReminderJob, ReportJob (@nestjs/schedule, Cron)
@@ -119,29 +130,31 @@ Cada punto se construye, se prueba, y solo entonces se pasa al siguiente. Los pr
 
 2. **Backend base** — proyecto NestJS con endpoint `/health` y `SupabaseService` conectado. *Hecho cuando:* `GET /health` responde `{ ok: true }` y el backend puede leer/escribir en Supabase.
 
-3. **Alta de equipo y miembros** — endpoints `POST /api/teams` y `POST /api/teams/:id/members`. *Hecho cuando:* se puede crear un equipo de prueba con 2-3 miembros por API, sin frontend todavía.
+3. **Auth** — `POST /api/auth/register` (crea el usuario en Supabase Auth + su `organization`), `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`, con la cookie `httpOnly wf_session` (ver sección 0.1). *Hecho cuando:* se puede registrar un usuario de prueba por API, hacer login, y `GET /api/auth/me` devuelve sus datos usando la cookie — sin cookie, da 401.
 
-4. **Envío de recordatorio por email** — `services/email.js` + un disparo manual (sin cron aún) que manda el recordatorio a los miembros de un equipo. *Hecho cuando:* llega el email de verdad a una bandeja de entrada real.
+4. **Alta de equipo y miembros** — endpoints `POST /api/teams` y `POST /api/teams/:id/members`, protegidos por `AuthGuard` (el `organization_id` sale de la sesión, no lo manda el cliente). *Hecho cuando:* con la cookie de un usuario logueado se puede crear un equipo de prueba con 2-3 miembros por API, sin frontend todavía.
 
-5. **Recepción de respuesta (fallback manual)** — endpoint `POST /api/checkins/manual` que guarda un check-in en la tabla `checkins`. *Hecho cuando:* se puede simular la respuesta de 2-3 personas y quedan guardadas correctamente, asociadas a la semana correcta.
+5. **Envío de recordatorio por email** — `EmailChannel` + un disparo manual (sin cron aún) que manda el recordatorio a los miembros de un equipo. *Hecho cuando:* llega el email de verdad a una bandeja de entrada real.
 
-6. **Generación del informe con IA** — `services/aggregate.js`, probado con los check-ins guardados en el paso anterior. *Hecho cuando:* el informe generado tiene sentido, agrupa bien, y detecta si alguien no respondió.
+6. **Recepción de respuesta (fallback manual)** — endpoint `POST /api/checkins/manual` que guarda un check-in en la tabla `checkins`. *Hecho cuando:* se puede simular la respuesta de 2-3 personas y quedan guardadas correctamente, asociadas a la semana correcta.
 
-7. **Entrega del informe por email** — `sendReport()`. *Hecho cuando:* el informe llega por email con buen formato.
+7. **Generación del informe con IA** — `AggregateService`, probado con los check-ins guardados en el paso anterior. *Hecho cuando:* el informe generado tiene sentido, agrupa bien, y detecta si alguien no respondió.
 
-8. **Cron automático** — job que cada 15 minutos revisa si algún equipo tiene que recibir recordatorio o informe según su horario configurado. *Hecho cuando:* el ciclo completo (recordatorio → respuesta manual → informe) ocurre solo, sin disparar nada a mano.
+8. **Entrega del informe por email** — entrega vía `EmailChannel`. *Hecho cuando:* el informe llega por email con buen formato.
 
-9. **Frontend: alta de equipo (onboarding)** — formulario Next.js que llama a los endpoints del punto 3. *Hecho cuando:* se puede dar de alta un equipo entero desde el navegador, sin tocar la base de datos a mano.
+9. **Cron automático** — job que cada 15 minutos revisa si algún equipo tiene que recibir recordatorio o informe según su horario configurado. *Hecho cuando:* el ciclo completo (recordatorio → respuesta manual → informe) ocurre solo, sin disparar nada a mano.
 
-10. **Frontend: histórico de informes** — panel que lista los informes generados por semana. *Hecho cuando:* el responsable del equipo puede entrar, ver el informe de esta semana y los anteriores.
+10. **Frontend: registro/login + alta de equipo (onboarding)** — formularios Next.js que llaman a los endpoints de los puntos 3 y 4. *Hecho cuando:* se puede registrar, entrar, y dar de alta un equipo entero desde el navegador, sin tocar la base de datos a mano.
 
-11. **Canal WhatsApp** — verificación en Meta, plantilla de recordatorio aprobada, webhook de entrada/salida. Se añade cuando el flujo por email ya funciona de punta a punta y hay al menos un cliente piloto pidiéndolo. *Hecho cuando:* un número de prueba recibe el recordatorio y su respuesta se guarda igual que en el flujo de email.
+11. **Frontend: histórico de informes** — panel que lista los informes generados por semana. *Hecho cuando:* el responsable del equipo puede entrar, ver el informe de esta semana y los anteriores.
 
-12. **Cobro con Stripe** — se añade cuando haya clientes reales dispuestos a pagar, no antes. *Hecho cuando:* un cliente de prueba puede suscribirse y su `organizations.status` pasa de `trial` a `active`.
+12. **Canal WhatsApp** — verificación en Meta, plantilla de recordatorio aprobada, webhook de entrada/salida. Se añade cuando el flujo por email ya funciona de punta a punta y hay al menos un cliente piloto pidiéndolo. *Hecho cuando:* un número de prueba recibe el recordatorio y su respuesta se guarda igual que en el flujo de email.
 
-13. **Límites de plan (Equipo / Organización / Custom)** — validar en la capa de aplicación, al crear un equipo o un miembro, que no se superen `max_teams` y `max_members_per_team` de la organización (en Plan Custom ambos son `NULL`, sin límite). *Hecho cuando:* una organización en Plan Equipo no puede crear un segundo equipo, y una en Plan Organización no puede crear un 6º equipo ni un 21º miembro en uno existente.
+13. **Cobro con Stripe** — se añade cuando haya clientes reales dispuestos a pagar, no antes. *Hecho cuando:* un cliente de prueba puede suscribirse y su `organizations.status` pasa de `trial` a `active`.
 
-14. **Resumen ejecutivo (varios equipos + informe consolidado)** — solo se construye cuando aparezca el primer lead real con varios equipos, no antes: alta de `organizations` en Plan Organización o Custom, vincular sus equipos, un interruptor para activar/desactivar `has_executive_summary` (es una opción, no algo automático por plan — ver sección 6.4 del documento de producto), y el job que genera el informe consolidado a partir de los informes de equipo ya generados esa semana, solo si la opción está activada. *Hecho cuando:* una organización de prueba con 2-3 equipos y el resumen ejecutivo activado genera su informe de equipo individual Y su resumen ejecutivo, cada uno al destinatario correcto — y una organización con la opción desactivada no genera el consolidado.
+14. **Límites de plan (Equipo / Organización / Custom)** — validar en la capa de aplicación, al crear un equipo o un miembro, que no se superen `max_teams` y `max_members_per_team` de la organización (en Plan Custom ambos son `NULL`, sin límite). *Hecho cuando:* una organización en Plan Equipo no puede crear un segundo equipo, y una en Plan Organización no puede crear un 6º equipo ni un 21º miembro en uno existente.
+
+15. **Resumen ejecutivo (varios equipos + informe consolidado)** — solo se construye cuando aparezca el primer lead real con varios equipos, no antes: alta de `organizations` en Plan Organización o Custom, vincular sus equipos, un interruptor para activar/desactivar `has_executive_summary` (es una opción, no algo automático por plan — ver sección 6.4 del documento de producto), y el job que genera el informe consolidado a partir de los informes de equipo ya generados esa semana, solo si la opción está activada. *Hecho cuando:* una organización de prueba con 2-3 equipos y el resumen ejecutivo activado genera su informe de equipo individual Y su resumen ejecutivo, cada uno al destinatario correcto — y una organización con la opción desactivada no genera el consolidado.
 
 ---
 

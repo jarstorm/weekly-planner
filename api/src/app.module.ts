@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { HealthController } from './health.controller';
 import { SupabaseModule } from './supabase/supabase.module';
+import { AuthModule } from './auth/auth.module';
 import { ChannelsModule } from './channels/channels.module';
 import { TeamsModule } from './teams/teams.module';
 import { CheckinsModule } from './checkins/checkins.module';
@@ -15,6 +16,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
     SupabaseModule,
+    AuthModule,
     ChannelsModule,
     TeamsModule,
     CheckinsModule,

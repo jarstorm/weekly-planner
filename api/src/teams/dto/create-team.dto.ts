@@ -1,9 +1,6 @@
-import { IsIn, IsInt, IsOptional, IsString, IsUUID, Matches, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Matches, Max, Min } from 'class-validator';
 
 export class CreateTeamDto {
-  @IsUUID()
-  organization_id: string;
-
   @IsString()
   name: string;
 

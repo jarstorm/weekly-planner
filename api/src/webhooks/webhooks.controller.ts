@@ -48,7 +48,7 @@ export class WebhooksController {
     }
 
     const timezone = (member as any).teams?.timezone ?? 'Europe/Madrid';
-    await this.checkins.saveManual({
+    await this.checkins.saveInternal({
       team_id: member.team_id,
       member_id: member.id,
       week_start: currentWeekStart(new Date(), timezone),
