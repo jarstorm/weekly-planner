@@ -18,7 +18,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await api.register({ email, password, orgName });
-      router.push('/onboarding');
+      router.push('/app/onboarding');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo registrar');
     } finally {
@@ -27,35 +27,37 @@ export default function RegisterPage() {
   }
 
   return (
-    <main>
-      <h1>Crear cuenta</h1>
-      <form onSubmit={handleSubmit}>
-        <label>
-          Nombre de la empresa/equipo
-          <input type="text" value={orgName} onChange={(e) => setOrgName(e.target.value)} required />
-        </label>
-        <label>
-          Email
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        </label>
-        <label>
-          Contraseña
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            minLength={8}
-            required
-          />
-        </label>
-        {error && <p role="alert">{error}</p>}
-        <button type="submit" disabled={loading}>
-          {loading ? 'Creando...' : 'Crear cuenta'}
-        </button>
-      </form>
-      <p>
-        ¿Ya tenés cuenta? <a href="/login">Entrá</a>
-      </p>
+    <main className="page">
+      <div className="card card-narrow">
+        <h1>Crear cuenta</h1>
+        <form onSubmit={handleSubmit}>
+          <label>
+            Nombre de la empresa/equipo
+            <input type="text" value={orgName} onChange={(e) => setOrgName(e.target.value)} required />
+          </label>
+          <label>
+            Email
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          </label>
+          <label>
+            Contraseña
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              minLength={8}
+              required
+            />
+          </label>
+          {error && <p role="alert">{error}</p>}
+          <button type="submit" disabled={loading}>
+            {loading ? 'Creando...' : 'Crear cuenta'}
+          </button>
+        </form>
+        <p>
+          ¿Ya tenés cuenta? <a href="/login">Entrá</a>
+        </p>
+      </div>
     </main>
   );
 }

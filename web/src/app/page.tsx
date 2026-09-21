@@ -1,87 +1,50 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { api, ApiError, Report, Team } from '@/lib/api';
-
-export default function DashboardPage() {
-  const router = useRouter();
-  const [teams, setTeams] = useState<Team[] | null>(null);
-  const [selectedTeamId, setSelectedTeamId] = useState<string>('');
-  const [reports, setReports] = useState<Report[]>([]);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    api
-      .me()
-      .then(() => api.listTeams())
-      .then((t) => {
-        setTeams(t);
-        if (t.length > 0) setSelectedTeamId(t[0].id);
-      })
-      .catch((err) => {
-        if (err instanceof ApiError && err.status === 401) {
-          router.push('/login');
-        } else {
-          setError('No se pudo cargar el panel');
-        }
-      });
-  }, [router]);
-
-  useEffect(() => {
-    if (!selectedTeamId) return;
-    api
-      .listReports(selectedTeamId)
-      .then(setReports)
-      .catch(() => setError('No se pudieron cargar los informes'));
-  }, [selectedTeamId]);
-
-  async function handleLogout() {
-    await api.logout();
-    router.push('/login');
-  }
-
-  if (error) return <main><p role="alert">{error}</p></main>;
-  if (teams === null) return <main><p>Cargando...</p></main>;
-
-  if (teams.length === 0) {
-    return (
-      <main>
-        <h1>WeeklyFeedback</h1>
-        <p>Todavía no tenés ningún equipo.</p>
-        <a href="/onboarding">Dar de alta tu primer equipo</a>
-      </main>
-    );
-  }
-
+export default function LandingPage() {
   return (
-    <main>
-      <h1>WeeklyFeedback</h1>
-      <button type="button" onClick={handleLogout}>
-        Salir
-      </button>
+    <main className="page">
+      <nav className="topbar">
+        <strong>WeeklyFeedback</strong>
+        <div className="hero-actions" style={{ marginTop: 0 }}>
+          <a className="btn btn-secondary" href="/login">Entrar</a>
+          <a className="btn btn-primary" href="/register">Crear cuenta</a>
+        </div>
+      </nav>
 
-      <label>
-        Equipo
-        <select value={selectedTeamId} onChange={(e) => setSelectedTeamId(e.target.value)}>
-          {teams.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </select>
-      </label>
+      <section className="hero">
+        <h1>WeeklyFeedback</h1>
+        <p className="tagline">
+          El resumen semanal que tu equipo ya no tiene que escribir, y que tú ya no tienes que resumir.
+        </p>
+        <p>
+          Cada semana le preguntamos a cada persona de tu equipo tres cosas cortas — qué hizo, qué hará, si tiene
+          algún bloqueo — por WhatsApp o email. Con las respuestas armamos un único informe narrativo, listo para
+          leer en 30 segundos.
+        </p>
+        <div className="hero-actions">
+          <a className="btn btn-primary" href="/register">Crear cuenta</a>
+        </div>
+      </section>
 
-      <h2>Histórico de informes</h2>
-      {reports.length === 0 && <p>Todavía no hay informes generados para este equipo.</p>}
-      <ul>
-        {reports.map((r) => (
-          <li key={r.id}>
-            <strong>Semana del {r.week_start}</strong>
-            <pre>{r.content_markdown ?? '(pendiente de generar)'}</pre>
-          </li>
-        ))}
+      <h2>Cómo funciona</h2>
+      <ol className="steps">
+        <li>Das de alta tu equipo y elegís día/hora del recordatorio.</li>
+        <li>Cada persona responde una vez por semana, en el canal que ya usa.</li>
+        <li>Recibís un informe único, agrupado por proyecto, con bloqueos y prioridades.</li>
+      </ol>
+
+      <h2>Precios</h2>
+      <ul className="pricing-grid">
+        <li>
+          <strong>Plan Equipo</strong>
+          <span className="price">49€/mes</span>
+          <p style={{ margin: '0.5rem 0 0' }}>Un equipo, hasta 20 personas.</p>
+        </li>
+        <li>
+          <strong>Plan Organización</strong>
+          <span className="price">149€/mes</span>
+          <p style={{ margin: '0.5rem 0 0' }}>Hasta 5 equipos, resumen ejecutivo opcional.</p>
+        </li>
       </ul>
+      <p className="muted-link">Precios sin IVA. Sin permanencia, cancelable en cualquier momento.</p>
     </main>
   );
 }

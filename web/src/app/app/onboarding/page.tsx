@@ -68,8 +68,9 @@ export default function OnboardingPage() {
 
   if (!team) {
     return (
-      <main>
+      <main className="page">
         <h1>Alta de equipo</h1>
+        <div className="card">
         <form onSubmit={handleCreateTeam}>
           <label>
             Nombre del equipo
@@ -114,18 +115,22 @@ export default function OnboardingPage() {
             {loading ? 'Creando...' : 'Crear equipo'}
           </button>
         </form>
+        </div>
       </main>
     );
   }
 
   return (
-    <main>
+    <main className="page">
       <h1>Miembros de {team.name}</h1>
-      <ul>
-        {members.map((m, i) => (
-          <li key={i}>{m}</li>
-        ))}
-      </ul>
+      <div className="card">
+      {members.length > 0 && (
+        <ul className="member-list">
+          {members.map((m, i) => (
+            <li key={i}>{m}</li>
+          ))}
+        </ul>
+      )}
       <form onSubmit={handleAddMember}>
         <label>
           Nombre
@@ -148,7 +153,8 @@ export default function OnboardingPage() {
           {loading ? 'Añadiendo...' : 'Añadir miembro'}
         </button>
       </form>
-      <button type="button" onClick={() => router.push('/')}>
+      </div>
+      <button type="button" onClick={() => router.push('/app')}>
         Terminar
       </button>
     </main>

@@ -17,7 +17,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await api.login({ email, password });
-      router.push('/');
+      router.push('/app');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo entrar');
     } finally {
@@ -26,25 +26,27 @@ export default function LoginPage() {
   }
 
   return (
-    <main>
-      <h1>Entrar</h1>
-      <form onSubmit={handleSubmit}>
-        <label>
-          Email
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        </label>
-        <label>
-          Contraseña
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-        </label>
-        {error && <p role="alert">{error}</p>}
-        <button type="submit" disabled={loading}>
-          {loading ? 'Entrando...' : 'Entrar'}
-        </button>
-      </form>
-      <p>
-        ¿No tenés cuenta? <a href="/register">Registrate</a>
-      </p>
+    <main className="page">
+      <div className="card card-narrow">
+        <h1>Entrar</h1>
+        <form onSubmit={handleSubmit}>
+          <label>
+            Email
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          </label>
+          <label>
+            Contraseña
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          </label>
+          {error && <p role="alert">{error}</p>}
+          <button type="submit" disabled={loading}>
+            {loading ? 'Entrando...' : 'Entrar'}
+          </button>
+        </form>
+        <p>
+          ¿No tenés cuenta? <a href="/register">Registrate</a>
+        </p>
+      </div>
     </main>
   );
 }
