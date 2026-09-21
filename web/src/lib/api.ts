@@ -37,10 +37,26 @@ export const api = {
 
   listTeams: () => request<Team[]>('/teams'),
 
+  getTeam: (teamId: string) => request<Team>(`/teams/${teamId}`),
+
   createTeam: (data: Partial<Team>) => request<Team>('/teams', { method: 'POST', body: JSON.stringify(data) }),
 
+  updateTeam: (teamId: string, data: Partial<Team>) =>
+    request<Team>(`/teams/${teamId}`, { method: 'PATCH', body: JSON.stringify(data) }),
+
+  listMembers: (teamId: string) => request<Member[]>(`/teams/${teamId}/members`),
+
   addMember: (teamId: string, data: { name: string; channel: ChannelName; contact: string }) =>
-    request(`/teams/${teamId}/members`, { method: 'POST', body: JSON.stringify(data) }),
+    request<Member>(`/teams/${teamId}/members`, { method: 'POST', body: JSON.stringify(data) }),
+
+  updateMember: (
+    teamId: string,
+    memberId: string,
+    data: Partial<{ name: string; channel: ChannelName; contact: string; active: boolean }>,
+  ) => request<Member>(`/teams/${teamId}/members/${memberId}`, { method: 'PATCH', body: JSON.stringify(data) }),
+
+  removeMember: (teamId: string, memberId: string) =>
+    request<Member>(`/teams/${teamId}/members/${memberId}`, { method: 'DELETE' }),
 
   listReports: (teamId: string) => request<Report[]>(`/reports?teamId=${teamId}`),
 
@@ -73,6 +89,15 @@ export interface Team {
   reminder_time: string;
   cutoff_time: string;
   timezone: string;
+}
+
+export interface Member {
+  id: string;
+  team_id: string;
+  name: string;
+  channel: ChannelName;
+  contact: string;
+  active: boolean;
 }
 
 export interface Report {

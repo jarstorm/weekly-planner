@@ -37,7 +37,7 @@ export class ReminderJob {
         // Se manda igual en los tres canales, no solo email: no molesta
         // en un chat y da una alternativa si prefieren no escribir texto libre.
         const link = this.checkinForm.buildLink(member.id, weekStart);
-        const message = `Hola ${member.name} 👋 Resumen semanal de ${team.name}.\n1️⃣ ¿Qué has hecho esta semana?\n2️⃣ ¿Qué harás la semana que viene?\n3️⃣ ¿Algo bloqueado o que necesites de alguien?\n\nTambién podés responder acá: ${link}`;
+        const message = `Hola ${member.name} 👋 Resumen semanal de ${team.name}.\n1️⃣ ¿Qué has hecho esta semana?\n2️⃣ ¿Qué harás la semana que viene?\n3️⃣ ¿Algo bloqueado o que necesites de alguien?\n\nTambién puedes responder aquí: ${link}`;
         try {
           await this.channels.get(member.channel).send(member.contact, message);
         } catch (err) {

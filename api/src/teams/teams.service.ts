@@ -2,6 +2,8 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { SupabaseService } from '../supabase/supabase.service';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { CreateMemberDto } from './dto/create-member.dto';
+import { UpdateTeamDto } from './dto/update-team.dto';
+import { UpdateMemberDto } from './dto/update-member.dto';
 
 @Injectable()
 export class TeamsService {
@@ -91,6 +93,32 @@ export class TeamsService {
     return data;
   }
 
+  async getOwn(organizationId: string, teamId: string) {
+    const { data, error } = await this.supabase.db
+      .from('teams')
+      .select('*')
+      .eq('id', teamId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) throw new NotFoundException('Equipo no encontrado');
+    if (data.organization_id !== organizationId) {
+      throw new ForbiddenException('Este equipo no pertenece a tu organización');
+    }
+    return data;
+  }
+
+  async updateTeam(organizationId: string, teamId: string, dto: UpdateTeamDto) {
+    await this.assertOwnership(teamId, organizationId);
+    const { data, error } = await this.supabase.db
+      .from('teams')
+      .update(dto)
+      .eq('id', teamId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
   async addMember(organizationId: string, teamId: string, dto: CreateMemberDto) {
     await this.assertOwnership(teamId, organizationId);
     await this.assertMemberLimit(teamId, organizationId);
@@ -99,6 +127,68 @@ export class TeamsService {
       .insert({ ...dto, team_id: teamId })
       .select()
       .single();
+    if (error) throw error;
+    return data;
+  }
+
+  // El miembro tiene que ser de ESE equipo Y ese equipo de la organización
+  // del que llama — dos saltos, no uno, para no poder editar/borrar un
+  // miembro pasándole el team_id de un equipo propio pero el member_id de
+  // uno ajeno.
+  private async assertMemberOwnership(teamId: string, memberId: string, organizationId: string) {
+    await this.assertOwnership(teamId, organizationId);
+    const { data, error } = await this.supabase.db
+      .from('members')
+      .select('id, team_id')
+      .eq('id', memberId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data || data.team_id !== teamId) {
+      throw new NotFoundException('Miembro no encontrado');
+    }
+  }
+
+  async updateMember(organizationId: string, teamId: string, memberId: string, dto: UpdateMemberDto) {
+    await this.assertMemberOwnership(teamId, memberId, organizationId);
+    // Reactivar a alguien desactivado cuenta contra el límite del plan
+    // igual que dar de alta uno nuevo — sin este chequeo, borrar y
+    // reactivar sería una forma de saltarse max_members_per_team.
+    if (dto.active === true) {
+      await this.assertMemberLimit(teamId, organizationId);
+    }
+    const { data, error } = await this.supabase.db
+      .from('members')
+      .update(dto)
+      .eq('id', memberId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  // Soft delete (active=false) — no un DELETE de la fila. El historial de
+  // checkins/informes ya generados sigue referenciando a este miembro por
+  // nombre; borrarlo de verdad no aporta nada y solo complica los reportes
+  // pasados. `listMembers`/`statusForTeamWeek` ya filtran por active=true.
+  async removeMember(organizationId: string, teamId: string, memberId: string) {
+    await this.assertMemberOwnership(teamId, memberId, organizationId);
+    const { data, error } = await this.supabase.db
+      .from('members')
+      .update({ active: false })
+      .eq('id', memberId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  async listMembersForOwner(organizationId: string, teamId: string) {
+    await this.assertOwnership(teamId, organizationId);
+    const { data, error } = await this.supabase.db
+      .from('members')
+      .select('*')
+      .eq('team_id', teamId)
+      .eq('active', true);
     if (error) throw error;
     return data;
   }

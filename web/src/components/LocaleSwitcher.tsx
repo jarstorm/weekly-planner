@@ -1,13 +1,12 @@
 'use client';
 
-import { Globe } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { usePathname } from '@/i18n/navigation';
 import { Link } from '@/i18n/navigation';
 
 const LOCALES = [
-  { code: 'es', label: 'ES' },
-  { code: 'en', label: 'EN' },
+  { code: 'es', flag: '🇪🇸', short: 'ES', label: 'Español' },
+  { code: 'en', flag: '🇺🇸', short: 'EN', label: 'English' },
 ] as const;
 
 export function LocaleSwitcher() {
@@ -16,19 +15,31 @@ export function LocaleSwitcher() {
 
   return (
     <span className="locale-switcher">
-      <Globe size={14} />
-      {LOCALES.map((l, i) => (
-        <span key={l.code}>
-          {i > 0 && ' · '}
-          {l.code === locale ? (
-            <strong>{l.label}</strong>
-          ) : (
-            <Link href={pathname} locale={l.code}>
-              {l.label}
-            </Link>
-          )}
-        </span>
-      ))}
+      {LOCALES.map((l, i) => {
+        const isActive = l.code === locale;
+        const content = (
+          <>
+            <span role="img" aria-label={l.label}>
+              {l.flag}
+            </span>{' '}
+            {l.short}
+          </>
+        );
+        return (
+          <span key={l.code}>
+            {i > 0 && ' · '}
+            {isActive ? (
+              <strong title={l.label}>
+                {content}
+              </strong>
+            ) : (
+              <Link href={pathname} locale={l.code} title={l.label}>
+                {content}
+              </Link>
+            )}
+          </span>
+        );
+      })}
     </span>
   );
 }

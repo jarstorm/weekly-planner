@@ -2,22 +2,26 @@ import { BadRequestException, Body, Controller, Get, Post, Query } from '@nestjs
 import { ConfigService } from '@nestjs/config';
 import { ChannelsService } from '../channels/channels.service';
 import { CheckinsService } from '../checkins/checkins.service';
+import { AudioService } from '../audio/audio.service';
 import { SupabaseService } from '../supabase/supabase.service';
-import { ChannelName } from '../channels/channel.interface';
+import { ChannelName, IncomingAudio } from '../channels/channel.interface';
 import { currentWeekStart } from '../jobs/date.utils';
 
 // Lógica compartida por los webhooks de entrada: resolver a qué member
-// pertenece el mensaje (por contact + channel) y guardar el checkin.
-// Cada canal tiene su propio controller porque cada uno verifica su
-// webhook distinto (Meta con hub.challenge, Telegram sin verificación
-// previa — el alta se hace llamando a setWebhook una vez, ver sección 0.2
-// de docs/especificaciones-tecnicas.md).
+// pertenece el mensaje (por contact + channel), transcribir si vino por
+// nota de voz (sección 0.7), y guardar el checkin. Cada canal tiene su
+// propio controller porque cada uno verifica su webhook distinto (Meta
+// con hub.challenge, Telegram sin verificación previa — el alta se hace
+// llamando a setWebhook una vez, ver sección 0.2 de
+// docs/especificaciones-tecnicas.md).
 async function matchMemberAndSaveCheckin(
   supabase: SupabaseService,
   checkins: CheckinsService,
+  audioService: AudioService,
   channel: ChannelName,
   contact: string,
   rawText: string,
+  audio?: IncomingAudio,
 ) {
   const { data: member, error } = await supabase.db
     .from('members')
@@ -32,11 +36,24 @@ async function matchMemberAndSaveCheckin(
   }
 
   const timezone = (member as any).teams?.timezone ?? 'Europe/Madrid';
+  const weekStart = currentWeekStart(new Date(), timezone);
+
+  let finalText = rawText;
+  let audioPath: string | undefined;
+  if (audio) {
+    audioPath = `${member.id}/${weekStart}.${audio.extension}`;
+    // Se guarda el audio primero — si falla la transcripción, el audio
+    // original no se pierde y se puede reintentar/revisar a mano.
+    await audioService.store(audio.buffer, audioPath, audio.mimeType);
+    finalText = await audioService.transcribe(audio.buffer, `checkin.${audio.extension}`, audio.mimeType);
+  }
+
   await checkins.saveInternal({
     team_id: member.team_id,
     member_id: member.id,
-    week_start: currentWeekStart(new Date(), timezone),
-    raw_text: rawText,
+    week_start: weekStart,
+    raw_text: finalText,
+    audio_path: audioPath,
   });
 
   return { ok: true, matched: true };
@@ -52,6 +69,7 @@ export class WhatsappWebhookController {
     private readonly config: ConfigService,
     private readonly channels: ChannelsService,
     private readonly checkins: CheckinsService,
+    private readonly audio: AudioService,
     private readonly supabase: SupabaseService,
   ) {}
 
@@ -70,8 +88,8 @@ export class WhatsappWebhookController {
 
   @Post()
   async receive(@Body() payload: unknown) {
-    const { contact, rawText } = this.channels.get('whatsapp').parseIncoming(payload);
-    return matchMemberAndSaveCheckin(this.supabase, this.checkins, 'whatsapp', contact, rawText);
+    const { contact, rawText, audio } = await this.channels.get('whatsapp').parseIncoming(payload);
+    return matchMemberAndSaveCheckin(this.supabase, this.checkins, this.audio, 'whatsapp', contact, rawText, audio);
   }
 }
 
@@ -83,12 +101,13 @@ export class TelegramWebhookController {
   constructor(
     private readonly channels: ChannelsService,
     private readonly checkins: CheckinsService,
+    private readonly audio: AudioService,
     private readonly supabase: SupabaseService,
   ) {}
 
   @Post()
   async receive(@Body() payload: unknown) {
-    const { contact, rawText } = this.channels.get('telegram').parseIncoming(payload);
-    return matchMemberAndSaveCheckin(this.supabase, this.checkins, 'telegram', contact, rawText);
+    const { contact, rawText, audio } = await this.channels.get('telegram').parseIncoming(payload);
+    return matchMemberAndSaveCheckin(this.supabase, this.checkins, this.audio, 'telegram', contact, rawText, audio);
   }
 }

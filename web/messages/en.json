@@ -101,9 +101,12 @@
     "statMembers": "Members",
     "statResponded": "Responded",
     "statPending": "Pending",
+    "responsePercent": "{pct}% responded ({responded}/{total})",
     "downloadPdf": "Download PDF",
     "downloadConversations": "Download conversations",
-    "downloadAllConversations": "Download all conversations"
+    "downloadAllConversations": "Download all conversations",
+    "editTeam": "Edit team",
+    "manageMembers": "Manage members"
   },
   "CheckinForm": {
     "loading": "Loading...",
@@ -117,5 +120,31 @@
     "submit": "Submit",
     "submitting": "Submitting...",
     "thanks": "Thanks, {memberName}! Your response for this week is recorded."
+  },
+  "TeamManager": {
+    "teamSettingsTitle": "Team settings",
+    "teamName": "Team name",
+    "companyContext": "Company context (optional)",
+    "deliveryChannel": "Report delivery channel",
+    "deliveryTarget": "Report destination",
+    "reminderDow": "Reminder day",
+    "reminderTime": "Reminder time",
+    "cutoffTime": "Cutoff time",
+    "saveTeam": "Save changes",
+    "saving": "Saving...",
+    "saveTeamError": "Could not save the team",
+    "loadTeamError": "Could not load the team",
+    "membersTitle": "Members",
+    "noMembersYet": "No members in this team yet.",
+    "loading": "Loading...",
+    "loadMembersError": "Could not load members",
+    "save": "Save",
+    "saveMemberError": "Could not save the member",
+    "removeMemberError": "Could not remove the member",
+    "memberName": "Name",
+    "memberContact": "Contact",
+    "addMember": "Add",
+    "adding": "Adding...",
+    "addMemberError": "Could not add the member"
   }
 }

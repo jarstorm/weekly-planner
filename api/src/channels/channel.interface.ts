@@ -1,6 +1,16 @@
+export interface IncomingAudio {
+  buffer: Buffer;
+  mimeType: string;
+  extension: string;
+}
+
 export interface IncomingMessage {
   contact: string;
   rawText: string;
+  // Presente si el mensaje entrante es una nota de voz — sección 0.7. Si
+  // viene seteado, rawText llega vacío: quien llama decide si transcribe
+  // o no, parseIncoming solo resuelve "quién escribió y qué mandó".
+  audio?: IncomingAudio;
 }
 
 export interface Channel {
@@ -10,7 +20,9 @@ export interface Channel {
   // válido como en email, no solo texto plano). `caption` es el mensaje
   // corto que acompaña al adjunto, no el contenido completo del informe.
   sendDocument(contact: string, file: Buffer, filename: string, caption: string): Promise<void>;
-  parseIncoming(payload: unknown): IncomingMessage;
+  // Async: bajar el archivo de una nota de voz (Telegram/WhatsApp) implica
+  // una llamada de red aparte antes de poder devolver el IncomingMessage.
+  parseIncoming(payload: unknown): Promise<IncomingMessage>;
 }
 
 export type ChannelName = 'email' | 'whatsapp' | 'telegram';

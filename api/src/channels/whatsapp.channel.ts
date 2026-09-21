@@ -80,18 +80,48 @@ export class WhatsappChannel implements Channel {
     }
   }
 
-  // Payload real del webhook de Meta: se ajusta cuando se valide en el
-  // prototipo n8n (Fase 0) — ver docs/notas-flujo-mensajeria.md.
-  parseIncoming(payload: any): IncomingMessage {
+  // Payload real del webhook de Meta: se ajusta cuando se valide con
+  // WhatsApp Business real (sigue pendiente, igual que el resto del canal
+  // — ver docs/especificaciones-tecnicas.md, sección 0.2).
+  async parseIncoming(payload: any): Promise<IncomingMessage> {
     const entry = payload?.entry?.[0];
     const change = entry?.changes?.[0]?.value;
     const message = change?.messages?.[0];
     if (!message) {
       throw new Error('Payload de WhatsApp sin mensaje entrante reconocible');
     }
-    return {
-      contact: message.from,
-      rawText: message.text?.body ?? '',
-    };
+    const contact = message.from;
+
+    if (message.type === 'audio' && message.audio?.id) {
+      const audio = await this.downloadMedia(message.audio.id);
+      return { contact, rawText: '', audio };
+    }
+
+    return { contact, rawText: message.text?.body ?? '' };
+  }
+
+  // Igual que subir un documento pero al revés: el webhook solo trae un
+  // media id, hay que pedir su URL temporal y bajarla aparte, con el
+  // mismo access token (no es una URL pública).
+  private async downloadMedia(mediaId: string) {
+    const accessToken = this.config.get<string>('WHATSAPP_ACCESS_TOKEN');
+    if (!accessToken) throw new Error('WHATSAPP_ACCESS_TOKEN no configurada');
+
+    const metaRes = await fetch(`https://graph.facebook.com/v20.0/${mediaId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!metaRes.ok) {
+      throw new Error(`WhatsApp Cloud API (media info) respondió ${metaRes.status}: ${await metaRes.text()}`);
+    }
+    const { url, mime_type: mimeType } = await metaRes.json();
+
+    const fileRes = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if (!fileRes.ok) {
+      throw new Error(`WhatsApp Cloud API (descarga de media) respondió ${fileRes.status}`);
+    }
+    const buffer = Buffer.from(await fileRes.arrayBuffer());
+    const extension = (mimeType as string)?.split('/')[1]?.split(';')[0] ?? 'ogg';
+
+    return { buffer, mimeType: mimeType ?? 'audio/ogg', extension };
   }
 }

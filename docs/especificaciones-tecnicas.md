@@ -40,13 +40,16 @@ Ninguna de las dos sustituciones toca `jobs/`, `teams/`, `checkins/` ni el resto
 
 Cualquier fichero que el producto necesite guardar (notas de voz, adjuntos futuros, logo de organización, etc.) va a **Supabase Storage** — no S3, no disco local, no otro proveedor. Es la misma cuenta que ya se usa para DB y Auth, así que no suma una pieza de infraestructura nueva ni credenciales nuevas, y el control de acceso se puede resolver con políticas de bucket análogas a las RLS que ya existen para las tablas. Igual que con la DB (sección 0.1), el backend accede con la `service_role` key — el frontend nunca sube directo a Storage, pasa por la API.
 
-### 0.4 Backlog: check-in por nota de voz (transcripción automática)
+### 0.7 Check-in por nota de voz (transcripción automática)
 
-`docs/mvp-resumen-semanal-equipos.md` ya describe el check-in por nota de voz como parte del flujo (sección 6.2: "Contesta con un mensaje de voz o texto, lo que te sea más rápido"), pero **no está en el alcance del MVP** (sección 7) — se construye cuando el flujo de texto ya esté validado con clientes reales, no antes. Apuntado para cuando se aborde:
+`docs/mvp-resumen-semanal-equipos.md` ya describía esto como parte del flujo (sección 6.2: "Contesta con un mensaje de voz o texto, lo que te sea más rápido"), inicialmente quedó en backlog fuera del MVP (sección 7) — se adelantó igual porque se pidió explícitamente durante el desarrollo, mismo patrón que el resto de los adelantos de esta lista.
 
-- El audio entrante (WhatsApp/Telegram mandan la nota de voz como archivo) se sube a Supabase Storage (sección 0.3), no se procesa en memoria y se descarta.
-- Transcripción: Groq ya expone `whisper-large-v3` en la misma cuenta que se usa para `AggregateService` (sección 0.2) — mismo proveedor, sin alta nueva. Si para entonces ya se volvió a Claude/Anthropic, evaluar el proveedor de transcripción en ese momento (Anthropic no transcribe audio).
-- El resto del pipeline no cambia: la transcripción entra a `checkins.raw_text` igual que un mensaje de texto — `AggregateService` no distingue el origen.
+- **Audio**: `TelegramChannel.parseIncoming()` y `WhatsappChannel.parseIncoming()` detectan si el mensaje entrante es una nota de voz (`message.voice` en Telegram, `message.type === 'audio'` en WhatsApp) y bajan el binario — Telegram con `getFile` + descarga aparte, WhatsApp con el mismo patrón en dos pasos que ya usa `sendDocument` (media id → URL temporal → descarga con el access token). `Channel.parseIncoming` pasó a ser `async` por esto — antes era síncrono, ahora cualquier canal puede necesitar una llamada de red para resolver el mensaje entrante.
+- **Storage**: `AudioService.store()` (`api/src/audio/audio.service.ts`) sube el audio al bucket privado `checkin-audio` de Supabase Storage (sección 0.3) — se guarda primero, así que si la transcripción falla después el audio original no se pierde. Se guarda el **path**, no una URL — el bucket es privado, nadie lo sirve directo.
+- **Transcripción**: `AudioService.transcribe()` llama a `whisper-large-v3` de Groq — mismo proveedor que `AggregateService` (sección 0.2), sin alta nueva. Formato compatible con la API de transcripciones de OpenAI (multipart, `file` + `model`). Cuando se vuelva a Claude/Anthropic (que no transcribe audio), este servicio se queda igual, no depende de `AggregateService`.
+- **Pipeline**: `webhooks.controller.ts` — si `parseIncoming` devuelve un `audio`, sube y transcribe antes de guardar el checkin; el texto transcrito entra a `checkins.raw_text` igual que un mensaje escrito, `AggregateService` no distingue el origen. `checkins.audio_path` guarda la referencia al fichero.
+- **Migración**: `checkins.audio_path` es una columna nueva — `supabase/migrations/0001_add_audio_path.sql`, aplicada sola al arrancar el backend (sección 0.8), no hizo falta pegar nada a mano.
+- **Bucket**: `checkin-audio`, privado, creado una vez vía script con la `service_role` key (no hace falta tocar el dashboard de Supabase — `storage.createBucket()` del cliente ya alcanza).
 
 ### 0.5 El informe se entrega como PDF adjunto, en los tres canales
 
@@ -66,6 +69,18 @@ Verificado con servicios reales: `EmailChannel.sendDocument` (PDF adjunto recibi
 `AggregateService.buildPrompt` ya tenía un hueco para "bloqueos de semanas anteriores" (sección 10 del doc de producto) pero `ReportJob` lo mandaba vacío (`// TODO`). Implementado: antes de generar el informe de la semana, `ReportJob.fetchPastBlockers` trae los últimos 3 informes del mismo equipo (`reports`, ordenado por `week_start` descendente) y extrae la sección "Bloqueos" de cada uno (`api/src/jobs/blockers.utils.ts`, regex sobre el markdown — el formato es el que el propio prompt le exige a la IA, así que es fiable) descartando las semanas sin bloqueo real (filtro simple sobre frases tipo "no se reportaron"/"sin bloqueos"). Esa lista se pasa al prompt de la semana actual, y es la propia IA la que decide si algo es recurrente y lo señala en el informe.
 
 Importante: esto **no** es lo mismo que la "detección simple de bloqueos recurrentes" del panel web descrita en `docs/mvp-resumen-semanal-equipos.md`, sección 6.2 (resaltar en el histórico si la misma palabra clave aparece 2+ semanas seguidas) — esa es una feature de UI, separada, todavía sin construir. Tampoco se popula la columna `reports.blockers_detected` (sigue en su default `[]`) — se re-parsea el markdown de los informes pasados en cada corrida en vez de guardar un campo estructurado aparte; se puede revisar si en algún momento resulta un cuello de botella (no debería, son 3 filas por equipo y semana).
+
+### 0.8 Migraciones de esquema automáticas al levantar el backend
+
+Cada cambio de esquema (agregar `telegram` a un `check`, la columna `audio_path` de la sección 0.7) requería antes pedirle al usuario que pegara SQL a mano en el SQL Editor de Supabase — pasó más de una vez durante el desarrollo. Automatizado con `MigrationRunnerService` (`api/src/supabase/migration-runner.service.ts`):
+
+- Archivos `.sql` numerados en `supabase/migrations/` (p. ej. `0001_add_audio_path.sql`), cada uno con una sola responsabilidad, escritos de forma idempotente (`if not exists` / `if exists`) para poder reintentarse sin romper nada.
+- Al arrancar (`OnModuleInit`), se conecta directo a Postgres con `DATABASE_URL` (el connection string real, **no** la `service_role` key de la API REST — esa no da SQL crudo/DDL), revisa una tabla `_migrations` (nombre + fecha aplicada) y corre las que falten, en orden, cada una en su propia transacción.
+- `DATABASE_URL` es la **única** pieza del backend que usa una conexión directa a Postgres — todo lo demás sigue por `SupabaseService` (REST + `service_role`, sección 0.1). Por eso vive en su propio servicio, no en `SupabaseService`.
+- Si falla (DB inalcanzable, credencial mala, lo que sea), **no tumba el backend** — solo loguea el error y la app sigue levantando; mismo criterio que `SupabaseService`, que avisa en vez de tirar si falta configuración. Se encontró este bug real probando: al principio un fallo acá crasheaba el proceso entero.
+- **Nota de red**: el host de conexión directa de Supabase (`db.<ref>.supabase.co`) es IPv6-only en proyectos nuevos — en un entorno sin salida IPv6 (pasó durante el desarrollo) da `ENOTFOUND` aunque el DNS resuelva bien. Ahí hace falta el connection string del **pooler** (Supavisor, `Settings → Database → Connection pooling`), que sí tiene IPv4.
+
+Para agregar un cambio de esquema nuevo: un archivo más en `supabase/migrations/`, numerado después del último. No hace falta tocar `schema.sql` (que queda como referencia de "esquema completo desde cero" para altas nuevas) ni pedirle nada al usuario — la próxima vez que arranque el backend, se aplica solo.
 
 ## 1. Qué hace falta crear antes de tocar código
 
@@ -92,6 +107,7 @@ Importante: esto **no** es lo mismo que la "detección simple de bloqueos recurr
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=       # todas las tablas — bypasea RLS, la autorización la hace el backend (ver 0.1)
 SUPABASE_ANON_KEY=               # solo para las llamadas de Auth (signUp/signInWithPassword/getUser)
+DATABASE_URL=                    # connection string directo de Postgres — SOLO para migraciones (ver 0.8), usar el del pooler si el directo da ENOTFOUND
 GROQ_API_KEY=                    # temporal en vez de Anthropic (ver sección 0.2) — console.groq.com
 GROQ_MODEL=                      # openai/gpt-oss-120b — Groq rota su catálogo, revisar si da 404 model_not_found
 RESEND_API_KEY=
@@ -123,11 +139,13 @@ weekly-feedback/
     mvp-resumen-semanal-equipos.md     # spec de producto (ya existe)
     especificaciones-tecnicas.md       # este documento
   supabase/
-    schema.sql                         # ya creado — tablas organizations, teams, members, checkins, reports
+    schema.sql                         # esquema completo de referencia — tablas organizations, teams, members, checkins, reports
+    migrations/                        # 0001_*.sql, 0002_*.sql... aplicadas solas al arrancar el backend (ver 0.8)
   api/                                  # backend Node.js/TypeScript (NestJS)
     src/
       config/            → ConfigModule, variables de entorno centralizadas
-      supabase/          → SupabaseModule/Service (cliente service_role + cliente anon para auth, ver 0.1)
+      supabase/          → SupabaseModule/Service (cliente service_role + cliente anon para auth, ver 0.1), MigrationRunnerService (ver 0.8)
+      audio/             → AudioService: transcripción (Groq Whisper) + Storage del audio (bucket privado, ver 0.7)
       auth/              → AuthModule: register/login/logout/me, AuthGuard, cookie httpOnly wf_session
       channels/          → interfaz común + un provider por canal (email.channel.ts, whatsapp.channel.ts, telegram.channel.ts [temporal, ver 0.2], [futuro] slack.channel.ts) + ChannelsService (dispatcher)
       teams/             → TeamsModule (equipos y miembros, protegido por AuthGuard): controller + service
@@ -189,6 +207,19 @@ Solución: cada recordatorio (`ReminderJob`, los tres canales, no solo email) in
 **Bug real encontrado probando en navegador:** el formato inicial del token usaba `.` como separador (`<payload>.<firma>`), y el matcher del middleware de next-intl excluye del enrutado cualquier path con un punto (asumiendo que es un archivo estático — `.*\\..*` en `web/src/middleware.ts`), así que la URL del checkin devolvía 404 antes de llegar a la página. Cambiado el separador a `~`, que no forma parte del alfabeto base64url ni choca con esa regla. Hay un test (`token.util.spec.ts`) que falla si vuelve a colarse un punto en el token.
 
 Sin expiración todavía: el token es válido indefinidamente para esa semana concreta (no hay lógica que rechace un link viejo). Limitación conocida, aceptable para el MVP — si alguien reusa un link de hace un mes, el checkin quedaría atribuido a la semana original del token, no a la actual.
+
+### 3.6 Editar equipo y gestionar miembros: páginas propias, no inline en el dashboard
+
+Pedido explícito: en vez de un `<select>` de equipo con todo apilado debajo en una sola página, cada equipo tiene su propio espacio:
+
+- `/app` es ahora una grilla de cards, una por equipo, cada una lleva a `/app/team/[teamId]`.
+- `/app/team/[teamId]` es el dashboard de ESE equipo (estado de la semana, histórico, descargas) — lo que antes vivía todo en `/app`.
+- `/app/team/[teamId]/edit` — formulario de edición del equipo, precargado (`GET /api/teams/:id`, nuevo endpoint — antes solo existía el listado).
+- `/app/team/[teamId]/members` — alta/edición/baja de miembros, cada fila editable inline.
+
+Backend nuevo en `TeamsController`/`TeamsService`: `getOwn` (`GET /api/teams/:id`), `updateTeam` (`PATCH /api/teams/:id`), `updateMember`/`removeMember` (`PATCH`/`DELETE /api/teams/:id/members/:memberId`), `listMembersForOwner` (`GET /api/teams/:id/members`). Todos con el mismo doble chequeo de propiedad que ya usaba `addMember`: el equipo tiene que ser de la organización que llama, y (para miembros) el miembro tiene que ser de ese equipo — dos saltos, no uno, para que no se pueda editar/borrar un miembro ajeno mezclando un `team_id` propio con un `member_id` de otro equipo.
+
+**Baja de miembro = soft delete**, no `DELETE` de la fila: `removeMember` pone `active = false`, no borra. El historial de checkins/informes ya generados sigue haciendo referencia a ese miembro por nombre — borrarlo de verdad no aporta nada y rompería esa trazabilidad. `listMembers`/`statusForTeamWeek` ya filtraban por `active = true`, así que no hizo falta tocar nada ahí. Reactivar a alguien (`PATCH` con `active: true`) vuelve a contar contra `max_members_per_team` — sin este chequeo, borrar y reactivar habría sido una forma de saltarse el límite del plan.
 
 ### 3.1 Conectores de canal — preparado para añadir Slack sin tocar el resto
 

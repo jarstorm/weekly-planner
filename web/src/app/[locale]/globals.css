@@ -241,9 +241,13 @@ button,
 }
 
 button[type='submit'],
+.btn-primary,
+.btn-primary:hover {
+  color: var(--color-brand-contrast);
+}
+button[type='submit'],
 .btn-primary {
   background: var(--color-brand);
-  color: var(--color-brand-contrast);
 }
 button[type='submit']:hover,
 .btn-primary:hover {
@@ -264,10 +268,13 @@ button[type='button']:hover {
   background: var(--color-neutral-100);
 }
 
+.btn-secondary,
+.btn-secondary:hover {
+  color: var(--color-text);
+}
 .btn-secondary {
   background: var(--color-neutral-0);
   border-color: var(--color-border);
-  color: var(--color-text);
 }
 .btn-secondary:hover {
   background: var(--color-neutral-100);
@@ -658,6 +665,83 @@ button[type='button']:hover {
 }
 .locale-switcher strong {
   color: var(--color-brand);
+}
+
+.response-percent {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-brand);
+  margin: 0 0 0.5rem;
+}
+
+.member-edit-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.member-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.member-edit-row input,
+.member-edit-row select {
+  flex: 1 1 auto;
+  min-width: 100px;
+  padding: 0.4rem 0.6rem;
+}
+.member-edit-row span:first-child {
+  font-weight: 600;
+  min-width: 100px;
+}
+
+.member-add-form {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.member-add-form input,
+.member-add-form select {
+  flex: 1 1 auto;
+  min-width: 100px;
+}
+
+.team-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.team-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 1.25rem;
+  color: var(--color-text);
+  text-decoration: none;
+  transition: box-shadow var(--transition), border-color var(--transition);
+}
+.team-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary-300);
+  color: var(--color-text);
+  text-decoration: none;
+}
+.team-card strong {
+  font-size: 1.05rem;
 }
 
 .member-status-list {

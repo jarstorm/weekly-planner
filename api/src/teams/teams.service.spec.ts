@@ -16,6 +16,7 @@ function fakeSupabase(responses: Array<{ data?: any; error?: any; count?: number
       select: jest.fn(() => builder),
       eq: jest.fn(() => builder),
       insert: jest.fn(() => builder),
+      update: jest.fn(() => builder),
       single: jest.fn(() => Promise.resolve(result)),
       maybeSingle: jest.fn(() => Promise.resolve(result)),
       then: (resolve: any, reject: any) => Promise.resolve(result).then(resolve, reject),
@@ -81,5 +82,53 @@ describe('TeamsService — límites de plan', () => {
     await expect(
       service.addMember(orgId, 'team-1', { name: 'Ana', channel: 'email', contact: 'ana@x.com' } as any),
     ).rejects.toThrow(ForbiddenException);
+  });
+
+  it('actualiza un miembro sin tocar el límite si no reactiva (active no viene en true)', async () => {
+    const supabase = fakeSupabase([
+      { data: { id: 'team-1', organization_id: orgId }, error: null }, // assertOwnership
+      { data: { id: 'member-1', team_id: 'team-1' }, error: null }, // assertMemberOwnership
+      { data: { id: 'member-1', name: 'Ana Nueva' }, error: null }, // update
+    ]);
+    const service = new TeamsService(supabase);
+
+    const member = await service.updateMember(orgId, 'team-1', 'member-1', { name: 'Ana Nueva' } as any);
+    expect(member).toEqual({ id: 'member-1', name: 'Ana Nueva' });
+  });
+
+  it('rechaza reactivar un miembro (active: true) si ya se alcanzó max_members_per_team', async () => {
+    const supabase = fakeSupabase([
+      { data: { id: 'team-1', organization_id: orgId }, error: null }, // assertOwnership
+      { data: { id: 'member-1', team_id: 'team-1' }, error: null }, // assertMemberOwnership
+      { data: { max_members_per_team: 2 }, error: null }, // organizations.select
+      { count: 2, error: null }, // members count
+    ]);
+    const service = new TeamsService(supabase);
+
+    await expect(
+      service.updateMember(orgId, 'team-1', 'member-1', { active: true } as any),
+    ).rejects.toThrow(ForbiddenException);
+  });
+
+  it('removeMember hace soft delete (active: false), no borra la fila', async () => {
+    const supabase = fakeSupabase([
+      { data: { id: 'team-1', organization_id: orgId }, error: null }, // assertOwnership
+      { data: { id: 'member-1', team_id: 'team-1' }, error: null }, // assertMemberOwnership
+      { data: { id: 'member-1', active: false }, error: null }, // update
+    ]);
+    const service = new TeamsService(supabase);
+
+    const member = await service.removeMember(orgId, 'team-1', 'member-1');
+    expect(member).toEqual({ id: 'member-1', active: false });
+  });
+
+  it('rechaza editar/borrar un miembro que no pertenece a ese equipo', async () => {
+    const supabase = fakeSupabase([
+      { data: { id: 'team-1', organization_id: orgId }, error: null }, // assertOwnership (team-1 sí es mío)
+      { data: { id: 'member-1', team_id: 'otro-team' }, error: null }, // pero el miembro es de otro equipo
+    ]);
+    const service = new TeamsService(supabase);
+
+    await expect(service.removeMember(orgId, 'team-1', 'member-1')).rejects.toThrow('Miembro no encontrado');
   });
 });

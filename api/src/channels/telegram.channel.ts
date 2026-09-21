@@ -54,14 +54,42 @@ export class TelegramChannel implements Channel {
     }
   }
 
-  parseIncoming(payload: any): IncomingMessage {
+  async parseIncoming(payload: any): Promise<IncomingMessage> {
     const message = payload?.message;
     if (!message?.chat?.id) {
       throw new Error('Payload de Telegram sin mensaje entrante reconocible');
     }
-    return {
-      contact: String(message.chat.id),
-      rawText: message.text ?? '',
-    };
+    const contact = String(message.chat.id);
+
+    if (message.voice) {
+      const audio = await this.downloadVoice(message.voice.file_id);
+      return { contact, rawText: '', audio };
+    }
+
+    return { contact, rawText: message.text ?? '' };
+  }
+
+  // Telegram no manda el binario en el webhook, solo un file_id — hay que
+  // pedir su ruta con getFile y después bajarlo de un host de archivos
+  // aparte (api.telegram.org/file/..., no .../bot.../messages).
+  private async downloadVoice(fileId: string) {
+    const token = this.config.get<string>('TELEGRAM_BOT_TOKEN');
+    if (!token) throw new Error('TELEGRAM_BOT_TOKEN no configurada');
+
+    const fileInfoRes = await fetch(`https://api.telegram.org/bot${token}/getFile?file_id=${fileId}`);
+    if (!fileInfoRes.ok) {
+      throw new Error(`Telegram Bot API (getFile) respondió ${fileInfoRes.status}: ${await fileInfoRes.text()}`);
+    }
+    const { result } = await fileInfoRes.json();
+    const filePath: string = result.file_path;
+
+    const fileRes = await fetch(`https://api.telegram.org/file/bot${token}/${filePath}`);
+    if (!fileRes.ok) {
+      throw new Error(`Telegram (descarga de archivo) respondió ${fileRes.status}`);
+    }
+    const buffer = Buffer.from(await fileRes.arrayBuffer());
+    const extension = filePath.split('.').pop() ?? 'oga';
+
+    return { buffer, mimeType: 'audio/ogg', extension };
   }
 }

@@ -112,10 +112,11 @@ create table if not exists checkins (
   team_id uuid not null references teams(id) on delete cascade,
   member_id uuid not null references members(id) on delete cascade,
   week_start date not null,                      -- lunes de la semana correspondiente
-  raw_text text,                                  -- mensaje único de WhatsApp/email sin estructurar
+  raw_text text,                                  -- mensaje único de WhatsApp/email sin estructurar (o transcripción, si vino por nota de voz)
   done_text text,                                 -- "¿qué has hecho?" (si viene de un formulario con 3 campos)
   next_text text,                                 -- "¿qué harás la semana que viene?"
   blocker_text text,                              -- "¿algo bloqueado?"
+  audio_path text,                                -- path en el bucket privado "checkin-audio" de Supabase Storage, si el checkin vino por nota de voz (ver docs/especificaciones-tecnicas.md, sección 0.7)
   received_at timestamptz not null default now(),
   unique (member_id, week_start)
 );

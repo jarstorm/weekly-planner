@@ -64,9 +64,9 @@ export class EmailChannel implements Channel {
   }
 
   // Resend no da webhook de respuesta entrante en el MVP — la respuesta por
-  // email se guarda vía el endpoint manual (POST /api/checkins/manual) hasta
-  // que se monte parseo de email entrante (fuera del MVP).
-  parseIncoming(): IncomingMessage {
-    throw new Error('EmailChannel.parseIncoming no implementado en el MVP — usar POST /api/checkins/manual');
+  // email se guarda vía el link con token de /checkin/<token> (sección 3.5)
+  // o el endpoint manual (POST /api/checkins/manual).
+  async parseIncoming(): Promise<IncomingMessage> {
+    throw new Error('EmailChannel.parseIncoming no implementado — usar /checkin/<token> o POST /api/checkins/manual');
   }
 }

@@ -1,7 +1,9 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, UseGuards } from '@nestjs/common';
 import { TeamsService } from './teams.service';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { CreateMemberDto } from './dto/create-member.dto';
+import { UpdateTeamDto } from './dto/update-team.dto';
+import { UpdateMemberDto } from './dto/update-member.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { AuthedUser } from '../auth/auth.service';
@@ -21,6 +23,25 @@ export class TeamsController {
     return this.teams.createTeam(user.organizationId, dto);
   }
 
+  @Get(':id')
+  getOwn(@CurrentUser() user: AuthedUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.teams.getOwn(user.organizationId, id);
+  }
+
+  @Patch(':id')
+  updateTeam(
+    @CurrentUser() user: AuthedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateTeamDto,
+  ) {
+    return this.teams.updateTeam(user.organizationId, id, dto);
+  }
+
+  @Get(':id/members')
+  listMembers(@CurrentUser() user: AuthedUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.teams.listMembersForOwner(user.organizationId, id);
+  }
+
   @Post(':id/members')
   addMember(
     @CurrentUser() user: AuthedUser,
@@ -28,5 +49,24 @@ export class TeamsController {
     @Body() dto: CreateMemberDto,
   ) {
     return this.teams.addMember(user.organizationId, id, dto);
+  }
+
+  @Patch(':id/members/:memberId')
+  updateMember(
+    @CurrentUser() user: AuthedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('memberId', ParseUUIDPipe) memberId: string,
+    @Body() dto: UpdateMemberDto,
+  ) {
+    return this.teams.updateMember(user.organizationId, id, memberId, dto);
+  }
+
+  @Delete(':id/members/:memberId')
+  removeMember(
+    @CurrentUser() user: AuthedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('memberId', ParseUUIDPipe) memberId: string,
+  ) {
+    return this.teams.removeMember(user.organizationId, id, memberId);
   }
 }
