@@ -48,6 +48,25 @@ Cualquier fichero que el producto necesite guardar (notas de voz, adjuntos futur
 - Transcripción: Groq ya expone `whisper-large-v3` en la misma cuenta que se usa para `AggregateService` (sección 0.2) — mismo proveedor, sin alta nueva. Si para entonces ya se volvió a Claude/Anthropic, evaluar el proveedor de transcripción en ese momento (Anthropic no transcribe audio).
 - El resto del pipeline no cambia: la transcripción entra a `checkins.raw_text` igual que un mensaje de texto — `AggregateService` no distingue el origen.
 
+### 0.5 El informe se entrega como PDF adjunto, en los tres canales
+
+Decisión explícita (pedida durante el desarrollo, no estaba en el spec original): el informe semanal no se manda como texto plano en el chat — se genera un PDF y se manda como documento adjunto, en email, WhatsApp y Telegram por igual.
+
+- `PdfService` (`api/src/pdf/pdf.service.ts`) convierte el markdown de `AggregateService` a PDF con `pdfkit` + `marked` — **sin Puppeteer/Chromium**: pdfkit dibuja el PDF directamente con sus fuentes estándar (Helvetica), nada de renderizar HTML en un navegador headless. Evaluado y descartado un microservicio aparte para esto (mismo argumento que la sección 0 — es JS puro, milisegundos, sin necesidad de escalar por separado).
+- Todo PDF lleva un pie de página fijo: *"Generado por la IA de WeeklyFeedback a partir de la información de los empleados."* — transparencia sobre el origen del contenido, pedido explícitamente.
+- `Channel` (sección 3.1) ganó un segundo método, `sendDocument(contact, file, filename, caption)`, junto al `send(contact, message)` que ya existía para el recordatorio (ese sigue siendo texto plano, no cambia). Implementado en los tres canales:
+  - **Email**: adjunto en base64 en el payload de Resend (`attachments`).
+  - **Telegram**: `sendDocument` del Bot API, `multipart/form-data` con `FormData`/`Blob` (nativos de Node, sin librería extra).
+  - **WhatsApp**: dos pasos — subir el PDF a `/media` (devuelve un media id), después mandar un mensaje `type: "document"` referenciando ese id. Sin probar todavía (mismo estado que el resto de WhatsApp, pendiente de verificación de Meta).
+
+Verificado con servicios reales: `EmailChannel.sendDocument` (PDF adjunto recibido por email, confirmado) y `TelegramChannel.sendDocument` (PDF recibido como documento en el chat, confirmado). `WhatsappChannel.sendDocument` sigue sin probar.
+
+### 0.6 Detección de bloqueos recurrentes: alimenta el prompt con los últimos informes
+
+`AggregateService.buildPrompt` ya tenía un hueco para "bloqueos de semanas anteriores" (sección 10 del doc de producto) pero `ReportJob` lo mandaba vacío (`// TODO`). Implementado: antes de generar el informe de la semana, `ReportJob.fetchPastBlockers` trae los últimos 3 informes del mismo equipo (`reports`, ordenado por `week_start` descendente) y extrae la sección "Bloqueos" de cada uno (`api/src/jobs/blockers.utils.ts`, regex sobre el markdown — el formato es el que el propio prompt le exige a la IA, así que es fiable) descartando las semanas sin bloqueo real (filtro simple sobre frases tipo "no se reportaron"/"sin bloqueos"). Esa lista se pasa al prompt de la semana actual, y es la propia IA la que decide si algo es recurrente y lo señala en el informe.
+
+Importante: esto **no** es lo mismo que la "detección simple de bloqueos recurrentes" del panel web descrita en `docs/mvp-resumen-semanal-equipos.md`, sección 6.2 (resaltar en el histórico si la misma palabra clave aparece 2+ semanas seguidas) — esa es una feature de UI, separada, todavía sin construir. Tampoco se popula la columna `reports.blockers_detected` (sigue en su default `[]`) — se re-parsea el markdown de los informes pasados en cada corrida en vez de guardar un campo estructurado aparte; se puede revisar si en algún momento resulta un cuello de botella (no debería, son 3 filas por equipo y semana).
+
 ## 1. Qué hace falta crear antes de tocar código
 
 | Cuenta / servicio | Para qué | Coste al arrancar |
@@ -114,7 +133,8 @@ weekly-feedback/
       checkins/          → CheckinsModule: controller + service
       reports/           → ReportsModule: histórico de informes (GET /api/reports?teamId=)
       aggregate/         → AggregateModule/Service (llamada a la IA — Groq temporal, ver 0.2)
-      jobs/              → ReminderJob, ReportJob (@nestjs/schedule, Cron)
+      pdf/               → PdfService: markdown → PDF (pdfkit + marked, sin Chromium, ver 0.5)
+      jobs/              → ReminderJob, ReportJob (@nestjs/schedule, Cron), blockers.utils.ts (recurrencia, ver 0.6)
       webhooks/          → WhatsappWebhookController, TelegramWebhookController (entrada de mensajes)
       app.module.ts, main.ts
   web/                                  # frontend Next.js/TypeScript
@@ -164,7 +184,17 @@ Esto es intencional, no sobre-ingeniería: la interfaz ya la fuerza tener dos ca
 
 Cada punto se construye, se prueba, y solo entonces se pasa al siguiente. Los primeros puntos no necesitan frontend ni WhatsApp — se prueban con `curl` o Postman contra el backend.
 
-**Estado actual:** pasos 1 a 4 y 6 (base de datos, backend, auth, equipos/miembros, checkin manual), 9 (frontend: registro/login/onboarding) y 11 (histórico de informes) **verificados de punta a punta contra el Supabase real del proyecto** — `schema.sql` corrido, backend probado con `curl` y el frontend probado de verdad en navegador (registro → alta de equipo → alta de miembro → dashboard → logout → login, ciclo completo). Al probar salió un bug real (usuario de Supabase Auth huérfano si fallaba el insert de `organizations` durante el registro — ya arreglado, `AuthService.register` compensa borrando el usuario si el segundo paso falla). Pasos 5 (email, con Resend), 7 (IA, con Groq — sustituto temporal de Anthropic, sección 0.2) y 12-envío (con Telegram como sustituto de WhatsApp — `TelegramChannel.send()` mandó un mensaje real a un chat real, confirmado recibido) también verificados con servicios reales. Falta probar: paso 8 (entrega del informe generado por IA, encadenada con el 5 — cada mitad ya funciona sola), el cron automático de punta a punta (`ReminderJob`/`ReportJob` corriendo solos, sin disparar nada a mano) y la recepción de respuesta por Telegram/WhatsApp (el webhook, `POST /api/webhooks/telegram`, todavía sin probar con un payload real). El paso 0 (n8n) sigue sin empezar, ya no hace falta para validar mensajería porque los pasos 5/7/12 se están probando directo contra los servicios reales.
+**Estado actual:** pasos 1 a 12 **verificados de punta a punta contra servicios reales** (Supabase, Resend, Groq, Telegram), salvo lo que depende de credenciales que todavía no existen (WhatsApp real, cuenta de Anthropic) — ver el detalle abajo. Encontrados y arreglados tres bugs reales en el camino, ninguno cosmético:
+
+- Usuario de Supabase Auth huérfano si fallaba el insert de `organizations` durante el registro (`AuthService.register` ahora compensa borrando el usuario si el segundo paso falla).
+- `currentWeekStart` calculaba mal el lunes de la semana en cualquier timezone adelantado a UTC — incluido Europe/Madrid, el timezone por defecto del producto (mezclaba `Date` en hora local con `toISOString()`, que es siempre UTC).
+- `isWithinWindow` (ventana del cron) era simétrica (±15min) — con una hora configurada que no cae en múltiplo de 15 (p. ej. `10:07`), el recordatorio se mandaba dos veces en dos ticks consecutivos. Cambiado a ventana hacia adelante, cada hora objetivo cae en exactamente un tick.
+
+**Ciclo de cron completo probado en vivo, sin disparar nada a mano** (salvo la respuesta del checkin, simulada por falta de una URL pública para el webhook real de Telegram): equipo de prueba con `reminder_time`/`cutoff_time` a pocos minutos en el futuro → `ReminderJob` disparó solo desde el `@Cron` de Nest, mensaje de Telegram confirmado recibido → se simuló la respuesta contra `POST /api/webhooks/telegram` con el payload real de Telegram (capturado antes con `getUpdates`) → `ReportJob` disparó solo, generó el informe con Groq, lo convirtió a PDF y lo entregó — confirmado recibido.
+
+Entrega del informe como PDF (sección 0.5) verificada con servicios reales en dos de los tres canales: `EmailChannel.sendDocument` (adjunto recibido por email) y `TelegramChannel.sendDocument` (documento recibido en el chat) — `WhatsappChannel.sendDocument` sin probar (bloqueado en la verificación de Meta, igual que el resto de WhatsApp).
+
+Sin probar todavía: WhatsApp real (paso 12, canal definitivo) y la cuenta de Anthropic (paso 7, sustituida por Groq). El paso 0 (n8n) no se hizo — no hizo falta, se validó todo directo contra los servicios reales.
 
 0. **Prototipo de mensajería en n8n (desechable)** — montar a mano, sin base de datos ni backend todavía, un workflow n8n que: mande un mensaje de WhatsApp (o email) de prueba, reciba la respuesta por webhook, y la deje ver en un nodo. Objetivo único: validar credenciales (Meta/WhatsApp Cloud API o Resend), formato del payload y, si es WhatsApp, que la plantilla de mensaje está aprobada — antes de escribir una sola línea del backend real. *Hecho cuando:* llega un mensaje de prueba real y su respuesta se recibe en n8n. En ese momento se anota en `docs/notas-flujo-mensajeria.md` lo aprendido (payloads, IDs de plantilla, headers) y se apaga n8n — no pasa a producción (ver sección 0 de este documento).
 

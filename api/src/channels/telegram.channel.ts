@@ -32,6 +32,28 @@ export class TelegramChannel implements Channel {
     }
   }
 
+  async sendDocument(contact: string, file: Buffer, filename: string, caption: string): Promise<void> {
+    const token = this.config.get<string>('TELEGRAM_BOT_TOKEN');
+    if (!token) {
+      throw new Error('TELEGRAM_BOT_TOKEN no configurada');
+    }
+
+    const form = new FormData();
+    form.append('chat_id', contact);
+    form.append('caption', caption);
+    form.append('document', new Blob([new Uint8Array(file)], { type: 'application/pdf' }), filename);
+
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendDocument`, {
+      method: 'POST',
+      body: form,
+    });
+
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Telegram Bot API respondió ${res.status}: ${body}`);
+    }
+  }
+
   parseIncoming(payload: any): IncomingMessage {
     const message = payload?.message;
     if (!message?.chat?.id) {

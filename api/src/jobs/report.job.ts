@@ -4,8 +4,12 @@ import { TeamsService } from '../teams/teams.service';
 import { CheckinsService } from '../checkins/checkins.service';
 import { ChannelsService } from '../channels/channels.service';
 import { AggregateService } from '../aggregate/aggregate.service';
+import { PdfService } from '../pdf/pdf.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { currentWeekStart, dowInTimezone, isWithinWindow } from './date.utils';
+import { extractBlockersSection, isMeaningfulBlocker } from './blockers.utils';
+
+const PAST_REPORTS_FOR_RECURRENCE = 3;
 
 // Simétrico a ReminderJob pero disparado por teams.cutoff_time: genera el
 // informe con IA a partir de los checkins de la semana y lo entrega al
@@ -19,6 +23,7 @@ export class ReportJob {
     private readonly checkins: CheckinsService,
     private readonly channels: ChannelsService,
     private readonly aggregate: AggregateService,
+    private readonly pdf: PdfService,
     private readonly supabase: SupabaseService,
   ) {}
 
@@ -55,6 +60,26 @@ export class ReportJob {
     return !!data;
   }
 
+  private async fetchPastBlockers(teamId: string, beforeWeekStart: string): Promise<string[]> {
+    const { data, error } = await this.supabase.db
+      .from('reports')
+      .select('week_start, content_markdown')
+      .eq('team_id', teamId)
+      .lt('week_start', beforeWeekStart)
+      .order('week_start', { ascending: false })
+      .limit(PAST_REPORTS_FOR_RECURRENCE);
+    if (error) throw error;
+
+    const blockers: string[] = [];
+    for (const report of data ?? []) {
+      const section = extractBlockersSection(report.content_markdown ?? '');
+      if (section && isMeaningfulBlocker(section)) {
+        blockers.push(`Semana del ${report.week_start}: ${section}`);
+      }
+    }
+    return blockers;
+  }
+
   private async generateAndDeliver(team: any, weekStart: string) {
     const members = await this.teams.listMembers(team.id);
     const rows = await this.checkins.listForTeamWeek(team.id, weekStart);
@@ -63,6 +88,11 @@ export class ReportJob {
     const membersWithoutResponse = members
       .filter((m: any) => !respondedMemberIds.has(m.id))
       .map((m: any) => m.name);
+
+    // Últimos 3 informes del equipo, para que la IA pueda señalar si un
+    // bloqueo ya viene repitiéndose (pedido explícitamente — antes era un
+    // TODO sin implementar).
+    const pastBlockers = await this.fetchPastBlockers(team.id, weekStart);
 
     const content = await this.aggregate.generateReport({
       teamName: team.name,
@@ -74,7 +104,7 @@ export class ReportJob {
         blockerText: r.blocker_text,
       })),
       membersWithoutResponse,
-      pastBlockers: [], // TODO: detección de bloqueos recurrentes (fuera del alcance de este paso)
+      pastBlockers,
     });
 
     const { error: insertError } = await this.supabase.db.from('reports').insert({
@@ -86,7 +116,17 @@ export class ReportJob {
     if (insertError) throw insertError;
 
     if (team.delivery_target) {
-      await this.channels.get(team.delivery_channel).send(team.delivery_target, content);
+      // El informe siempre se entrega como PDF adjunto — en los tres
+      // canales, no solo por email (decisión explícita, ver
+      // docs/especificaciones-tecnicas.md sección 0.2/3.1).
+      const title = `Resumen semanal — ${team.name} — semana del ${weekStart}`;
+      const pdfBuffer = await this.pdf.fromMarkdown(content, title);
+      const filename = `resumen-semanal-${weekStart}.pdf`;
+      const caption = `Resumen semanal de ${team.name} — semana del ${weekStart}. Adjunto en PDF.`;
+
+      await this.channels
+        .get(team.delivery_channel)
+        .sendDocument(team.delivery_target, pdfBuffer, filename, caption);
       await this.supabase.db
         .from('reports')
         .update({ delivered_at: new Date().toISOString() })
