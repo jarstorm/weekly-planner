@@ -90,14 +90,15 @@ weekly-feedback/
       channels/          → interfaz común + un provider por canal (email.channel.ts, whatsapp.channel.ts, [futuro] slack.channel.ts) + ChannelsService (dispatcher)
       teams/             → TeamsModule (equipos y miembros, protegido por AuthGuard): controller + service
       checkins/          → CheckinsModule: controller + service
+      reports/           → ReportsModule: histórico de informes (GET /api/reports?teamId=)
       aggregate/         → AggregateModule/Service (llamada a la IA)
       jobs/              → ReminderJob, ReportJob (@nestjs/schedule, Cron)
       webhooks/          → WebhooksController (entrada de whatsapp/slack)
       app.module.ts, main.ts
-  web/                                  # frontend Next.js/JavaScript
+  web/                                  # frontend Next.js/TypeScript
     src/
-      app/               → Login, Onboarding, Dashboard (App Router)
-      lib/              → cliente de supabase
+      app/               → login/, register/, onboarding/, page.tsx (dashboard) — App Router
+      lib/api.ts         → cliente HTTP al backend (fetch con credentials: 'include', nunca supabase-js — ver sección 0.1)
 ```
 
 El esquema de base de datos (`supabase/schema.sql`) ya está escrito: tablas `organizations` (la cuenta que paga, con su plan — equipo/organización/custom — y sus límites), `teams`, `members`, `checkins`, `reports`, con seguridad por fila (RLS) para que cada responsable solo vea sus propios equipos y, si tiene el resumen ejecutivo activado, el consolidado de su organización (ver `docs/mvp-resumen-semanal-equipos.md`, sección 6.4 y 11).
@@ -123,6 +124,8 @@ Esto es intencional, no sobre-ingeniería: la interfaz ya la fuerza tener dos ca
 ## 4. Hoja de ruta — una funcionalidad detrás de otra
 
 Cada punto se construye, se prueba, y solo entonces se pasa al siguiente. Los primeros puntos no necesitan frontend ni WhatsApp — se prueban con `curl` o Postman contra el backend.
+
+**Estado actual:** los pasos 2 a 11 (menos el 5/8 — envío real de email, que necesita `RESEND_API_KEY`) están **escritos y compilan**, pero ninguno está probado contra servicios reales todavía — falta dar de alta Supabase/Resend/Anthropic y ejecutar `schema.sql` (paso 1) para poder probar de punta a punta. El paso 0 (n8n) y el paso 12 (WhatsApp real) siguen sin empezar.
 
 0. **Prototipo de mensajería en n8n (desechable)** — montar a mano, sin base de datos ni backend todavía, un workflow n8n que: mande un mensaje de WhatsApp (o email) de prueba, reciba la respuesta por webhook, y la deje ver en un nodo. Objetivo único: validar credenciales (Meta/WhatsApp Cloud API o Resend), formato del payload y, si es WhatsApp, que la plantilla de mensaje está aprobada — antes de escribir una sola línea del backend real. *Hecho cuando:* llega un mensaje de prueba real y su respuesta se recibe en n8n. En ese momento se anota en `docs/notas-flujo-mensajeria.md` lo aprendido (payloads, IDs de plantilla, headers) y se apaga n8n — no pasa a producción (ver sección 0 de este documento).
 

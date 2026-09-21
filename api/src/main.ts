@@ -9,7 +9,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api', { exclude: ['health'] });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.use(cookieParser());
-  app.enableCors({ origin: process.env.APP_BASE_URL, credentials: true });
+  app.enableCors({ origin: process.env.APP_BASE_URL ?? 'http://localhost:3000', credentials: true });
   const port = process.env.PORT ?? 3001;
   await app.listen(port);
 }

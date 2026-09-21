@@ -23,7 +23,56 @@ export class TeamsService {
     }
   }
 
+  // Roadmap paso 14: límites de plan. max_teams/max_members_per_team en
+  // NULL significa sin límite (solo Plan Custom) — ver
+  // docs/mvp-resumen-semanal-equipos.md, sección 11.
+  private async assertTeamLimit(organizationId: string) {
+    const { data: org, error: orgError } = await this.supabase.db
+      .from('organizations')
+      .select('max_teams')
+      .eq('id', organizationId)
+      .single();
+    if (orgError) throw orgError;
+    if (org.max_teams === null) return;
+
+    const { count, error: countError } = await this.supabase.db
+      .from('teams')
+      .select('id', { count: 'exact', head: true })
+      .eq('organization_id', organizationId);
+    if (countError) throw countError;
+
+    if ((count ?? 0) >= org.max_teams) {
+      throw new ForbiddenException(
+        `Tu plan permite hasta ${org.max_teams} equipo(s) — actualiza de plan para crear más.`,
+      );
+    }
+  }
+
+  private async assertMemberLimit(teamId: string, organizationId: string) {
+    const { data: org, error: orgError } = await this.supabase.db
+      .from('organizations')
+      .select('max_members_per_team')
+      .eq('id', organizationId)
+      .single();
+    if (orgError) throw orgError;
+    if (org.max_members_per_team === null) return;
+
+    const { count, error: countError } = await this.supabase.db
+      .from('members')
+      .select('id', { count: 'exact', head: true })
+      .eq('team_id', teamId)
+      .eq('active', true);
+    if (countError) throw countError;
+
+    if ((count ?? 0) >= org.max_members_per_team) {
+      throw new ForbiddenException(
+        `Tu plan permite hasta ${org.max_members_per_team} miembro(s) por equipo — actualiza de plan para añadir más.`,
+      );
+    }
+  }
+
   async createTeam(organizationId: string, dto: CreateTeamDto) {
+    await this.assertTeamLimit(organizationId);
     const { data, error } = await this.supabase.db
       .from('teams')
       .insert({ ...dto, organization_id: organizationId })
@@ -44,6 +93,7 @@ export class TeamsService {
 
   async addMember(organizationId: string, teamId: string, dto: CreateMemberDto) {
     await this.assertOwnership(teamId, organizationId);
+    await this.assertMemberLimit(teamId, organizationId);
     const { data, error } = await this.supabase.db
       .from('members')
       .insert({ ...dto, team_id: teamId })
