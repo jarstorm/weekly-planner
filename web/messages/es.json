@@ -4,7 +4,8 @@
     "createAccount": "Crear cuenta",
     "logout": "Salir",
     "dashboard": "Panel",
-    "newTeam": "Nuevo equipo"
+    "newTeam": "Nuevo equipo",
+    "billing": "Facturación"
   },
   "Channel": {
     "email": "Email",
@@ -146,5 +147,29 @@
     "addMember": "Añadir",
     "adding": "Añadiendo...",
     "addMemberError": "No se pudo añadir el miembro"
+  },
+  "Billing": {
+    "title": "Facturación",
+    "loading": "Cargando...",
+    "loadError": "No se pudo cargar el estado de la suscripción",
+    "currentPlan": "Plan actual",
+    "statusTrial": "En periodo de prueba",
+    "statusActive": "Activa",
+    "statusCanceled": "Cancelada",
+    "planEquipo": "Plan Equipo",
+    "planOrganizacion": "Plan Organización",
+    "planCustom": "Plan Custom",
+    "noPrice": "Precio a medida",
+    "perMonth": "{price}€/mes",
+    "manageSubscription": "Gestionar suscripción",
+    "subscribe": "Suscribirse",
+    "redirecting": "Redirigiendo a Stripe...",
+    "checkoutError": "No se pudo iniciar el pago, prueba de nuevo",
+    "portalError": "No se pudo abrir la gestión de la suscripción",
+    "checkoutSuccess": "¡Pago confirmado! Tu suscripción ya está activa.",
+    "checkoutCancel": "Pago cancelado, no se hizo ningún cargo.",
+    "teamPlanDesc": "Un equipo, hasta 20 personas.",
+    "orgPlanDesc": "Hasta 5 equipos, resumen ejecutivo opcional.",
+    "currentPlanBadge": "Tu plan actual"
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { LayoutDashboard, UserPlus, LogOut } from 'lucide-react';
+import { LayoutDashboard, UserPlus, LogOut, CreditCard } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, Link } from '@/i18n/navigation';
 import { api } from '@/lib/api';
@@ -29,6 +29,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link href="/app/onboarding" className={pathname === '/app/onboarding' ? 'active' : ''}>
             <UserPlus size={18} />
             <span>{t('newTeam')}</span>
+          </Link>
+          <Link href="/app/billing" className={pathname === '/app/billing' ? 'active' : ''}>
+            <CreditCard size={18} />
+            <span>{t('billing')}</span>
           </Link>
         </nav>
         <div className="app-sidebar-footer">

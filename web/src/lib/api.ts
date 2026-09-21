@@ -77,6 +77,11 @@ export const api = {
     request<CheckinFormInfo>(`/checkins/form?token=${encodeURIComponent(token)}`),
   submitCheckinForm: (token: string, data: { doneText?: string; nextText?: string; blockerText?: string }) =>
     request('/checkins/form', { method: 'POST', body: JSON.stringify({ token, ...data }) }),
+
+  billingStatus: () => request<BillingStatus>('/billing/status'),
+  createCheckoutSession: (plan: 'equipo' | 'organizacion') =>
+    request<{ url: string }>('/billing/checkout', { method: 'POST', body: JSON.stringify({ plan }) }),
+  createPortalSession: () => request<{ url: string }>('/billing/portal', { method: 'POST' }),
 };
 
 export interface Team {
@@ -125,4 +130,13 @@ export interface CheckinStatus {
   blockerText: string | null;
   rawText: string | null;
   receivedAt: string | null;
+}
+
+export interface BillingStatus {
+  plan: 'equipo' | 'organizacion' | 'custom';
+  status: 'trial' | 'active' | 'canceled';
+  price_month: number | null;
+  max_teams: number | null;
+  max_members_per_team: number | null;
+  has_executive_summary: boolean;
 }

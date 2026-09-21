@@ -4,7 +4,8 @@
     "createAccount": "Sign up",
     "logout": "Log out",
     "dashboard": "Dashboard",
-    "newTeam": "New team"
+    "newTeam": "New team",
+    "billing": "Billing"
   },
   "Channel": {
     "email": "Email",
@@ -146,5 +147,29 @@
     "addMember": "Add",
     "adding": "Adding...",
     "addMemberError": "Could not add the member"
+  },
+  "Billing": {
+    "title": "Billing",
+    "loading": "Loading...",
+    "loadError": "Could not load the subscription status",
+    "currentPlan": "Current plan",
+    "statusTrial": "Trial period",
+    "statusActive": "Active",
+    "statusCanceled": "Canceled",
+    "planEquipo": "Team plan",
+    "planOrganizacion": "Organization plan",
+    "planCustom": "Custom plan",
+    "noPrice": "Custom pricing",
+    "perMonth": "€{price}/mo",
+    "manageSubscription": "Manage subscription",
+    "subscribe": "Subscribe",
+    "redirecting": "Redirecting to Stripe...",
+    "checkoutError": "Could not start checkout, try again",
+    "portalError": "Could not open subscription management",
+    "checkoutSuccess": "Payment confirmed! Your subscription is now active.",
+    "checkoutCancel": "Payment canceled, nothing was charged.",
+    "teamPlanDesc": "One team, up to 20 people.",
+    "orgPlanDesc": "Up to 5 teams, optional executive summary.",
+    "currentPlanBadge": "Your current plan"
   }
 }

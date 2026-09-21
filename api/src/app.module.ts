@@ -12,6 +12,7 @@ import { JobsModule } from './jobs/jobs.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { ReportsModule } from './reports/reports.module';
 import { CheckinFormModule } from './checkin-form/checkin-form.module';
+import { BillingModule } from './billing/billing.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { CheckinFormModule } from './checkin-form/checkin-form.module';
     WebhooksModule,
     ReportsModule,
     CheckinFormModule,
+    BillingModule,
   ],
   controllers: [HealthController],
 })
