@@ -24,11 +24,17 @@ export function dowInTimezone(now: Date, timezone: string): number {
 }
 
 // Lunes de la semana actual en el timezone dado, formato YYYY-MM-DD.
+// Todo el cálculo se hace en UTC (mediodía, para no rozar ningún borde de
+// día) a partir de la fecha calendario ya resuelta en el timezone del
+// equipo — mezclar Date "local" (parseado sin Z) con toISOString() (que es
+// siempre UTC) corre el resultado un día cuando el servidor no corre en
+// UTC (p. ej. en Europe/Madrid, UTC+1/+2).
 export function currentWeekStart(now: Date, timezone: string): string {
   const dateStr = new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(now); // YYYY-MM-DD
-  const d = new Date(`${dateStr}T00:00:00`);
-  const dow = d.getDay();
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const utcNoon = new Date(Date.UTC(year, month - 1, day, 12));
+  const dow = utcNoon.getUTCDay();
   const diffToMonday = dow === 0 ? -6 : 1 - dow;
-  d.setDate(d.getDate() + diffToMonday);
-  return d.toISOString().slice(0, 10);
+  utcNoon.setUTCDate(utcNoon.getUTCDate() + diffToMonday);
+  return utcNoon.toISOString().slice(0, 10);
 }
