@@ -36,7 +36,17 @@ El producto sigue apuntando a **WhatsApp + Claude** (ver `docs/mvp-resumen-seman
 
 Ninguna de las dos sustituciones toca `jobs/`, `teams/`, `checkins/` ni el resto del dominio — quedaron aisladas exactamente donde ya estaban pensadas para aislarse.
 
----
+### 0.3 Almacenamiento de ficheros: Supabase Storage
+
+Cualquier fichero que el producto necesite guardar (notas de voz, adjuntos futuros, logo de organización, etc.) va a **Supabase Storage** — no S3, no disco local, no otro proveedor. Es la misma cuenta que ya se usa para DB y Auth, así que no suma una pieza de infraestructura nueva ni credenciales nuevas, y el control de acceso se puede resolver con políticas de bucket análogas a las RLS que ya existen para las tablas. Igual que con la DB (sección 0.1), el backend accede con la `service_role` key — el frontend nunca sube directo a Storage, pasa por la API.
+
+### 0.4 Backlog: check-in por nota de voz (transcripción automática)
+
+`docs/mvp-resumen-semanal-equipos.md` ya describe el check-in por nota de voz como parte del flujo (sección 6.2: "Contesta con un mensaje de voz o texto, lo que te sea más rápido"), pero **no está en el alcance del MVP** (sección 7) — se construye cuando el flujo de texto ya esté validado con clientes reales, no antes. Apuntado para cuando se aborde:
+
+- El audio entrante (WhatsApp/Telegram mandan la nota de voz como archivo) se sube a Supabase Storage (sección 0.3), no se procesa en memoria y se descarta.
+- Transcripción: Groq ya expone `whisper-large-v3` en la misma cuenta que se usa para `AggregateService` (sección 0.2) — mismo proveedor, sin alta nueva. Si para entonces ya se volvió a Claude/Anthropic, evaluar el proveedor de transcripción en ese momento (Anthropic no transcribe audio).
+- El resto del pipeline no cambia: la transcripción entra a `checkins.raw_text` igual que un mensaje de texto — `AggregateService` no distingue el origen.
 
 ## 1. Qué hace falta crear antes de tocar código
 
