@@ -59,6 +59,13 @@ export class BillingService {
 
     const baseUrl = this.config.get<string>('APP_BASE_URL') ?? 'http://localhost:3000';
 
+    // stripe_customer_id ya existía → esta organización ya tuvo una
+    // suscripción antes (incluso si la canceló, nunca lo borramos). Sin esta
+    // guarda, cancelar y volver a suscribirse regalaba otros 30 días gratis
+    // cada vez — limitación conocida documentada en
+    // docs/especificaciones-tecnicas.md, ahora cerrada.
+    const isFirstSubscription = !org.stripe_customer_id;
+
     // Si ya existe stripe_customer_id lo reusamos (evita duplicar el
     // customer en Stripe en cada intento de suscripción/cambio de plan).
     const session = await this.stripe.checkout.sessions.create({
@@ -68,7 +75,10 @@ export class BillingService {
       customer_email: org.stripe_customer_id ? undefined : email,
       client_reference_id: organizationId,
       metadata: { organizationId, plan },
-      subscription_data: { trial_period_days: TRIAL_PERIOD_DAYS, metadata: { organizationId, plan } },
+      subscription_data: {
+        ...(isFirstSubscription ? { trial_period_days: TRIAL_PERIOD_DAYS } : {}),
+        metadata: { organizationId, plan },
+      },
       success_url: `${baseUrl}/app/billing?checkout=success`,
       cancel_url: `${baseUrl}/app/billing?checkout=cancel`,
     });

@@ -7,6 +7,19 @@ import { SupabaseService } from '../supabase/supabase.service';
 import { ChannelName, IncomingAudio } from '../channels/channel.interface';
 import { currentWeekStart } from '../jobs/date.utils';
 
+// parseIncoming rechaza un payload sin mensaje reconocible tirando un Error
+// genérico — sin este wrapper, el filtro de excepciones por defecto de Nest
+// lo convierte en 500 (bug real, detectado probando el webhook con un
+// payload malformado a mano). Un payload que no reconocemos es un error del
+// cliente (400), no un fallo nuestro.
+async function parsePayloadOrBadRequest(channels: ChannelsService, channel: ChannelName, payload: unknown) {
+  try {
+    return await channels.get(channel).parseIncoming(payload);
+  } catch (err) {
+    throw new BadRequestException((err as Error).message);
+  }
+}
+
 // Lógica compartida por los webhooks de entrada: resolver a qué member
 // pertenece el mensaje (por contact + channel), transcribir si vino por
 // nota de voz (sección 0.7), y guardar el checkin. Cada canal tiene su
@@ -88,8 +101,8 @@ export class WhatsappWebhookController {
 
   @Post()
   async receive(@Body() payload: unknown) {
-    const { contact, rawText, audio } = await this.channels.get('whatsapp').parseIncoming(payload);
-    return matchMemberAndSaveCheckin(this.supabase, this.checkins, this.audio, 'whatsapp', contact, rawText, audio);
+    const parsed = await parsePayloadOrBadRequest(this.channels, 'whatsapp', payload);
+    return matchMemberAndSaveCheckin(this.supabase, this.checkins, this.audio, 'whatsapp', parsed.contact, parsed.rawText, parsed.audio);
   }
 }
 
@@ -107,7 +120,7 @@ export class TelegramWebhookController {
 
   @Post()
   async receive(@Body() payload: unknown) {
-    const { contact, rawText, audio } = await this.channels.get('telegram').parseIncoming(payload);
-    return matchMemberAndSaveCheckin(this.supabase, this.checkins, this.audio, 'telegram', contact, rawText, audio);
+    const parsed = await parsePayloadOrBadRequest(this.channels, 'telegram', payload);
+    return matchMemberAndSaveCheckin(this.supabase, this.checkins, this.audio, 'telegram', parsed.contact, parsed.rawText, parsed.audio);
   }
 }
