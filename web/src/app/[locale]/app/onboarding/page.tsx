@@ -90,7 +90,6 @@ export default function OnboardingPage() {
             {t('deliveryChannel')}
             <select value={deliveryChannel} onChange={(e) => setDeliveryChannel(e.target.value as ChannelName)}>
               <option value="email">{tChannel('email')}</option>
-              <option value="whatsapp">{tChannel('whatsapp')}</option>
               <option value="telegram">{tChannel('telegram')}</option>
             </select>
           </label>
@@ -148,7 +147,6 @@ export default function OnboardingPage() {
           {t('memberChannel')}
           <select value={memberChannel} onChange={(e) => setMemberChannel(e.target.value as ChannelName)}>
             <option value="email">{tChannel('email')}</option>
-            <option value="whatsapp">{tChannel('whatsapp')}</option>
             <option value="telegram">{tChannel('telegram')}</option>
           </select>
         </label>

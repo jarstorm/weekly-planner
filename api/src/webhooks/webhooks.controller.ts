@@ -1,5 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Post, Query } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { BadRequestException, Body, Controller, Post } from '@nestjs/common';
 import { ChannelsService } from '../channels/channels.service';
 import { CheckinsService } from '../checkins/checkins.service';
 import { AudioService } from '../audio/audio.service';
@@ -22,11 +21,7 @@ async function parsePayloadOrBadRequest(channels: ChannelsService, channel: Chan
 
 // Lógica compartida por los webhooks de entrada: resolver a qué member
 // pertenece el mensaje (por contact + channel), transcribir si vino por
-// nota de voz (sección 0.7), y guardar el checkin. Cada canal tiene su
-// propio controller porque cada uno verifica su webhook distinto (Meta
-// con hub.challenge, Telegram sin verificación previa — el alta se hace
-// llamando a setWebhook una vez, ver sección 0.2 de
-// docs/especificaciones-tecnicas.md).
+// nota de voz (sección 0.7), y guardar el checkin.
 async function matchMemberAndSaveCheckin(
   supabase: SupabaseService,
   checkins: CheckinsService,
@@ -72,41 +67,9 @@ async function matchMemberAndSaveCheckin(
   return { ok: true, matched: true };
 }
 
-// Verificación + recepción de mensajes de WhatsApp Cloud API (Meta).
-// El payload real se confirma en el prototipo n8n de la Fase 0
-// (docs/especificaciones-tecnicas.md, sección 4, paso 0) — ajustar
-// WhatsappChannel.parseIncoming si el formato difiere.
-@Controller('webhooks/whatsapp')
-export class WhatsappWebhookController {
-  constructor(
-    private readonly config: ConfigService,
-    private readonly channels: ChannelsService,
-    private readonly checkins: CheckinsService,
-    private readonly audio: AudioService,
-    private readonly supabase: SupabaseService,
-  ) {}
-
-  @Get()
-  verify(
-    @Query('hub.mode') mode: string,
-    @Query('hub.verify_token') token: string,
-    @Query('hub.challenge') challenge: string,
-  ) {
-    const expected = this.config.get<string>('WHATSAPP_VERIFY_TOKEN');
-    if (mode === 'subscribe' && token === expected) {
-      return challenge;
-    }
-    throw new BadRequestException('Verify token inválido');
-  }
-
-  @Post()
-  async receive(@Body() payload: unknown) {
-    const parsed = await parsePayloadOrBadRequest(this.channels, 'whatsapp', payload);
-    return matchMemberAndSaveCheckin(this.supabase, this.checkins, this.audio, 'whatsapp', parsed.contact, parsed.rawText, parsed.audio);
-  }
-}
-
-// Recepción de mensajes de Telegram (canal temporal de MVP, sección 0.2).
+// Recepción de mensajes de Telegram (canal conversacional del MVP, ver
+// docs/especificaciones-tecnicas.md sección 0.2 — WhatsApp queda fuera del
+// MVP por decisión explícita, se retoma cuando haya demanda real).
 // Sin paso de verificación GET: el alta del webhook se hace una vez,
 // llamando a https://api.telegram.org/bot<TOKEN>/setWebhook?url=<esta URL>.
 @Controller('webhooks/telegram')

@@ -1,6 +1,6 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3001/api';
 
-export type ChannelName = 'email' | 'whatsapp' | 'telegram';
+export type ChannelName = 'email' | 'telegram';
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {

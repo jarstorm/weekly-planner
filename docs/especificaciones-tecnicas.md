@@ -27,14 +27,15 @@ El patrón estándar de Supabase (cliente en el navegador con la `anon key`, pro
 
 Dos clientes de Supabase conviven en `SupabaseService` (`api/src/supabase/supabase.service.ts`): `db` (con `service_role`, para todas las tablas) y `authClient` (con `anon key`, solo para las llamadas de Auth — `signUp`/`signInWithPassword`/`getUser`, que es el uso previsto de esa key).
 
-### 0.2 Sustituciones temporales de MVP: Telegram en vez de WhatsApp, Groq en vez de Claude
+### 0.2 Canal MVP: Telegram (WhatsApp queda fuera), Groq en vez de Claude
 
-El producto sigue apuntando a **WhatsApp + Claude** (ver `docs/mvp-resumen-semanal-equipos.md`, secciones 3-5 y 10) — eso no cambia. Pero verificar una empresa en Meta Business Manager tarda días y la cuenta de Anthropic todavía no está disponible, así que mientras tanto el MVP se desarrolla y prueba con dos sustitutos gratuitos y sin fricción de alta:
+**WhatsApp queda fuera del MVP** — decisión explícita (no solo un retraso técnico): el MVP se lanza con **Telegram como único canal conversacional** + email, y WhatsApp se retoma cuando haya demanda real de un cliente pidiéndolo, no antes. `WhatsappChannel` y `WhatsappWebhookController` se borraron del código (`git log` los tiene si hace falta recuperarlos); lo que queda documentado acá y en `docs/mvp-resumen-semanal-equipos.md` (secciones 3-5, 10) es el diseño para retomarlo, no una integración a medio construir. Motivo del corte: verificar una empresa en Meta Business Manager tarda días y requiere plantilla de mensaje aprobada — no tiene sentido bloquear el lanzamiento del MVP en eso cuando Telegram ya cubre el mismo caso de uso (conversación bidireccional, notas de voz) sin esa fricción.
 
-- **Telegram en vez de WhatsApp.** `TelegramChannel` (`api/src/channels/telegram.channel.ts`) implementa la misma interfaz `Channel` que `WhatsappChannel` — se registra igual en `ChannelsService`, tiene su propio webhook (`POST /api/webhooks/telegram`, sin el paso de verificación `hub.challenge` de Meta; el alta del webhook se hace una vez llamando a `https://api.telegram.org/bot<TOKEN>/setWebhook?url=<url pública>`). Se crea el bot hablando con **@BotFather** en Telegram — sin cuenta de empresa, sin plantillas aprobadas, token al instante. Diferencia a tener en cuenta: `contact` para Telegram es el `chat_id` numérico, no un teléfono, y solo se consigue después de que esa persona le escriba `/start` al bot (Telegram no permite que el bot inicie la conversación, al revés que WhatsApp). Quitar Telegram cuando WhatsApp esté verificado es borrar `telegram.channel.ts`, sacarlo del registry y del `check` de `schema.sql` — nada en `jobs/` cambia, es exactamente el escenario para el que se diseñó la interfaz `Channel` (sección 3.1).
-- **Groq en vez de la API de Claude.** `AggregateService.generateReport()` llama a `https://api.groq.com/openai/v1/chat/completions` (formato compatible con OpenAI) en vez de `api.anthropic.com`. Cuenta gratis en console.groq.com, sin tarjeta. El prompt (`buildPrompt()`, literal de la sección 10 del doc de producto) no cambia nada — solo cambia a qué URL/formato se manda. Modelo usado: `openai/gpt-oss-120b` (revisar `GROQ_MODEL` si Groq cambia su catálogo — ya pasó una vez durante el desarrollo, los modelos de este proveedor rotan). Volver a Claude cuando la cuenta de Anthropic esté lista es cambiar el bloque de `fetch` de este único método, nada más se entera.
+Si se retoma: `WhatsappChannel` implementaba la interfaz `Channel` igual que `TelegramChannel` — Cloud API de Meta, `send`/`sendDocument` con `fetch` a `graph.facebook.com`, documentos en dos pasos (subir a `/media` → mandar mensaje `type: "document"` referenciando el media id), audio con el mismo patrón (media id → URL temporal → descarga con el access token), webhook con verificación `hub.challenge` (`WHATSAPP_VERIFY_TOKEN`). Reconstruirlo es: nuevo `channels/whatsapp.channel.ts` implementando `Channel`, registrarlo en `ChannelsModule`/`ChannelsService`, sumar `'whatsapp'` de vuelta al `check` de `delivery_channel`/`channel` en `schema.sql` (con una migración), un `WhatsappWebhookController` en `webhooks.controller.ts`, y las opciones en los `<select>` del frontend (`onboarding`, `team/[teamId]/edit`, `team/[teamId]/members`) — mismo trabajo mecánico que ya se hizo una vez con Telegram, la interfaz `Channel` está pensada exactamente para esto (sección 3.1).
 
-Ninguna de las dos sustituciones toca `jobs/`, `teams/`, `checkins/` ni el resto del dominio — quedaron aisladas exactamente donde ya estaban pensadas para aislarse.
+**Groq en vez de la API de Claude** (esto sí sigue siendo una sustitución temporal, no una decisión de alcance): `AggregateService.generateReport()` llama a `https://api.groq.com/openai/v1/chat/completions` (formato compatible con OpenAI) en vez de `api.anthropic.com`. Cuenta gratis en console.groq.com, sin tarjeta. El prompt (`buildPrompt()`, literal de la sección 10 del doc de producto) no cambia nada — solo cambia a qué URL/formato se manda. Modelo usado: `openai/gpt-oss-120b` (revisar `GROQ_MODEL` si Groq cambia su catálogo — ya pasó una vez durante el desarrollo, los modelos de este proveedor rotan). Volver a Claude cuando la cuenta de Anthropic esté lista es cambiar el bloque de `fetch` de este único método, nada más se entera.
+
+Ninguna de las dos cosas toca `jobs/`, `teams/`, `checkins/` ni el resto del dominio — quedaron aisladas exactamente donde ya estaban pensadas para aislarse.
 
 ### 0.3 Almacenamiento de ficheros: Supabase Storage
 
@@ -44,7 +45,7 @@ Cualquier fichero que el producto necesite guardar (notas de voz, adjuntos futur
 
 `docs/mvp-resumen-semanal-equipos.md` ya describía esto como parte del flujo (sección 6.2: "Contesta con un mensaje de voz o texto, lo que te sea más rápido"), inicialmente quedó en backlog fuera del MVP (sección 7) — se adelantó igual porque se pidió explícitamente durante el desarrollo, mismo patrón que el resto de los adelantos de esta lista.
 
-- **Audio**: `TelegramChannel.parseIncoming()` y `WhatsappChannel.parseIncoming()` detectan si el mensaje entrante es una nota de voz (`message.voice` en Telegram, `message.type === 'audio'` en WhatsApp) y bajan el binario — Telegram con `getFile` + descarga aparte, WhatsApp con el mismo patrón en dos pasos que ya usa `sendDocument` (media id → URL temporal → descarga con el access token). `Channel.parseIncoming` pasó a ser `async` por esto — antes era síncrono, ahora cualquier canal puede necesitar una llamada de red para resolver el mensaje entrante.
+- **Audio**: `TelegramChannel.parseIncoming()` detecta si el mensaje entrante es una nota de voz (`message.voice`) y baja el binario con `getFile` + descarga aparte. `Channel.parseIncoming` pasó a ser `async` por esto — antes era síncrono, ahora cualquier canal puede necesitar una llamada de red para resolver el mensaje entrante.
 - **Storage**: `AudioService.store()` (`api/src/audio/audio.service.ts`) sube el audio al bucket privado `checkin-audio` de Supabase Storage (sección 0.3) — se guarda primero, así que si la transcripción falla después el audio original no se pierde. Se guarda el **path**, no una URL — el bucket es privado, nadie lo sirve directo.
 - **Transcripción**: `AudioService.transcribe()` llama a `whisper-large-v3` de Groq — mismo proveedor que `AggregateService` (sección 0.2), sin alta nueva. Formato compatible con la API de transcripciones de OpenAI (multipart, `file` + `model`). Cuando se vuelva a Claude/Anthropic (que no transcribe audio), este servicio se queda igual, no depende de `AggregateService`.
 - **Pipeline**: `webhooks.controller.ts` — si `parseIncoming` devuelve un `audio`, sube y transcribe antes de guardar el checkin; el texto transcrito entra a `checkins.raw_text` igual que un mensaje escrito, `AggregateService` no distingue el origen. `checkins.audio_path` guarda la referencia al fichero.
@@ -57,12 +58,11 @@ Decisión explícita (pedida durante el desarrollo, no estaba en el spec origina
 
 - `PdfService` (`api/src/pdf/pdf.service.ts`) convierte el markdown de `AggregateService` a PDF con `pdfkit` + `marked` — **sin Puppeteer/Chromium**: pdfkit dibuja el PDF directamente con sus fuentes estándar (Helvetica), nada de renderizar HTML en un navegador headless. Evaluado y descartado un microservicio aparte para esto (mismo argumento que la sección 0 — es JS puro, milisegundos, sin necesidad de escalar por separado).
 - Todo PDF lleva un pie de página fijo: *"Generado por la IA de WeeklyFeedback a partir de la información de los empleados."* — transparencia sobre el origen del contenido, pedido explícitamente.
-- `Channel` (sección 3.1) ganó un segundo método, `sendDocument(contact, file, filename, caption)`, junto al `send(contact, message)` que ya existía para el recordatorio (ese sigue siendo texto plano, no cambia). Implementado en los tres canales:
+- `Channel` (sección 3.1) ganó un segundo método, `sendDocument(contact, file, filename, caption)`, junto al `send(contact, message)` que ya existía para el recordatorio (ese sigue siendo texto plano, no cambia). Implementado en los dos canales del MVP (WhatsApp queda fuera, sección 0.2):
   - **Email**: adjunto en base64 en el payload de Resend (`attachments`).
   - **Telegram**: `sendDocument` del Bot API, `multipart/form-data` con `FormData`/`Blob` (nativos de Node, sin librería extra).
-  - **WhatsApp**: dos pasos — subir el PDF a `/media` (devuelve un media id), después mandar un mensaje `type: "document"` referenciando ese id. Sin probar todavía (mismo estado que el resto de WhatsApp, pendiente de verificación de Meta).
 
-Verificado con servicios reales: `EmailChannel.sendDocument` (PDF adjunto recibido por email, confirmado) y `TelegramChannel.sendDocument` (PDF recibido como documento en el chat, confirmado). `WhatsappChannel.sendDocument` sigue sin probar.
+Verificado con servicios reales y con un chat real (no solo credenciales de sandbox): `EmailChannel.sendDocument` (PDF adjunto recibido por email) y `TelegramChannel.sendDocument` (PDF recibido como documento en el chat de Telegram, confirmado visualmente por el usuario).
 
 ### 0.6 Detección de bloqueos recurrentes: alimenta el prompt con los últimos informes
 
@@ -112,10 +112,7 @@ GROQ_API_KEY=                    # temporal en vez de Anthropic (ver sección 0.
 GROQ_MODEL=                      # openai/gpt-oss-120b — Groq rota su catálogo, revisar si da 404 model_not_found
 RESEND_API_KEY=
 RESEND_FROM=
-WHATSAPP_PHONE_NUMBER_ID=
-WHATSAPP_ACCESS_TOKEN=
-WHATSAPP_VERIFY_TOKEN=
-TELEGRAM_BOT_TOKEN=              # temporal en vez de WhatsApp (ver sección 0.2) — @BotFather en Telegram
+TELEGRAM_BOT_TOKEN=              # canal conversacional del MVP (WhatsApp queda fuera, ver sección 0.2) — @BotFather en Telegram
 CHECKIN_TOKEN_SECRET=            # string largo random — firma los links de /checkin/<token> (sección 3.5)
 STRIPE_SECRET_KEY=
 PORT=3001
@@ -147,7 +144,7 @@ weekly-feedback/
       supabase/          → SupabaseModule/Service (cliente service_role + cliente anon para auth, ver 0.1), MigrationRunnerService (ver 0.8)
       audio/             → AudioService: transcripción (Groq Whisper) + Storage del audio (bucket privado, ver 0.7)
       auth/              → AuthModule: register/login/logout/me, AuthGuard, cookie httpOnly wf_session
-      channels/          → interfaz común + un provider por canal (email.channel.ts, whatsapp.channel.ts, telegram.channel.ts [temporal, ver 0.2], [futuro] slack.channel.ts) + ChannelsService (dispatcher)
+      channels/          → interfaz común + un provider por canal (email.channel.ts, telegram.channel.ts, [futuro] whatsapp.channel.ts [ver 0.2], [futuro] slack.channel.ts) + ChannelsService (dispatcher)
       teams/             → TeamsModule (equipos y miembros, protegido por AuthGuard): controller + service
       checkins/          → CheckinsModule: controller + service (estado por semana, export de conversaciones — ver 3.3)
       checkin-form/      → CheckinFormModule: formulario público /checkin/<token>, sin AuthGuard (ver 3.5)
@@ -155,7 +152,7 @@ weekly-feedback/
       aggregate/         → AggregateModule/Service (llamada a la IA — Groq temporal, ver 0.2)
       pdf/               → PdfService: markdown → PDF (pdfkit + marked, sin Chromium, ver 0.5)
       jobs/              → ReminderJob, ReportJob (@nestjs/schedule, Cron), blockers.utils.ts (recurrencia, ver 0.6)
-      webhooks/          → WhatsappWebhookController, TelegramWebhookController (entrada de mensajes)
+      webhooks/          → TelegramWebhookController (entrada de mensajes; WhatsappWebhookController se suma cuando se retome WhatsApp, ver 0.2)
       app.module.ts, main.ts
   web/                                  # frontend Next.js/TypeScript
     messages/          → es.json, en.json (diccionarios de next-intl, ver sección 3.2)
@@ -223,7 +220,7 @@ Backend nuevo en `TeamsController`/`TeamsService`: `getOwn` (`GET /api/teams/:id
 
 ### 3.1 Conectores de canal — preparado para añadir Slack sin tocar el resto
 
-Slack queda fuera del MVP, pero `email` y `whatsapp` se construyen desde el día uno detrás de la misma interfaz, para que añadir un canal nuevo más adelante sea solo sumar un archivo, no tocar `jobs/` ni la lógica de negocio:
+Slack (y WhatsApp, ver sección 0.2) quedan fuera del MVP, pero `email` y `telegram` se construyen desde el día uno detrás de la misma interfaz, para que añadir un canal nuevo más adelante sea solo sumar un archivo, no tocar `jobs/` ni la lógica de negocio:
 
 ```ts
 // channels/channel.interface.ts — cada provider implementa el mismo contrato
@@ -233,9 +230,9 @@ interface Channel {
 }
 ```
 
-`ReminderJob` y `ReportJob` no conocen el canal — llaman a `channelsService.get(member.channel).send(...)`, elegido por el `channel` de cada `member` (o `delivery_channel` del `team`/`organization` para el informe). `ChannelsService` es el dispatcher, con un mapa `{ email, whatsapp }` inyectado por DI — añadir Slack cuando toque es: crear `channels/slack.channel.ts` implementando `Channel`, registrarlo como provider en `ChannelsModule`, sumar `'slack'` al `check` de `channel` en `schema.sql`, y un endpoint en `WebhooksController`. Nada en `jobs/` cambia.
+`ReminderJob` y `ReportJob` no conocen el canal — llaman a `channelsService.get(member.channel).send(...)`, elegido por el `channel` de cada `member` (o `delivery_channel` del `team`/`organization` para el informe). `ChannelsService` es el dispatcher, con un mapa `{ email, telegram }` inyectado por DI — añadir un canal nuevo (Slack, o WhatsApp cuando se retome, sección 0.2) es: crear `channels/<nombre>.channel.ts` implementando `Channel`, registrarlo como provider en `ChannelsModule`, sumar el nombre al `check` de `channel`/`delivery_channel` en `schema.sql` (con una migración), y un endpoint en `WebhooksController` si el canal recibe mensajes. Nada en `jobs/` cambia.
 
-Esto es intencional, no sobre-ingeniería: la interfaz ya la fuerza tener dos canales reales (email y whatsapp) desde el MVP — no es una abstracción especulativa para un caso hipotético, es la misma forma que ya toman los dos canales que sí se construyen ahora.
+Esto es intencional, no sobre-ingeniería: la interfaz ya fuerza tener dos canales reales (email y telegram) desde el MVP — no es una abstracción especulativa para un caso hipotético, es la misma forma que ya toman los dos canales que sí se construyen ahora.
 
 ---
 
@@ -243,17 +240,18 @@ Esto es intencional, no sobre-ingeniería: la interfaz ya la fuerza tener dos ca
 
 Cada punto se construye, se prueba, y solo entonces se pasa al siguiente. Los primeros puntos no necesitan frontend ni WhatsApp — se prueban con `curl` o Postman contra el backend.
 
-**Estado actual:** pasos 1 a 12 **verificados de punta a punta contra servicios reales** (Supabase, Resend, Groq, Telegram), salvo lo que depende de credenciales que todavía no existen (WhatsApp real, cuenta de Anthropic) — ver el detalle abajo. Encontrados y arreglados tres bugs reales en el camino, ninguno cosmético:
+**Estado actual:** pasos 1 a 13 **verificados de punta a punta contra servicios reales** (Supabase, Resend, Groq, Telegram, Stripe), salvo lo que depende de una cuenta que todavía no existe (Anthropic, paso 7, sustituida por Groq) — ver el detalle abajo. WhatsApp (paso 12) ya no cuenta como "pendiente de probar": queda fuera del MVP por decisión explícita (sección 0.2), no es algo a lo que le falte credenciales. Encontrados y arreglados varios bugs reales en el camino, ninguno cosmético:
 
 - Usuario de Supabase Auth huérfano si fallaba el insert de `organizations` durante el registro (`AuthService.register` ahora compensa borrando el usuario si el segundo paso falla).
 - `currentWeekStart` calculaba mal el lunes de la semana en cualquier timezone adelantado a UTC — incluido Europe/Madrid, el timezone por defecto del producto (mezclaba `Date` en hora local con `toISOString()`, que es siempre UTC).
 - `isWithinWindow` (ventana del cron) era simétrica (±15min) — con una hora configurada que no cae en múltiplo de 15 (p. ej. `10:07`), el recordatorio se mandaba dos veces en dos ticks consecutivos. Cambiado a ventana hacia adelante, cada hora objetivo cae en exactamente un tick.
+- Webhook de Telegram devolvía 500 (no 400) con un payload sin mensaje reconocible — el filtro de excepciones por defecto de Nest convertía el `Error` genérico de `parseIncoming` en 500; ahora se captura y se relanza como `BadRequestException`.
 
-**Ciclo de cron completo probado en vivo, sin disparar nada a mano** (salvo la respuesta del checkin, simulada por falta de una URL pública para el webhook real de Telegram): equipo de prueba con `reminder_time`/`cutoff_time` a pocos minutos en el futuro → `ReminderJob` disparó solo desde el `@Cron` de Nest, mensaje de Telegram confirmado recibido → se simuló la respuesta contra `POST /api/webhooks/telegram` con el payload real de Telegram (capturado antes con `getUpdates`) → `ReportJob` disparó solo, generó el informe con Groq, lo convirtió a PDF y lo entregó — confirmado recibido.
+**Ciclo de cron completo probado en vivo contra un chat de Telegram real (no de test), sin disparar nada a mano** más que el mensaje del propio usuario: equipo de prueba con `reminder_time`/`cutoff_time` a pocos minutos en el futuro → `ReminderJob` disparó solo desde el `@Cron` de Nest, recordatorio confirmado recibido en Telegram → el usuario respondió por Telegram de verdad → el mensaje se capturó con `getUpdates` (no hay URL pública para que Telegram llame directo a nuestro webhook en este entorno) y se reenvió tal cual a `POST /api/webhooks/telegram` → quedó guardado como checkin real → `ReportJob` disparó solo, generó el informe con Groq, lo convirtió a PDF y lo entregó por Telegram — confirmado recibido por el usuario.
 
-Entrega del informe como PDF (sección 0.5) verificada con servicios reales en dos de los tres canales: `EmailChannel.sendDocument` (adjunto recibido por email) y `TelegramChannel.sendDocument` (documento recibido en el chat) — `WhatsappChannel.sendDocument` sin probar (bloqueado en la verificación de Meta, igual que el resto de WhatsApp).
+Entrega del informe como PDF (sección 0.5) verificada con servicios reales en los dos canales del MVP: `EmailChannel.sendDocument` (adjunto recibido por email) y `TelegramChannel.sendDocument` (documento recibido en el chat, confirmado por el usuario).
 
-Sin probar todavía: WhatsApp real (paso 12, canal definitivo) y la cuenta de Anthropic (paso 7, sustituida por Groq). El paso 0 (n8n) no se hizo — no hizo falta, se validó todo directo contra los servicios reales.
+Sin probar: la cuenta de Anthropic (paso 7, sustituida por Groq). El paso 0 (n8n) no se hizo — no hizo falta, se validó todo directo contra los servicios reales.
 
 0. **Prototipo de mensajería en n8n (desechable)** — montar a mano, sin base de datos ni backend todavía, un workflow n8n que: mande un mensaje de WhatsApp (o email) de prueba, reciba la respuesta por webhook, y la deje ver en un nodo. Objetivo único: validar credenciales (Meta/WhatsApp Cloud API o Resend), formato del payload y, si es WhatsApp, que la plantilla de mensaje está aprobada — antes de escribir una sola línea del backend real. *Hecho cuando:* llega un mensaje de prueba real y su respuesta se recibe en n8n. En ese momento se anota en `docs/notas-flujo-mensajeria.md` lo aprendido (payloads, IDs de plantilla, headers) y se apaga n8n — no pasa a producción (ver sección 0 de este documento).
 
@@ -279,7 +277,7 @@ Sin probar todavía: WhatsApp real (paso 12, canal definitivo) y la cuenta de An
 
 11. **Frontend: histórico de informes** — panel que lista los informes generados por semana. *Hecho cuando:* el responsable del equipo puede entrar, ver el informe de esta semana y los anteriores.
 
-12. **Canal WhatsApp** — verificación en Meta, plantilla de recordatorio aprobada, webhook de entrada/salida. Se añade cuando el flujo por email ya funciona de punta a punta y hay al menos un cliente piloto pidiéndolo. *Hecho cuando:* un número de prueba recibe el recordatorio y su respuesta se guarda igual que en el flujo de email.
+12. **Canal WhatsApp** — fuera del MVP por decisión explícita (sección 0.2), no un paso pendiente de credenciales. Se retoma cuando haya al menos un cliente piloto pidiéndolo, no antes — mismo criterio que el resumen ejecutivo (paso 15). Verificación en Meta, plantilla de recordatorio aprobada, webhook de entrada/salida, reconstruir `WhatsappChannel` (diseño documentado en 0.2). *Hecho cuando:* un número de prueba recibe el recordatorio y su respuesta se guarda igual que en el flujo de Telegram.
 
 13. **Cobro con Stripe** — implementado: `BillingModule` (`api/src/billing/`) con Stripe Checkout hospedado (no Elements a medida), un customer/subscription por organización, Billing Portal para autogestión, y un webhook (`POST /webhooks/stripe`, sin `AuthGuard` — confianza vía firma `Stripe-Signature`, mismo patrón que los webhooks de canal) que marca `organizations.status` en `active`/`canceled` según `checkout.session.completed` / `customer.subscription.updated` / `customer.subscription.deleted`. Precios (Equipo 49€, Organización 149€) creados como Product+Price reales en el Stripe sandbox — ids en `STRIPE_PRICE_EQUIPO`/`STRIPE_PRICE_ORGANIZACION`. Frontend: página `/app/billing` con las 2 cards de plan y botón de gestión de suscripción. *Verificado de punta a punta:* `DATABASE_URL` migrado al connection pooling de Supabase (host `db.<ref>.supabase.co` es IPv6-only y no era accesible desde este entorno; el pooler `aws-1-eu-west-1.pooler.supabase.com` sí). Con eso aplicada la migración `0002_add_stripe_subscription.sql`. Se hizo un pago real en modo test (tarjeta 4242 4242 4242 4242) contra una organización de prueba vía `stripe listen --forward-to`: `checkout.session.completed` pasó `organizations.status` de `trial` a `active`, y cancelar la suscripción (`customer.subscription.deleted`) lo pasó a `canceled`. También verificado en el navegador: login → `/app/billing` muestra el plan activo, y "Manage subscription" abre el Billing Portal real de Stripe. Organizaciones de prueba borradas al terminar.
 

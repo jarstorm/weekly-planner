@@ -90,7 +90,6 @@ export default function EditTeamPage() {
               onChange={(e) => setTeam({ ...team, delivery_channel: e.target.value as ChannelName })}
             >
               <option value="email">{tChannel('email')}</option>
-              <option value="whatsapp">{tChannel('whatsapp')}</option>
               <option value="telegram">{tChannel('telegram')}</option>
             </select>
           </label>

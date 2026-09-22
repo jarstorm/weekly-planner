@@ -33,8 +33,8 @@ export class ReminderJob {
       for (const member of members) {
         // El link con token propio (sección 3.5) es lo único que le
         // permite a alguien con canal email contestar — email no es
-        // conversacional como WhatsApp/Telegram, no hay a qué "responder".
-        // Se manda igual en los tres canales, no solo email: no molesta
+        // conversacional como Telegram, no hay a qué "responder".
+        // Se manda igual en los dos canales, no solo email: no molesta
         // en un chat y da una alternativa si prefieren no escribir texto libre.
         const link = this.checkinForm.buildLink(member.id, weekStart);
         const message = `Hola ${member.name} 👋 Resumen semanal de ${team.name}.\n1️⃣ ¿Qué has hecho esta semana?\n2️⃣ ¿Qué harás la semana que viene?\n3️⃣ ¿Algo bloqueado o que necesites de alguien?\n\nTambién puedes responder aquí: ${link}`;

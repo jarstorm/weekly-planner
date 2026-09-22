@@ -4,8 +4,8 @@ export class CreateMemberDto {
   @IsString()
   name: string;
 
-  @IsIn(['email', 'whatsapp', 'telegram'])
-  channel: 'email' | 'whatsapp' | 'telegram';
+  @IsIn(['email', 'telegram'])
+  channel: 'email' | 'telegram';
 
   @IsString()
   contact: string;

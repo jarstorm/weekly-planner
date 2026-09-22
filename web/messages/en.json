@@ -9,7 +9,6 @@
   },
   "Channel": {
     "email": "Email",
-    "whatsapp": "WhatsApp",
     "telegram": "Telegram"
   },
   "Day": {
@@ -24,7 +23,7 @@
   "Landing": {
     "title": "WeeklyFeedback",
     "tagline": "The weekly report your team no longer has to write, and you no longer have to summarize.",
-    "description": "Every week we ask each person on your team three short things — what they did, what they'll do next, whether they're blocked — over WhatsApp or email. We turn the answers into a single narrative report, ready to read in 30 seconds.",
+    "description": "Every week we ask each person on your team three short things — what they did, what they'll do next, whether they're blocked — over Telegram or email. We turn the answers into a single narrative report, ready to read in 30 seconds.",
     "cta": "Sign up",
     "howItWorksTitle": "How it works",
     "step1Title": "Set the reminder",

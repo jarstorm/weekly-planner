@@ -35,7 +35,7 @@ create table if not exists organizations (
   owner_id uuid references auth.users(id) on delete set null,
   name text not null,
   delivery_channel text not null default 'email' -- dónde llega el informe CONSOLIDADO, si aplica
-    check (delivery_channel in ('email', 'whatsapp')),
+    check (delivery_channel in ('email', 'telegram')),
   delivery_target text,                          -- normalmente quien dirige la empresa
   plan text not null default 'equipo'
     check (plan in ('equipo', 'organizacion', 'custom')),
@@ -70,9 +70,9 @@ create table if not exists teams (
   organization_id uuid not null references organizations(id) on delete cascade,
   name text not null,
   company_context text default '',              -- 2-3 líneas de contexto para el prompt de IA
-  delivery_channel text not null default 'email' -- 'email' | 'whatsapp' | 'telegram' (temporal MVP, ver docs/especificaciones-tecnicas.md sección 0.2)
-    check (delivery_channel in ('email', 'whatsapp', 'telegram')),
-  delivery_target text,                          -- email, número de WhatsApp o chat_id de Telegram donde llega el informe de ESTE equipo
+  delivery_channel text not null default 'email' -- 'email' | 'telegram' (WhatsApp queda fuera del MVP, ver docs/especificaciones-tecnicas.md sección 0.2)
+    check (delivery_channel in ('email', 'telegram')),
+  delivery_target text,                          -- email o chat_id de Telegram donde llega el informe de ESTE equipo
   reminder_dow smallint not null default 5       -- día de la semana del recordatorio (0=domingo .. 6=sábado; 5=viernes)
     check (reminder_dow between 0 and 6),
   reminder_time time not null default '10:00',
@@ -95,9 +95,9 @@ create table if not exists members (
   id uuid primary key default gen_random_uuid(),
   team_id uuid not null references teams(id) on delete cascade,
   name text not null,
-  channel text not null default 'email'          -- 'email' | 'whatsapp' | 'telegram' (temporal MVP, ver docs/especificaciones-tecnicas.md sección 0.2)
-    check (channel in ('email', 'whatsapp', 'telegram')),
-  contact text not null,                         -- email, teléfono E.164 (+34...) o chat_id de Telegram
+  channel text not null default 'email'          -- 'email' | 'telegram' (WhatsApp queda fuera del MVP, ver docs/especificaciones-tecnicas.md sección 0.2)
+    check (channel in ('email', 'telegram')),
+  contact text not null,                         -- email o chat_id de Telegram
   active boolean not null default true,
   created_at timestamptz not null default now()
 );
@@ -112,7 +112,7 @@ create table if not exists checkins (
   team_id uuid not null references teams(id) on delete cascade,
   member_id uuid not null references members(id) on delete cascade,
   week_start date not null,                      -- lunes de la semana correspondiente
-  raw_text text,                                  -- mensaje único de WhatsApp/email sin estructurar (o transcripción, si vino por nota de voz)
+  raw_text text,                                  -- mensaje único de Telegram/email sin estructurar (o transcripción, si vino por nota de voz)
   done_text text,                                 -- "¿qué has hecho?" (si viene de un formulario con 3 campos)
   next_text text,                                 -- "¿qué harás la semana que viene?"
   blocker_text text,                              -- "¿algo bloqueado?"

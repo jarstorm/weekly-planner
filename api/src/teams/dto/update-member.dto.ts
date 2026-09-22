@@ -6,8 +6,8 @@ export class UpdateMemberDto {
   name?: string;
 
   @IsOptional()
-  @IsIn(['email', 'whatsapp', 'telegram'])
-  channel?: 'email' | 'whatsapp' | 'telegram';
+  @IsIn(['email', 'telegram'])
+  channel?: 'email' | 'telegram';
 
   @IsOptional()
   @IsString()

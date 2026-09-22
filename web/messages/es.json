@@ -9,7 +9,6 @@
   },
   "Channel": {
     "email": "Email",
-    "whatsapp": "WhatsApp",
     "telegram": "Telegram"
   },
   "Day": {
@@ -24,7 +23,7 @@
   "Landing": {
     "title": "WeeklyFeedback",
     "tagline": "El resumen semanal que tu equipo ya no tiene que escribir, y que tú ya no tienes que resumir.",
-    "description": "Cada semana le preguntamos a cada persona de tu equipo tres cosas cortas — qué hizo, qué hará, si tiene algún bloqueo — por WhatsApp o email. Con las respuestas armamos un único informe narrativo, listo para leer en 30 segundos.",
+    "description": "Cada semana le preguntamos a cada persona de tu equipo tres cosas cortas — qué hizo, qué hará, si tiene algún bloqueo — por Telegram o email. Con las respuestas armamos un único informe narrativo, listo para leer en 30 segundos.",
     "cta": "Crear cuenta",
     "howItWorksTitle": "Cómo funciona",
     "step1Title": "Configura el recordatorio",

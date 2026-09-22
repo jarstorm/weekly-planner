@@ -2,7 +2,7 @@ import { BadRequestException, Controller, Headers, Post, Req } from '@nestjs/com
 import { Request } from 'express';
 import { BillingService } from './billing.service';
 
-// Sin AuthGuard — mismo patrón que los webhooks de WhatsApp/Telegram
+// Sin AuthGuard — mismo patrón que el webhook de Telegram
 // (api/src/webhooks/webhooks.controller.ts): la confianza viene de
 // verificar la firma Stripe-Signature, no de una sesión de usuario.
 // El body debe llegar como Buffer sin parsear — configurado en main.ts

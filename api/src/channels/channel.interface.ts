@@ -15,14 +15,14 @@ export interface IncomingMessage {
 
 export interface Channel {
   send(contact: string, message: string): Promise<void>;
-  // Informe semanal: siempre se manda como PDF adjunto, en los tres canales
-  // (decisión explícita — un PDF en el chat de WhatsApp/Telegram es tan
-  // válido como en email, no solo texto plano). `caption` es el mensaje
+  // Informe semanal: siempre se manda como PDF adjunto, en los canales
+  // conversacionales (decisión explícita — un PDF en el chat de Telegram es
+  // tan válido como en email, no solo texto plano). `caption` es el mensaje
   // corto que acompaña al adjunto, no el contenido completo del informe.
   sendDocument(contact: string, file: Buffer, filename: string, caption: string): Promise<void>;
-  // Async: bajar el archivo de una nota de voz (Telegram/WhatsApp) implica
-  // una llamada de red aparte antes de poder devolver el IncomingMessage.
+  // Async: bajar el archivo de una nota de voz (Telegram) implica una
+  // llamada de red aparte antes de poder devolver el IncomingMessage.
   parseIncoming(payload: unknown): Promise<IncomingMessage>;
 }
 
-export type ChannelName = 'email' | 'whatsapp' | 'telegram';
+export type ChannelName = 'email' | 'telegram';

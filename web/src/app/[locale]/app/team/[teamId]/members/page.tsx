@@ -114,7 +114,6 @@ export default function TeamMembersPage() {
                   onChange={(e) => setEditDraft({ ...editDraft, channel: e.target.value as ChannelName })}
                 >
                   <option value="email">{tChannel('email')}</option>
-                  <option value="whatsapp">{tChannel('whatsapp')}</option>
                   <option value="telegram">{tChannel('telegram')}</option>
                 </select>
                 <input
@@ -156,7 +155,6 @@ export default function TeamMembersPage() {
           />
           <select value={newChannel} onChange={(e) => setNewChannel(e.target.value as ChannelName)}>
             <option value="email">{tChannel('email')}</option>
-            <option value="whatsapp">{tChannel('whatsapp')}</option>
             <option value="telegram">{tChannel('telegram')}</option>
           </select>
           <input

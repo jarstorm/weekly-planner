@@ -40,9 +40,9 @@ export class CheckinsService {
     return this.saveInternal(dto);
   }
 
-  // Sin chequeo de organización — usado por el webhook de WhatsApp, donde
-  // team_id/member_id ya vienen resueltos server-side a partir del número
-  // de teléfono que escribió (no hay input de usuario que falsificar).
+  // Sin chequeo de organización — usado por el webhook de Telegram, donde
+  // team_id/member_id ya vienen resueltos server-side a partir del contacto
+  // que escribió (no hay input de usuario que falsificar).
   async saveInternal(dto: CreateCheckinDto) {
     const { data, error } = await this.supabase.db
       .from('checkins')
