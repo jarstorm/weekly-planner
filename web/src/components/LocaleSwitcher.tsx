@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import { useLocale } from 'next-intl';
+import { ChevronDown } from 'lucide-react';
 import { usePathname } from '@/i18n/navigation';
 import { Link } from '@/i18n/navigation';
 
@@ -12,34 +14,57 @@ const LOCALES = [
 export function LocaleSwitcher() {
   const locale = useLocale();
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const current = LOCALES.find((l) => l.code === locale) ?? LOCALES[0];
+
+  useEffect(() => {
+    if (!open) return;
+    function onClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [open]);
 
   return (
-    <span className="locale-switcher">
-      {LOCALES.map((l, i) => {
-        const isActive = l.code === locale;
-        const content = (
-          <>
-            <span role="img" aria-label={l.label}>
-              {l.flag}
-            </span>{' '}
-            {l.short}
-          </>
-        );
-        return (
-          <span key={l.code}>
-            {i > 0 && ' · '}
-            {isActive ? (
-              <strong title={l.label}>
-                {content}
-              </strong>
-            ) : (
-              <Link href={pathname} locale={l.code} title={l.label}>
-                {content}
+    <div className="locale-dropdown" ref={ref}>
+      <button
+        type="button"
+        className="locale-dropdown-trigger"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span role="img" aria-label={current.label}>
+          {current.flag}
+        </span>
+        {current.short}
+        <ChevronDown size={14} />
+      </button>
+      {open && (
+        <div className="locale-dropdown-menu" role="listbox">
+          {LOCALES.map((l) => {
+            const isActive = l.code === locale;
+            return (
+              <Link
+                key={l.code}
+                href={pathname}
+                locale={l.code}
+                className={`locale-dropdown-item${isActive ? ' active' : ''}`}
+                role="option"
+                aria-selected={isActive}
+                onClick={() => setOpen(false)}
+              >
+                <span role="img" aria-label={l.label}>
+                  {l.flag}
+                </span>
+                {l.label}
               </Link>
-            )}
-          </span>
-        );
-      })}
-    </span>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
