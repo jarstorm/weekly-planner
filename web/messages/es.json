@@ -162,6 +162,7 @@
     "noPrice": "Precio a medida",
     "perMonth": "{price}€/mes",
     "manageSubscription": "Gestionar suscripción",
+    "trialNote": "{days} días de prueba gratis con tarjeta — no se cobra nada hasta que termine el periodo.",
     "subscribe": "Suscribirse",
     "redirecting": "Redirigiendo a Stripe...",
     "checkoutError": "No se pudo iniciar el pago, prueba de nuevo",

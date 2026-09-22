@@ -13,6 +13,13 @@ const PLAN_CONFIG: Record<BillingPlan, { maxTeams: number; maxMembersPerTeam: nu
   organizacion: { maxTeams: 5, maxMembersPerTeam: 20, priceMonth: 149 },
 };
 
+// Trial con tarjeta: se pide la tarjeta en el Checkout (comportamiento por
+// defecto de Stripe en modo subscription) pero no se cobra hasta que pasan
+// estos días — Stripe cobra solo, sin que el backend tenga que hacer nada
+// el día 30. Filtra curiosos sin tarjeta y no perdemos al cliente en la
+// transición trial→pago porque ya está todo configurado desde el alta.
+export const TRIAL_PERIOD_DAYS = 30;
+
 @Injectable()
 export class BillingService {
   private readonly stripe: Stripe;
@@ -61,7 +68,7 @@ export class BillingService {
       customer_email: org.stripe_customer_id ? undefined : email,
       client_reference_id: organizationId,
       metadata: { organizationId, plan },
-      subscription_data: { metadata: { organizationId, plan } },
+      subscription_data: { trial_period_days: TRIAL_PERIOD_DAYS, metadata: { organizationId, plan } },
       success_url: `${baseUrl}/app/billing?checkout=success`,
       cancel_url: `${baseUrl}/app/billing?checkout=cancel`,
     });

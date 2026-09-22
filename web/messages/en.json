@@ -162,6 +162,7 @@
     "noPrice": "Custom pricing",
     "perMonth": "€{price}/mo",
     "manageSubscription": "Manage subscription",
+    "trialNote": "{days}-day free trial with card — you won't be charged until it ends.",
     "subscribe": "Subscribe",
     "redirecting": "Redirecting to Stripe...",
     "checkoutError": "Could not start checkout, try again",

@@ -101,6 +101,8 @@ export default function BillingPage() {
         )}
       </div>
 
+      {status.status === 'trial' && <p className="muted-link">{t('trialNote', { days: 30 })}</p>}
+
       <ul className="pricing-grid">
         <li className={status.plan === 'equipo' ? 'current-plan' : ''}>
           <strong>{t('planEquipo')}</strong>
