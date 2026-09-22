@@ -647,6 +647,11 @@ button[type='button']:hover {
   font-size: 0.9rem;
 }
 
+.price-note {
+  text-align: center;
+  margin-top: 1.25rem;
+}
+
 .pricing-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -1048,7 +1053,8 @@ button[type='button']:hover {
 }
 
 .plan-badge {
-  display: inline-block;
+  display: block;
+  width: fit-content;
   font-size: 0.7rem;
   font-weight: 700;
   color: var(--color-brand);
@@ -1056,6 +1062,11 @@ button[type='button']:hover {
   border-radius: var(--radius-sm, 6px);
   padding: 0.15rem 0.5rem;
   margin-bottom: 0.5rem;
+}
+
+.plan-badge-bottom {
+  margin-bottom: 0;
+  margin-top: 0.85rem;
 }
 
 .member-edit-list {

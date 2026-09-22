@@ -164,13 +164,13 @@ export default function LandingPage() {
             <p style={{ margin: '0.5rem 0 0' }}>{t('planTeamDesc')}</p>
           </li>
           <li className="pricing-featured">
-            <span className="plan-badge">{t('planPopular')}</span>
             <strong>{t('planOrg')}</strong>
             <span className="price">{t('planOrgPrice')}</span>
             <p style={{ margin: '0.5rem 0 0' }}>{t('planOrgDesc')}</p>
+            <span className="plan-badge plan-badge-bottom">{t('planPopular')}</span>
           </li>
         </ul>
-        <p className="muted-link">{t('priceNote')}</p>
+        <p className="muted-link price-note">{t('priceNote')}</p>
       </section>
 
       <section className="landing-section" id="faq">
