@@ -303,3 +303,8 @@ Los cupones/códigos en sí se crean en el dashboard de Stripe (Coupons → Prom
 ## 5. Qué NO se construye todavía
 
 Para no perder tiempo antes de validar lo esencial: sin integraciones con GitHub/Jira/Trello, sin analítica de tendencias, sin multi-idioma. Los límites de plan (paso 13) se construyen con el MVP porque son baratos y evitan sorpresas, pero el resumen ejecutivo (paso 14) se deja para cuando haya demanda real de un cliente con varios equipos, no se construye especulativamente junto con el resto del MVP. Todo lo demás vive en el roadmap post-MVP del documento de producto.
+
+**Pendiente en la landing (`web/src/app/[locale]/page.tsx`), identificado pero no hecho:**
+
+- **Screenshot real del producto en vez del mock armado a mano.** El hero y la sección "Here's what your report looks like" usan un `.report-mock` construido en HTML/CSS con contenido de ejemplo (marcado "Example"). Un comprador B2B escéptico distingue un mock de un screenshot real de la app funcionando — y la app ya funciona, así que no hay excusa técnica, solo falta capturarlo.
+- **Términos de servicio y Política de privacidad.** El footer no tiene links legales — es de las primeras cosas que un comprador B2B busca, y su ausencia hoy resta confianza más que cualquier detalle visual. La política de privacidad se puede escribir honesta y específica sin inventar nada (subprocesadores reales del producto: Supabase, Stripe, Resend, Groq, Telegram — ver sección 0.2-0.3), pero hace falta que el dueño del producto confirme antes datos legales propios (razón social, si aplica DPO, etc.) — no es algo que se pueda completar sin esa información.
