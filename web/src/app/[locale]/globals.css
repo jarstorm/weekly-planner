@@ -974,6 +974,13 @@ button[type='button']:hover {
   position: relative;
   top: 1px;
 }
+
+.locale-flag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.95em;
+  line-height: 1;
+}
 .locale-dropdown-trigger:hover {
   background: var(--color-neutral-100);
 }
