@@ -74,12 +74,18 @@ export class BillingService {
       customer: org.stripe_customer_id ?? undefined,
       customer_email: org.stripe_customer_id ? undefined : email,
       client_reference_id: organizationId,
-      // Campo nativo "¿Tenés un código?" en la página de Stripe — códigos
+      // Campo nativo "¿Tienes un código?" en la página de Stripe — códigos
       // promocionales únicos por cliente (X meses gratis, o gratis para
       // siempre) se crean en el dashboard de Stripe (Coupons → Promotion
       // codes), sin lógica de descuentos propia. Stripe valida el código,
       // aplica el descuento y no deja reusarlo si se limita a "1 use".
       allow_promotion_codes: true,
+      // IVA automático por país del cliente (reverse-charge para empresas
+      // de la UE con VAT ID válido, IVA local para consumidores) — requiere
+      // tener el registro fiscal completo en el dashboard de Stripe
+      // (Settings → Tax → Origin address + al menos una jurisdicción
+      // registrada), si no la sesión falla al calcular el impuesto.
+      automatic_tax: { enabled: true },
       metadata: { organizationId, plan },
       subscription_data: {
         ...(isFirstSubscription ? { trial_period_days: TRIAL_PERIOD_DAYS } : {}),
