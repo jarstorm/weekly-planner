@@ -19,14 +19,16 @@ export default function LandingPage() {
 
   return (
     <main>
-      <nav className="landing-nav">
-        <BrandMark />
-        <div className="hero-actions" style={{ marginTop: 0 }}>
-          <LocaleSwitcher />
-          <Link className="btn btn-secondary" href="/login">{tNav('login')}</Link>
-          <Link className="btn btn-primary" href="/register">{tNav('createAccount')}</Link>
-        </div>
-      </nav>
+      <div className="landing-nav-bar">
+        <nav className="landing-nav">
+          <BrandMark />
+          <div className="hero-actions" style={{ marginTop: 0 }}>
+            <LocaleSwitcher />
+            <Link className="btn btn-secondary" href="/login">{tNav('login')}</Link>
+            <Link className="btn btn-primary" href="/register">{tNav('createAccount')}</Link>
+          </div>
+        </nav>
+      </div>
 
       <section className="hero">
         <span className="eyebrow">{t('badge')}</span>
@@ -95,20 +97,26 @@ export default function LandingPage() {
         <p className="section-desc">{t('howItWorksDesc')}</p>
         <ol className="steps">
           <li>
-            <span className="step-number">1</span>
-            <span className="step-icon"><CalendarClock size={20} /></span>
+            <div className="step-top">
+              <span className="step-number">1</span>
+              <span className="step-icon"><CalendarClock size={20} /></span>
+            </div>
             <strong>{t('step1Title')}</strong>
             <p>{t('step1')}</p>
           </li>
           <li>
-            <span className="step-number">2</span>
-            <span className="step-icon"><MessageCircle size={20} /></span>
+            <div className="step-top">
+              <span className="step-number">2</span>
+              <span className="step-icon"><MessageCircle size={20} /></span>
+            </div>
             <strong>{t('step2Title')}</strong>
             <p>{t('step2')}</p>
           </li>
           <li>
-            <span className="step-number">3</span>
-            <span className="step-icon"><FileCheck2 size={20} /></span>
+            <div className="step-top">
+              <span className="step-number">3</span>
+              <span className="step-icon"><FileCheck2 size={20} /></span>
+            </div>
             <strong>{t('step3Title')}</strong>
             <p>{t('step3')}</p>
           </li>

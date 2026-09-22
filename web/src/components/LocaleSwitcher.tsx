@@ -36,7 +36,9 @@ export function LocaleSwitcher() {
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        {current.short}
+        <span role="img" aria-label={current.label} className="locale-flag">
+          {current.flag}
+        </span>
         <ChevronDown size={14} />
       </button>
       {open && (
