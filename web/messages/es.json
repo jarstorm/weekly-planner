@@ -170,6 +170,11 @@
     "checkoutCancel": "Pago cancelado, no se hizo ningún cargo.",
     "teamPlanDesc": "Un equipo, hasta 20 personas.",
     "orgPlanDesc": "Hasta 5 equipos, resumen ejecutivo opcional.",
-    "currentPlanBadge": "Tu plan actual"
+    "currentPlanBadge": "Tu plan actual",
+    "promoCodePlaceholder": "Código promocional",
+    "promoCodeApply": "Aplicar",
+    "promoCodeApplying": "Aplicando...",
+    "promoCodeSuccess": "Código aplicado. El descuento se verá reflejado en tu próxima factura.",
+    "promoCodeError": "No se pudo aplicar el código"
   }
 }

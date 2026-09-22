@@ -82,6 +82,7 @@ export const api = {
   createCheckoutSession: (plan: 'equipo' | 'organizacion') =>
     request<{ url: string }>('/billing/checkout', { method: 'POST', body: JSON.stringify({ plan }) }),
   createPortalSession: () => request<{ url: string }>('/billing/portal', { method: 'POST' }),
+  applyPromoCode: (code: string) => request<{ ok: true }>('/billing/promo-code', { method: 'POST', body: JSON.stringify({ code }) }),
 };
 
 export interface Team {

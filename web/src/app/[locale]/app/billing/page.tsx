@@ -18,6 +18,10 @@ export default function BillingPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [pendingPlan, setPendingPlan] = useState<string | null>(null);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoStatus, setPromoStatus] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoSuccess, setPromoSuccess] = useState(false);
 
   useEffect(() => {
     api
@@ -53,6 +57,22 @@ export default function BillingPage() {
       window.location.href = url;
     } catch {
       setActionError(t('portalError'));
+    }
+  }
+
+  async function applyPromoCode(e: React.FormEvent) {
+    e.preventDefault();
+    setPromoStatus('loading');
+    setPromoError(null);
+    setPromoSuccess(false);
+    try {
+      await api.applyPromoCode(promoCode.trim());
+      setPromoStatus('idle');
+      setPromoSuccess(true);
+      setPromoCode('');
+    } catch (err) {
+      setPromoStatus('error');
+      setPromoError(err instanceof ApiError ? err.message : t('promoCodeError'));
     }
   }
 
@@ -95,9 +115,29 @@ export default function BillingPage() {
           {status.price_month !== null && <> — {t('perMonth', { price: status.price_month })}</>}
         </p>
         {status.status !== 'trial' && (
-          <button type="button" className="btn btn-secondary" style={{ marginTop: '1rem' }} onClick={openPortal}>
-            {t('manageSubscription')}
-          </button>
+          <>
+            <button type="button" className="btn btn-secondary" style={{ marginTop: '1rem' }} onClick={openPortal}>
+              {t('manageSubscription')}
+            </button>
+
+            <form onSubmit={applyPromoCode} style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <input
+                type="text"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value)}
+                placeholder={t('promoCodePlaceholder')}
+              />
+              <button type="submit" className="btn btn-secondary" disabled={promoStatus === 'loading' || !promoCode.trim()}>
+                {promoStatus === 'loading' ? t('promoCodeApplying') : t('promoCodeApply')}
+              </button>
+            </form>
+            {promoError && (
+              <p role="alert" className="muted-link" style={{ color: 'crimson' }}>
+                {promoError}
+              </p>
+            )}
+            {promoSuccess && <p className="muted-link">{t('promoCodeSuccess')}</p>}
+          </>
         )}
       </div>
 

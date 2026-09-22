@@ -74,6 +74,12 @@ export class BillingService {
       customer: org.stripe_customer_id ?? undefined,
       customer_email: org.stripe_customer_id ? undefined : email,
       client_reference_id: organizationId,
+      // Campo nativo "¿Tenés un código?" en la página de Stripe — códigos
+      // promocionales únicos por cliente (X meses gratis, o gratis para
+      // siempre) se crean en el dashboard de Stripe (Coupons → Promotion
+      // codes), sin lógica de descuentos propia. Stripe valida el código,
+      // aplica el descuento y no deja reusarlo si se limita a "1 use".
+      allow_promotion_codes: true,
       metadata: { organizationId, plan },
       subscription_data: {
         ...(isFirstSubscription ? { trial_period_days: TRIAL_PERIOD_DAYS } : {}),
@@ -104,6 +110,35 @@ export class BillingService {
       return_url: `${baseUrl}/app/billing`,
     });
     return { url: session.url };
+  }
+
+  // Aplicar un código promocional a una suscripción YA activa (el campo
+  // nativo de Checkout solo cubre el alta) — el Billing Portal de Stripe no
+  // trae un flujo propio para esto, así que se resuelve con dos llamadas:
+  // buscar el promotion code por su texto y, si es válido, pisar los
+  // discounts de la suscripción con él.
+  async applyPromoCode(organizationId: string, code: string) {
+    const { data: org, error } = await this.supabase.db
+      .from('organizations')
+      .select('stripe_subscription_id')
+      .eq('id', organizationId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!org?.stripe_subscription_id) {
+      throw new BadRequestException('Todavía no tienes una suscripción activa');
+    }
+
+    const found = await this.stripe.promotionCodes.list({ code, active: true, limit: 1 });
+    const promotionCode = found.data[0];
+    if (!promotionCode) {
+      throw new BadRequestException('Código inválido o ya no está activo');
+    }
+
+    await this.stripe.subscriptions.update(org.stripe_subscription_id, {
+      discounts: [{ promotion_code: promotionCode.id }],
+    });
+
+    return { ok: true };
   }
 
   // El body debe llegar sin parsear (Buffer) — la firma de Stripe se

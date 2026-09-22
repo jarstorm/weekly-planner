@@ -4,6 +4,7 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { AuthedUser } from '../auth/auth.service';
 import { BillingService } from './billing.service';
 import { CreateCheckoutDto } from './dto/create-checkout.dto';
+import { ApplyPromoCodeDto } from './dto/apply-promo-code.dto';
 
 @Controller('billing')
 @UseGuards(AuthGuard)
@@ -23,5 +24,10 @@ export class BillingController {
   @Post('portal')
   portal(@CurrentUser() user: AuthedUser) {
     return this.billing.createPortalSession(user.organizationId);
+  }
+
+  @Post('promo-code')
+  applyPromoCode(@CurrentUser() user: AuthedUser, @Body() dto: ApplyPromoCodeDto) {
+    return this.billing.applyPromoCode(user.organizationId, dto.code);
   }
 }

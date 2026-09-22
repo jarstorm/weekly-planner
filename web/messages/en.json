@@ -170,6 +170,11 @@
     "checkoutCancel": "Payment canceled, nothing was charged.",
     "teamPlanDesc": "One team, up to 20 people.",
     "orgPlanDesc": "Up to 5 teams, optional executive summary.",
-    "currentPlanBadge": "Your current plan"
+    "currentPlanBadge": "Your current plan",
+    "promoCodePlaceholder": "Promo code",
+    "promoCodeApply": "Apply",
+    "promoCodeApplying": "Applying...",
+    "promoCodeSuccess": "Code applied. The discount will show up on your next invoice.",
+    "promoCodeError": "Could not apply the code"
   }
 }
