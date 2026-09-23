@@ -220,5 +220,93 @@
     "promoCodeApplying": "Aplicando...",
     "promoCodeSuccess": "Código aplicado. El descuento se verá reflejado en tu próxima factura.",
     "promoCodeError": "No se pudo aplicar el código"
+  },
+  "Legal": {
+    "termsLink": "Términos",
+    "privacyLink": "Privacidad",
+    "lastUpdated": "Última actualización: 22 de septiembre de 2026",
+    "placeholderNotice": "Este documento tiene datos marcados entre corchetes [ASÍ] pendientes de completar por el titular del servicio antes de considerarse definitivo.",
+    "termsTitle": "Términos de servicio",
+    "termsSections": [
+      {
+        "heading": "1. Objeto",
+        "body": "Estas condiciones regulan el acceso y uso de WeeklyFeedback, un servicio SaaS que recoge respuestas semanales de los miembros de un equipo (por Telegram o email) y genera un informe narrativo mediante inteligencia artificial para el responsable del equipo."
+      },
+      {
+        "heading": "2. Identificación del prestador",
+        "body": "WeeklyFeedback es prestado por [NOMBRE COMPLETO], en calidad de autónomo, con NIF [NIF] y domicilio en [DOMICILIO FISCAL]. Contacto: [EMAIL DE CONTACTO]."
+      },
+      {
+        "heading": "3. Cuenta y acceso",
+        "body": "El acceso al panel requiere registro con email y contraseña. El titular de la cuenta es responsable de mantener la confidencialidad de sus credenciales y de la actividad que ocurra bajo su cuenta. Los miembros del equipo que responden por Telegram o email no crean cuenta ni tienen acceso al panel."
+      },
+      {
+        "heading": "4. Planes, precios y facturación",
+        "body": "Los precios vigentes (Plan Equipo 49€/mes, Plan Organización 149€/mes, IVA no incluido) se muestran en la página de precios. La suscripción se gestiona a través de Stripe, incluye un periodo de prueba de 30 días con tarjeta registrada desde el alta, y se renueva automáticamente cada mes salvo cancelación. No hay permanencia: el usuario puede cancelar en cualquier momento desde su panel, con efecto al final del periodo ya pagado."
+      },
+      {
+        "heading": "5. Uso del servicio",
+        "body": "El usuario se compromete a usar el servicio conforme a la ley, a no introducir datos que no tenga derecho a tratar, y a no usar el servicio para fines distintos de la gestión legítima de su equipo de trabajo."
+      },
+      {
+        "heading": "6. Propiedad intelectual",
+        "body": "El software, la marca WeeklyFeedback y los materiales del sitio son propiedad del prestador. Los datos introducidos por el usuario (respuestas del equipo, contexto de empresa) siguen siendo propiedad del usuario."
+      },
+      {
+        "heading": "7. Disponibilidad y responsabilidad",
+        "body": "El servicio se presta \"tal cual\", sin garantía de disponibilidad ininterrumpida. El prestador no será responsable de daños indirectos derivados del uso o imposibilidad de uso del servicio, dentro de los límites que permita la ley."
+      },
+      {
+        "heading": "8. Protección de datos",
+        "body": "El tratamiento de datos personales se rige por la Política de Privacidad, parte integrante de estas condiciones."
+      },
+      {
+        "heading": "9. Legislación aplicable",
+        "body": "Estas condiciones se rigen por la legislación española. Para cualquier controversia, las partes se someten a los juzgados y tribunales que correspondan según la normativa de protección de consumidores aplicable."
+      },
+      {
+        "heading": "10. Modificaciones",
+        "body": "Estas condiciones pueden actualizarse; los cambios relevantes se comunicarán a los usuarios activos por email."
+      }
+    ],
+    "privacyTitle": "Política de privacidad",
+    "privacySections": [
+      {
+        "heading": "1. Responsable del tratamiento",
+        "body": "[NOMBRE COMPLETO], autónomo, NIF [NIF], domicilio en [DOMICILIO FISCAL]. Contacto para temas de privacidad: [EMAIL DE CONTACTO]. No existe Delegado de Protección de Datos designado; las consultas se atienden directamente por el responsable del tratamiento."
+      },
+      {
+        "heading": "2. Qué datos tratamos",
+        "body": "De quien crea la cuenta: email y contraseña (gestionada por Supabase Auth). Del equipo: nombre del equipo, contexto de empresa, y de cada miembro: nombre y contacto (email, teléfono o chat_id de Telegram). De las respuestas semanales: el texto (o transcripción, si se envió nota de voz) de lo que cada persona contesta. De facturación: los datos de pago los procesa Stripe directamente — este servicio no almacena números de tarjeta."
+      },
+      {
+        "heading": "3. Finalidad",
+        "body": "Prestar el servicio contratado: generar el informe semanal, entregarlo al responsable del equipo, gestionar la cuenta y la suscripción."
+      },
+      {
+        "heading": "4. Base legal",
+        "body": "Ejecución del contrato de prestación de servicio (art. 6.1.b RGPD). En el caso de las respuestas de los miembros del equipo, quien da de alta la cuenta es responsable de contar con base legítima para tratar esos datos frente a su propio equipo."
+      },
+      {
+        "heading": "5. Con quién compartimos datos",
+        "body": "Los siguientes proveedores procesan datos como encargados del tratamiento, cada uno solo con el dato que necesita para su función: Supabase (base de datos, autenticación y almacenamiento de archivos, servidores en la Unión Europea), Stripe (procesamiento de pagos), Resend (envío de emails transaccionales), Telegram (canal de mensajería para quienes lo eligen), y Groq (generación del informe con IA a partir del texto de las respuestas — proveedor con sede en EEUU; la transferencia se ampara en las cláusulas contractuales tipo de la Comisión Europea). No vendemos ni cedemos datos a terceros con fines publicitarios."
+      },
+      {
+        "heading": "6. Conservación",
+        "body": "Los datos se conservan mientras la cuenta esté activa, y durante el plazo adicional que exija la normativa fiscal o mercantil tras la baja. El usuario puede solicitar el borrado anticipado escribiendo al contacto de privacidad."
+      },
+      {
+        "heading": "7. Derechos de las personas",
+        "body": "Cualquier persona puede ejercer sus derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad escribiendo a [EMAIL DE CONTACTO]. También puede presentar una reclamación ante la Agencia Española de Protección de Datos (aepd.es) si considera que sus derechos no han sido atendidos."
+      },
+      {
+        "heading": "8. Menores de edad",
+        "body": "El servicio está dirigido a empresas y no está destinado a menores de edad."
+      },
+      {
+        "heading": "9. Cambios en esta política",
+        "body": "Esta política puede actualizarse para reflejar cambios en el servicio o en la normativa aplicable; la fecha de última actualización figura al principio del documento."
+      }
+    ]
   }
 }

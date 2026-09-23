@@ -754,6 +754,31 @@ button[type='button']:hover {
   font-size: 0.85rem;
 }
 
+.landing-footer-links {
+  display: flex;
+  gap: 1.25rem;
+  font-size: 0.85rem;
+}
+
+.legal-page > a {
+  display: inline-block;
+  margin-bottom: 2rem;
+}
+
+.legal-page section {
+  margin-top: 2rem;
+}
+
+.legal-page section h2 {
+  font-size: 1rem;
+  margin: 0 0 0.5rem;
+}
+
+.legal-page > p[role='alert'] {
+  display: block;
+  margin: 1rem 0 0;
+}
+
 /* --- app shell (dashboard) --- */
 
 .app-shell {

@@ -16,6 +16,7 @@ import { BrandMark } from '@/components/BrandMark';
 export default function LandingPage() {
   const t = useTranslations('Landing');
   const tNav = useTranslations('Nav');
+  const tLegal = useTranslations('Legal');
 
   return (
     <main>
@@ -211,6 +212,10 @@ export default function LandingPage() {
         <div className="landing-footer-inner">
           <BrandMark />
           <p>{t('footerTagline')}</p>
+          <nav className="landing-footer-links">
+            <Link href="/legal/terms">{tLegal('termsLink')}</Link>
+            <Link href="/legal/privacy">{tLegal('privacyLink')}</Link>
+          </nav>
           <p className="muted-link">© {new Date().getFullYear()} WeeklyFeedback. {t('footerRights')}</p>
         </div>
       </footer>

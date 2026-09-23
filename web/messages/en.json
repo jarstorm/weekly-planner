@@ -220,5 +220,93 @@
     "promoCodeApplying": "Applying...",
     "promoCodeSuccess": "Code applied. The discount will show up on your next invoice.",
     "promoCodeError": "Could not apply the code"
+  },
+  "Legal": {
+    "termsLink": "Terms",
+    "privacyLink": "Privacy",
+    "lastUpdated": "Last updated: September 22, 2026",
+    "placeholderNotice": "This document has data marked in brackets [LIKE THIS] still to be filled in by the service owner before it's considered final.",
+    "termsTitle": "Terms of Service",
+    "termsSections": [
+      {
+        "heading": "1. Purpose",
+        "body": "These terms govern access to and use of WeeklyFeedback, a SaaS service that collects weekly replies from team members (over Telegram or email) and generates a narrative report using AI for the team's lead."
+      },
+      {
+        "heading": "2. Service provider",
+        "body": "WeeklyFeedback is provided by [FULL LEGAL NAME], as a sole trader (autónomo), tax ID [TAX ID], registered address at [REGISTERED ADDRESS]. Contact: [CONTACT EMAIL]."
+      },
+      {
+        "heading": "3. Account and access",
+        "body": "Accessing the dashboard requires registering with an email and password. The account holder is responsible for keeping their credentials confidential and for activity under their account. Team members who reply over Telegram or email don't create an account and have no access to the dashboard."
+      },
+      {
+        "heading": "4. Plans, pricing and billing",
+        "body": "Current prices (Team plan €49/mo, Organization plan €149/mo, excluding VAT) are shown on the pricing page. The subscription is managed through Stripe, includes a 30-day free trial with a card on file from signup, and renews automatically each month unless canceled. There's no lock-in: you can cancel anytime from your dashboard, effective at the end of the period already paid for."
+      },
+      {
+        "heading": "5. Use of the service",
+        "body": "You agree to use the service lawfully, to only enter data you have the right to process, and not to use the service for purposes other than legitimately managing your own work team."
+      },
+      {
+        "heading": "6. Intellectual property",
+        "body": "The software, the WeeklyFeedback brand and site materials belong to the provider. Data you enter (team replies, company context) remains yours."
+      },
+      {
+        "heading": "7. Availability and liability",
+        "body": "The service is provided \"as is\", without a guarantee of uninterrupted availability. The provider is not liable for indirect damages arising from use or inability to use the service, to the extent permitted by law."
+      },
+      {
+        "heading": "8. Data protection",
+        "body": "Processing of personal data is governed by the Privacy Policy, which forms part of these terms."
+      },
+      {
+        "heading": "9. Governing law",
+        "body": "These terms are governed by Spanish law. Any dispute will be subject to the applicable courts under consumer-protection rules."
+      },
+      {
+        "heading": "10. Changes",
+        "body": "These terms may be updated; material changes will be communicated to active users by email."
+      }
+    ],
+    "privacyTitle": "Privacy Policy",
+    "privacySections": [
+      {
+        "heading": "1. Data controller",
+        "body": "[FULL LEGAL NAME], sole trader (autónomo), tax ID [TAX ID], registered address at [REGISTERED ADDRESS]. Contact for privacy matters: [CONTACT EMAIL]. There is no designated Data Protection Officer; requests are handled directly by the data controller."
+      },
+      {
+        "heading": "2. What data we process",
+        "body": "From whoever creates the account: email and password (managed by Supabase Auth). About the team: team name, company context, and for each member: name and contact (email, phone, or Telegram chat_id). About weekly replies: the text (or transcription, if sent as a voice note) of what each person answers. About billing: payment details are processed directly by Stripe — this service never stores card numbers."
+      },
+      {
+        "heading": "3. Purpose",
+        "body": "To provide the contracted service: generate the weekly report, deliver it to the team lead, and manage the account and subscription."
+      },
+      {
+        "heading": "4. Legal basis",
+        "body": "Performance of the service contract (GDPR art. 6.1.b). For team members' replies, whoever creates the account is responsible for having a legitimate basis to process that data with respect to their own team."
+      },
+      {
+        "heading": "5. Who we share data with",
+        "body": "The following providers process data as processors, each only with the data they need for their function: Supabase (database, authentication and file storage, servers in the European Union), Stripe (payment processing), Resend (transactional email delivery), Telegram (messaging channel for those who choose it), and Groq (AI report generation from reply text — US-based provider; the transfer relies on the European Commission's standard contractual clauses). We do not sell or share data with third parties for advertising purposes."
+      },
+      {
+        "heading": "6. Retention",
+        "body": "Data is kept while the account is active, plus the additional period required by tax or commercial regulations after cancellation. You can request earlier deletion by writing to the privacy contact."
+      },
+      {
+        "heading": "7. Your rights",
+        "body": "Anyone can exercise their rights of access, rectification, erasure, objection, restriction and portability by writing to [CONTACT EMAIL]. You may also file a complaint with the Spanish Data Protection Agency (aepd.es) if you believe your rights haven't been addressed."
+      },
+      {
+        "heading": "8. Minors",
+        "body": "The service is aimed at businesses and is not intended for minors."
+      },
+      {
+        "heading": "9. Changes to this policy",
+        "body": "This policy may be updated to reflect changes to the service or applicable regulations; the last-updated date appears at the top of the document."
+      }
+    ]
   }
 }
