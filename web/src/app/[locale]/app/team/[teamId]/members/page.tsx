@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { ArrowLeft, Pencil, Trash2, UserPlus, X } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, UserPlus } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
-import { api, ApiError, ChannelName, Member, Team } from '@/lib/api';
+import { api, Member, Team } from '@/lib/api';
 import { AppShell } from '@/components/AppShell';
 import { FormSkeleton } from '@/components/Skeleton';
 
@@ -19,18 +19,6 @@ export default function TeamMembersPage() {
   const [members, setMembers] = useState<Member[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editDraft, setEditDraft] = useState<{ name: string; channel: ChannelName; contact: string }>({
-    name: '',
-    channel: 'email',
-    contact: '',
-  });
-
-  const [newName, setNewName] = useState('');
-  const [newChannel, setNewChannel] = useState<ChannelName>('email');
-  const [newContact, setNewContact] = useState('');
-  const [addLoading, setAddLoading] = useState(false);
-
   useEffect(() => {
     if (!teamId) return;
     api.getTeam(teamId).then(setTeam).catch(() => setError(t('loadTeamError')));
@@ -41,45 +29,13 @@ export default function TeamMembersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [teamId]);
 
-  function startEdit(m: Member) {
-    setEditingId(m.id);
-    setEditDraft({ name: m.name, channel: m.channel, contact: m.contact });
-  }
-
-  async function handleSaveMember(memberId: string) {
-    setError(null);
-    try {
-      const updated = await api.updateMember(teamId, memberId, editDraft);
-      setMembers((prev) => prev!.map((m) => (m.id === memberId ? updated : m)));
-      setEditingId(null);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : t('saveMemberError'));
-    }
-  }
-
   async function handleRemoveMember(memberId: string) {
     setError(null);
     try {
       await api.removeMember(teamId, memberId);
       setMembers((prev) => prev!.filter((m) => m.id !== memberId));
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : t('removeMemberError'));
-    }
-  }
-
-  async function handleAddMember(e: React.FormEvent) {
-    e.preventDefault();
-    setAddLoading(true);
-    setError(null);
-    try {
-      const created = await api.addMember(teamId, { name: newName, channel: newChannel, contact: newContact });
-      setMembers((prev) => [...(prev ?? []), created]);
-      setNewName('');
-      setNewContact('');
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : t('addMemberError'));
-    } finally {
-      setAddLoading(false);
+    } catch {
+      setError(t('removeMemberError'));
     }
   }
 
@@ -89,84 +45,36 @@ export default function TeamMembersPage() {
 
   return (
     <AppShell>
-      <Link href={`/app/team/${teamId}`} className="btn-ghost" style={{ marginBottom: '1rem' }}>
+      <Link href={`/app/team/${teamId}`} className="back-link">
         <ArrowLeft size={16} />
         {team.name}
       </Link>
-      <h1>{t('membersTitle')}</h1>
+      <div className="topbar">
+        <h1 style={{ margin: 0 }}>{t('membersTitle')}</h1>
+        <Link className="btn btn-primary" href={`/app/team/${teamId}/members/new`}>
+          <UserPlus size={16} />
+          {t('addMember')}
+        </Link>
+      </div>
       <div className="card">
         {error && <p role="alert">{error}</p>}
 
         <ul className="member-edit-list">
-          {members.map((m) =>
-            editingId === m.id ? (
-              <li key={m.id} className="member-edit-row">
-                <input
-                  type="text"
-                  value={editDraft.name}
-                  onChange={(e) => setEditDraft({ ...editDraft, name: e.target.value })}
-                />
-                <select
-                  value={editDraft.channel}
-                  onChange={(e) => setEditDraft({ ...editDraft, channel: e.target.value as ChannelName })}
-                >
-                  <option value="email">{tChannel('email')}</option>
-                  <option value="telegram">{tChannel('telegram')}</option>
-                </select>
-                <input
-                  type="text"
-                  placeholder={editDraft.channel === 'telegram' ? t('memberContactTelegramPlaceholder') : t('memberContactEmailPlaceholder')}
-                  value={editDraft.contact}
-                  onChange={(e) => setEditDraft({ ...editDraft, contact: e.target.value })}
-                />
-                <button type="button" className="btn-ghost" onClick={() => handleSaveMember(m.id)}>
-                  {t('save')}
-                </button>
-                <button type="button" className="btn-ghost" onClick={() => setEditingId(null)}>
-                  <X size={16} />
-                </button>
-              </li>
-            ) : (
-              <li key={m.id} className="member-edit-row">
-                <span>{m.name}</span>
-                <span className="muted-link">{tChannel(m.channel)}</span>
-                <span className="muted-link">{m.contact}</span>
-                <button type="button" className="btn-ghost" onClick={() => startEdit(m)}>
-                  <Pencil size={15} />
-                </button>
-                <button type="button" className="btn-ghost" onClick={() => handleRemoveMember(m.id)}>
-                  <Trash2 size={15} />
-                </button>
-              </li>
-            ),
-          )}
+          {members.map((m) => (
+            <li key={m.id} className="member-edit-row">
+              <span>{m.name}</span>
+              <span className="muted-link">{tChannel(m.channel)}</span>
+              <span className="muted-link">{m.contact}</span>
+              <Link className="btn-ghost" href={`/app/team/${teamId}/members/${m.id}/edit`}>
+                <Pencil size={15} />
+              </Link>
+              <button type="button" className="btn-ghost" onClick={() => handleRemoveMember(m.id)}>
+                <Trash2 size={15} />
+              </button>
+            </li>
+          ))}
           {members.length === 0 && <p>{t('noMembersYet')}</p>}
         </ul>
-
-        <form onSubmit={handleAddMember} className="member-add-form">
-          <input
-            type="text"
-            placeholder={t('memberName')}
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            required
-          />
-          <select value={newChannel} onChange={(e) => setNewChannel(e.target.value as ChannelName)}>
-            <option value="email">{tChannel('email')}</option>
-            <option value="telegram">{tChannel('telegram')}</option>
-          </select>
-          <input
-            type="text"
-            placeholder={newChannel === 'telegram' ? t('memberContactTelegramPlaceholder') : t('memberContactEmailPlaceholder')}
-            value={newContact}
-            onChange={(e) => setNewContact(e.target.value)}
-            required
-          />
-          <button type="submit" disabled={addLoading}>
-            <UserPlus size={16} />
-            {addLoading ? t('adding') : t('addMember')}
-          </button>
-        </form>
       </div>
     </AppShell>
   );

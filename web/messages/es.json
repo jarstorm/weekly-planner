@@ -189,12 +189,16 @@
     "saveMemberError": "No se pudo guardar el miembro",
     "removeMemberError": "No se pudo quitar el miembro",
     "memberName": "Nombre",
+    "memberChannel": "Canal",
     "memberContact": "Contacto",
     "memberContactEmailPlaceholder": "nombre@empresa.com",
     "memberContactTelegramPlaceholder": "Chat ID de Telegram (ej. 123456789)",
-    "addMember": "Añadir",
+    "addMember": "Añadir miembro",
     "adding": "Añadiendo...",
-    "addMemberError": "No se pudo añadir el miembro"
+    "addMemberError": "No se pudo añadir el miembro",
+    "addMemberTitle": "Añadir miembro",
+    "editMemberTitle": "Editar miembro",
+    "notFound": "Este miembro no existe o no pertenece a este equipo"
   },
   "Billing": {
     "title": "Facturación",

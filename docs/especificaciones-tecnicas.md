@@ -121,6 +121,16 @@ Decisión explícita del usuario: horario del recordatorio, hora de corte, timez
 
 Verificado end-to-end: cuenta nueva registrada, formulario de alta de equipo confirmado sin los campos de horario/entrega, guardada la configuración de feedback en Ajustes con datos reales, confirmado en base de datos que `organizations.reminder_dow/reminder_time/cutoff_time/timezone/delivery_target` quedan con los valores correctos y `teams` ya no tiene esas columnas.
 
+### 0.13 Añadir/editar miembro: pantalla propia, no inline en la lista
+
+Pedido explícito: la página de "Gestionar miembros" (`team/[teamId]/members`) tenía el alta y la edición como formularios inline dentro de la propia lista (una fila se convertía en inputs al pulsar editar; el alta era un formulario pegado debajo) — cambiado a dos páginas propias, mismo patrón que ya usaban "Editar equipo" y el detalle de informe:
+
+- `team/[teamId]/members/new` — alta.
+- `team/[teamId]/members/[memberId]/edit` — edición; sin endpoint `GET` de un miembro suelto, cargado buscando por id en `listMembers(teamId)` (mismo truco que la página de detalle de informe con `listReports`, sección 0.11).
+- La lista queda solo como lista: nombre/canal/contacto + icono de editar (link a la pantalla nueva) + borrar (se queda inline, es una acción destructiva de un click, no un formulario).
+
+De paso, arreglado el link "volver" (`← Equipo`) de varias páginas de detalle: usaba la clase `btn-ghost` sola, sin la clase base `.btn` que le da el layout (`inline-flex`+`gap`) — sin eso el icono y el texto no se alineaban bien y el espaciado con el título de debajo dependía de un `style={{marginBottom}}` suelto y repetido en cada página. Nueva clase `.back-link` centraliza layout + espaciado, aplicada en las 4 páginas que tienen un link de "volver" (miembros, editar equipo, detalle de informe, y las 2 pantallas nuevas de miembros).
+
 ## 1. Qué hace falta crear antes de tocar código
 
 | Cuenta / servicio | Para qué | Coste al arrancar |

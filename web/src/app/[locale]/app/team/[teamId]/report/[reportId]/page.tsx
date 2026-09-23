@@ -56,7 +56,7 @@ export default function ReportDetailPage() {
 
   return (
     <AppShell>
-      <Link href={`/app/team/${teamId}`} className="btn-ghost" style={{ marginBottom: '1rem' }}>
+      <Link href={`/app/team/${teamId}`} className="back-link">
         <ArrowLeft size={16} />
         {team.name}
       </Link>

@@ -293,6 +293,28 @@ button[type='button']:hover {
   color: var(--color-text);
 }
 
+/* Link "volver" arriba de una página de detalle — necesita el layout base
+   de .btn (inline-flex + gap) que .btn-ghost solo no trae, más separación
+   fija del título de debajo. */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.7rem;
+  margin: 0 0 1.25rem -0.7rem;
+  background: transparent;
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+.back-link:hover {
+  background: var(--color-neutral-100);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
 :focus-visible {
   outline: 2px solid var(--color-primary-400);
   outline-offset: 2px;

@@ -189,12 +189,16 @@
     "saveMemberError": "Could not save the member",
     "removeMemberError": "Could not remove the member",
     "memberName": "Name",
+    "memberChannel": "Channel",
     "memberContact": "Contact",
     "memberContactEmailPlaceholder": "name@company.com",
     "memberContactTelegramPlaceholder": "Telegram chat ID (e.g. 123456789)",
-    "addMember": "Add",
+    "addMember": "Add member",
     "adding": "Adding...",
-    "addMemberError": "Could not add the member"
+    "addMemberError": "Could not add the member",
+    "addMemberTitle": "Add member",
+    "editMemberTitle": "Edit member",
+    "notFound": "This member doesn't exist or doesn't belong to this team"
   },
   "Billing": {
     "title": "Billing",
