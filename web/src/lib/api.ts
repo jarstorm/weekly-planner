@@ -79,8 +79,22 @@ export const api = {
     request('/checkins/form', { method: 'POST', body: JSON.stringify({ token, ...data }) }),
 
   getOrganization: () => request<Organization>('/organizations/me'),
-  updateOrganization: (data: Partial<Pick<Organization, 'name' | 'country' | 'contact_name'>>) =>
-    request<Organization>('/organizations/me', { method: 'PATCH', body: JSON.stringify(data) }),
+  updateOrganization: (
+    data: Partial<
+      Pick<
+        Organization,
+        | 'name'
+        | 'country'
+        | 'contact_name'
+        | 'delivery_channel'
+        | 'delivery_target'
+        | 'reminder_dow'
+        | 'reminder_time'
+        | 'cutoff_time'
+        | 'timezone'
+      >
+    >,
+  ) => request<Organization>('/organizations/me', { method: 'PATCH', body: JSON.stringify(data) }),
 
   billingStatus: () => request<BillingStatus>('/billing/status'),
   createCheckoutSession: (plan: 'equipo' | 'organizacion') =>
@@ -93,12 +107,6 @@ export interface Team {
   id: string;
   name: string;
   company_context: string;
-  delivery_channel: ChannelName;
-  delivery_target: string;
-  reminder_dow: number;
-  reminder_time: string;
-  cutoff_time: string;
-  timezone: string;
 }
 
 export interface Member {
@@ -144,6 +152,14 @@ export interface Organization {
   country: string | null;
   contact_name: string | null;
   email: string;
+  // Configuración del "loop de feedback" — global para toda la cuenta
+  // (migración 0006), no por equipo.
+  delivery_channel: ChannelName;
+  delivery_target: string | null;
+  reminder_dow: number;
+  reminder_time: string;
+  cutoff_time: string;
+  timezone: string;
 }
 
 export interface BillingStatus {

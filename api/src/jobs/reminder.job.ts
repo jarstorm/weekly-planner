@@ -6,9 +6,10 @@ import { CheckinFormService } from '../checkin-form/checkin-form.service';
 import { currentWeekStart, dowInTimezone, isWithinWindow } from './date.utils';
 
 // Recorre todos los equipos cada 15 min y manda el recordatorio semanal a
-// los miembros activos de los que están en su día/hora configurados
-// (teams.reminder_dow / teams.reminder_time) — ver docs/especificaciones-tecnicas.md,
-// sección 4, paso 8.
+// los miembros activos de los que están en su día/hora configurados —
+// horario de cuenta, no por equipo (organizations.reminder_dow /
+// reminder_time, migración 0006, aplanado sobre cada equipo por
+// TeamsService.listAll) — ver docs/especificaciones-tecnicas.md, sección 4, paso 8.
 @Injectable()
 export class ReminderJob {
   private readonly logger = new Logger(ReminderJob.name);

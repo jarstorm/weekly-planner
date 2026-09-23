@@ -3,17 +3,14 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { CheckCircle2 } from 'lucide-react';
-import { useRouter } from '@/i18n/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { api, ApiError, ChannelName, Team } from '@/lib/api';
 import { AppShell } from '@/components/AppShell';
-
-const DOW_KEYS = ['0', '1', '2', '3', '4', '5', '6'] as const;
 
 export default function OnboardingPage() {
   const router = useRouter();
   const t = useTranslations('Onboarding');
   const tChannel = useTranslations('Channel');
-  const tDay = useTranslations('Day');
   const [team, setTeam] = useState<Team | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -21,11 +18,6 @@ export default function OnboardingPage() {
   // datos del equipo
   const [name, setName] = useState('');
   const [companyContext, setCompanyContext] = useState('');
-  const [deliveryChannel, setDeliveryChannel] = useState<ChannelName>('email');
-  const [deliveryTarget, setDeliveryTarget] = useState('');
-  const [reminderDow, setReminderDow] = useState(5);
-  const [reminderTime, setReminderTime] = useState('10:00');
-  const [cutoffTime, setCutoffTime] = useState('13:00');
 
   // alta de miembros, una vez el equipo existe
   const [memberName, setMemberName] = useState('');
@@ -38,15 +30,7 @@ export default function OnboardingPage() {
     setError(null);
     setLoading(true);
     try {
-      const created = await api.createTeam({
-        name,
-        company_context: companyContext,
-        delivery_channel: deliveryChannel,
-        delivery_target: deliveryTarget,
-        reminder_dow: reminderDow,
-        reminder_time: reminderTime,
-        cutoff_time: cutoffTime,
-      });
+      const created = await api.createTeam({ name, company_context: companyContext });
       setTeam(created);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t('createTeamError'));
@@ -76,50 +60,24 @@ export default function OnboardingPage() {
     return (
       <AppShell>
         <h1>{t('createTeamTitle')}</h1>
+        <p className="muted-link">
+          {t('feedbackConfigNote')} <Link href="/app/settings">{t('feedbackConfigLink')}</Link>.
+        </p>
         <div className="card">
-        <form onSubmit={handleCreateTeam}>
-          <label>
-            {t('teamName')}
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
-          </label>
-          <label>
-            {t('companyContext')}
-            <textarea value={companyContext} onChange={(e) => setCompanyContext(e.target.value)} />
-          </label>
-          <label>
-            {t('deliveryChannel')}
-            <select value={deliveryChannel} onChange={(e) => setDeliveryChannel(e.target.value as ChannelName)}>
-              <option value="email">{tChannel('email')}</option>
-              <option value="telegram">{tChannel('telegram')}</option>
-            </select>
-          </label>
-          <label>
-            {t('deliveryTarget')}
-            <input type="text" value={deliveryTarget} onChange={(e) => setDeliveryTarget(e.target.value)} required />
-          </label>
-          <label>
-            {t('reminderDow')}
-            <select value={reminderDow} onChange={(e) => setReminderDow(Number(e.target.value))}>
-              {DOW_KEYS.map((key, i) => (
-                <option key={key} value={i}>
-                  {tDay(key)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            {t('reminderTime')}
-            <input type="time" value={reminderTime} onChange={(e) => setReminderTime(e.target.value)} required />
-          </label>
-          <label>
-            {t('cutoffTime')}
-            <input type="time" value={cutoffTime} onChange={(e) => setCutoffTime(e.target.value)} required />
-          </label>
-          {error && <p role="alert">{error}</p>}
-          <button type="submit" disabled={loading}>
-            {loading ? t('createTeamSubmitLoading') : t('createTeamSubmit')}
-          </button>
-        </form>
+          <form onSubmit={handleCreateTeam}>
+            <label>
+              {t('teamName')}
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
+            </label>
+            <label>
+              {t('companyContext')}
+              <textarea value={companyContext} onChange={(e) => setCompanyContext(e.target.value)} />
+            </label>
+            {error && <p role="alert">{error}</p>}
+            <button type="submit" disabled={loading}>
+              {loading ? t('createTeamSubmitLoading') : t('createTeamSubmit')}
+            </button>
+          </form>
         </div>
       </AppShell>
     );
@@ -152,7 +110,13 @@ export default function OnboardingPage() {
         </label>
         <label>
           {t('memberContact')}
-          <input type="text" value={memberContact} onChange={(e) => setMemberContact(e.target.value)} required />
+          <input
+            type="text"
+            placeholder={memberChannel === 'telegram' ? t('memberContactTelegramPlaceholder') : t('memberContactEmailPlaceholder')}
+            value={memberContact}
+            onChange={(e) => setMemberContact(e.target.value)}
+            required
+          />
         </label>
         {error && <p role="alert">{error}</p>}
         <button type="submit" disabled={loading}>

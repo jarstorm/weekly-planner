@@ -115,6 +115,7 @@ export default function TeamMembersPage() {
                 </select>
                 <input
                   type="text"
+                  placeholder={editDraft.channel === 'telegram' ? t('memberContactTelegramPlaceholder') : t('memberContactEmailPlaceholder')}
                   value={editDraft.contact}
                   onChange={(e) => setEditDraft({ ...editDraft, contact: e.target.value })}
                 />
@@ -156,7 +157,7 @@ export default function TeamMembersPage() {
           </select>
           <input
             type="text"
-            placeholder={t('memberContact')}
+            placeholder={newChannel === 'telegram' ? t('memberContactTelegramPlaceholder') : t('memberContactEmailPlaceholder')}
             value={newContact}
             onChange={(e) => setNewContact(e.target.value)}
             required

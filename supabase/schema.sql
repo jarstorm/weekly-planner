@@ -34,9 +34,14 @@ create table if not exists organizations (
   id uuid primary key default gen_random_uuid(),
   owner_id uuid references auth.users(id) on delete set null,
   name text not null,
-  delivery_channel text not null default 'email' -- dónde llega el informe CONSOLIDADO, si aplica
+  delivery_channel text not null default 'email' -- destino de CADA informe de equipo de esta cuenta (config global, ver migración 0006) — no solo del resumen ejecutivo consolidado
     check (delivery_channel in ('email', 'telegram')),
   delivery_target text,                          -- normalmente quien dirige la empresa
+  reminder_dow smallint not null default 5       -- día de la semana del recordatorio, para TODOS los equipos de la cuenta (0=domingo .. 6=sábado; 5=viernes)
+    check (reminder_dow between 0 and 6),
+  reminder_time time not null default '10:00',
+  cutoff_time time not null default '13:00',     -- hora de corte para generar los informes, para todos los equipos
+  timezone text not null default 'Europe/Madrid',
   plan text not null default 'equipo'
     check (plan in ('equipo', 'organizacion', 'custom')),
   status text not null default 'trial'
@@ -71,15 +76,7 @@ create table if not exists teams (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null references organizations(id) on delete cascade,
   name text not null,
-  company_context text default '',              -- 2-3 líneas de contexto para el prompt de IA
-  delivery_channel text not null default 'email' -- 'email' | 'telegram' (WhatsApp queda fuera del MVP, ver docs/especificaciones-tecnicas.md sección 0.2)
-    check (delivery_channel in ('email', 'telegram')),
-  delivery_target text,                          -- email o chat_id de Telegram donde llega el informe de ESTE equipo
-  reminder_dow smallint not null default 5       -- día de la semana del recordatorio (0=domingo .. 6=sábado; 5=viernes)
-    check (reminder_dow between 0 and 6),
-  reminder_time time not null default '10:00',
-  cutoff_time time not null default '13:00',     -- hora de corte para generar el informe de equipo
-  timezone text not null default 'Europe/Madrid',
+  company_context text default '',              -- 2-3 líneas de contexto para el prompt de IA, sí es por equipo
   created_at timestamptz not null default now()
 );
 

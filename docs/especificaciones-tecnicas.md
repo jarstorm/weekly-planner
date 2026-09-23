@@ -111,6 +111,16 @@ Desde el histórico de un equipo, la fecha de cada informe (`web/src/app/[locale
 
 Verificado end-to-end con datos reales: equipo de prueba con un checkin de texto estructurado, un checkin de nota de voz (audio sintetizado subido al bucket `checkin-audio`) y uno sin responder — la página de detalle mostró los tres estados correctamente y el audio se reprodujo en el navegador desde el signed URL. Datos de prueba borrados (org, usuario, fichero de audio) al terminar.
 
+### 0.12 Configuración del feedback: de cuenta, no por equipo
+
+Decisión explícita del usuario: horario del recordatorio, hora de corte, timezone y canal/destino de entrega del informe dejan de configurarse por equipo — pasan a ser una única configuración de cuenta (`organizations`), que aplica a todos los equipos de esa organización. Antes cada equipo pedía estos 6 campos al darse de alta; con varios equipos, eso significaba repetir la misma configuración N veces (o, peor, dejarla inconsistente entre equipos sin querer).
+
+- **Migración `0006_feedback_config_to_organization.sql`**: `organizations` gana `reminder_dow`/`reminder_time`/`cutoff_time`/`timezone` (nuevas columnas); `delivery_channel`/`delivery_target` ya existían ahí (pensadas para el resumen ejecutivo futuro, sección 0.6 del doc de producto) y se reutilizan como el destino real de cada informe de equipo, no solo del consolidado. Los 6 campos se quitan de `teams` (`company_context` y `name` siguen siendo por equipo — el contexto de IA y el nombre sí varían por equipo). Backfill: cada organización existente hereda la configuración de uno de sus equipos, para no dejar cuentas ya creadas sin recordatorio.
+- `TeamsService.listAll()` (usado solo por los jobs internos) trae la configuración vía join con `organizations` y la aplana sobre cada equipo — `ReminderJob`/`ReportJob` siguen leyendo `team.timezone`/`team.reminder_dow`/etc sin cambios, solo cambia de dónde sale el dato.
+- `OrganizationsController`/`OrganizationsService` (sección 0.10) ganan estos 6 campos en `GET/PATCH /api/organizations/me`. El formulario de "Alta de equipo" (`onboarding`) y "Configuración del equipo" (`team/[teamId]/edit`) se simplifican a solo nombre + contexto; la página de Ajustes de empresa (`/app/settings`) gana una segunda tarjeta, "Configuración del feedback", con los 6 campos — un único sitio para configurarlo, con una nota en el alta de equipo que enlaza ahí.
+
+Verificado end-to-end: cuenta nueva registrada, formulario de alta de equipo confirmado sin los campos de horario/entrega, guardada la configuración de feedback en Ajustes con datos reales, confirmado en base de datos que `organizations.reminder_dow/reminder_time/cutoff_time/timezone/delivery_target` quedan con los valores correctos y `teams` ya no tiene esas columnas.
+
 ## 1. Qué hace falta crear antes de tocar código
 
 | Cuenta / servicio | Para qué | Coste al arrancar |
@@ -336,6 +346,10 @@ Para no perder tiempo antes de validar lo esencial: sin integraciones con GitHub
 **Pendiente en la landing (`web/src/app/[locale]/page.tsx`), identificado pero no hecho:**
 
 - **Screenshot real del producto en vez del mock armado a mano.** El hero y la sección "Here's what your report looks like" usan un `.report-mock` construido en HTML/CSS con contenido de ejemplo (marcado "Example"). Un comprador B2B escéptico distingue un mock de un screenshot real de la app funcionando — y la app ya funciona, así que no hay excusa técnica, solo falta capturarlo.
+
+**Pendiente en el alta de miembros por Telegram, identificado pero no hecho:**
+
+- **No hay forma en el panel de resolver el `chat_id` de un miembro a partir de su @usuario.** La API de bots de Telegram no permite mandar mensajes a un @handle — hace falta el `chat_id` numérico, que solo se obtiene después de que esa persona le escriba al bot (ver `webhooks.controller.ts`, `matchMemberAndSaveCheckin`, que matchea por `contact` exacto). Hoy el dueño de la cuenta tiene que conseguir ese número a mano (pedirle al miembro que hable con `@userinfobot`, o mirar los logs del bot) y pegarlo en el campo "Contacto" — el placeholder del campo ya lo indica, pero no hay un flujo guiado. Alternativa a evaluar: un código de invitación de un solo uso que el miembro manda al bot (`/start CODIGO`), y el backend resuelve el `chat_id` solo, sin pedírselo a nadie a mano.
 
 ## 6. Checklist antes de producción
 

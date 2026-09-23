@@ -33,7 +33,7 @@ async function matchMemberAndSaveCheckin(
 ) {
   const { data: member, error } = await supabase.db
     .from('members')
-    .select('id, team_id, teams(timezone)')
+    .select('id, team_id, teams(organizations(timezone))')
     .eq('contact', contact)
     .eq('channel', channel)
     .maybeSingle();
@@ -43,7 +43,8 @@ async function matchMemberAndSaveCheckin(
     return { ok: true, matched: false };
   }
 
-  const timezone = (member as any).teams?.timezone ?? 'Europe/Madrid';
+  // Timezone de cuenta, no por equipo (migración 0006).
+  const timezone = (member as any).teams?.organizations?.timezone ?? 'Europe/Madrid';
   const weekStart = currentWeekStart(new Date(), timezone);
 
   let finalText = rawText;

@@ -11,9 +11,10 @@ import { extractBlockersSection, isMeaningfulBlocker } from './blockers.utils';
 
 const PAST_REPORTS_FOR_RECURRENCE = 3;
 
-// Simétrico a ReminderJob pero disparado por teams.cutoff_time: genera el
-// informe con IA a partir de los checkins de la semana y lo entrega al
-// canal/destino del equipo (teams.delivery_channel / delivery_target).
+// Simétrico a ReminderJob pero disparado por la hora de corte de la cuenta:
+// genera el informe con IA a partir de los checkins de la semana y lo
+// entrega al canal/destino de la cuenta (organizations.delivery_channel /
+// delivery_target, migración 0006 — mismo destino para todos los equipos).
 @Injectable()
 export class ReportJob {
   private readonly logger = new Logger(ReportJob.name);
