@@ -140,6 +140,19 @@ Conseguir el `chat_id` de Telegram (sección 0.13, pendiente sin resolver autom�
 
 Verificado con el bot real de desarrollo: `GET /api/telegram/bot-username` devuelve el username correcto, la página pública lo usa para armar el link `t.me/<bot>`, y el link condicional aparece/desaparece al cambiar el canal en las pantallas de miembro.
 
+### 0.15 Configuración del feedback: pantalla propia, banner en el dashboard
+
+La "Configuración del feedback" (sección 0.12: horario + canal/destino de entrega, de cuenta desde esa sección) vivía como una segunda tarjeta dentro de `/app/settings`, junto a los datos de la empresa — pedido explícito: sacarla de ahí, pantalla propia, con visibilidad directa desde el dashboard en vez de quedar escondida dentro de "Empresa".
+
+- Nueva ruta `/app/feedback` (`web/src/app/[locale]/app/feedback/page.tsx`) — el formulario que antes era la segunda tarjeta de `/app/settings`, movido tal cual (mismos campos, mismo `PATCH /api/organizations/me`). `/app/settings` vuelve a ser solo nombre/email/contacto/país.
+- El dashboard (`/app/page.tsx`) muestra un banner clicable **arriba del todo**, antes incluso del título — pide `GET /api/organizations/me` en paralelo a los equipos (no bloquea el render si falla, igual que las estadísticas por equipo). Dos estados:
+  - **Configurado**: `"{día} a las {hora de corte} · se entrega por {canal} a {destino}"`, tarjeta neutra.
+  - **Sin `delivery_target`** (cuenta nueva, sección 0.12 — el registro no lo pide, hay que configurarlo alguna vez): tarjeta con fondo verde suave (`.schedule-banner-unset`) y texto de aviso — mismo patrón visual que usan otros CTA de "esto falta por hacer".
+  - Todo el banner es un `<Link>` a `/app/feedback`.
+- El aviso del alta de equipo (sección 0.12, "el horario y el destino son de cuenta, configúralos en...") ahora enlaza a `/app/feedback` en vez de `/app/settings`.
+
+Verificado end-to-end: cuenta nueva sin equipos muestra el banner en su variante "sin configurar" arriba del todo; al guardar el horario/destino en `/app/feedback` y volver al panel, el banner pasa a la variante configurada con los datos reales (`"Viernes a las 13:00 · se entrega por Email a ..."`); `/app/settings` confirmado sin ningún rastro de los campos de horario/entrega.
+
 ## 1. Qué hace falta crear antes de tocar código
 
 | Cuenta / servicio | Para qué | Coste al arrancar |

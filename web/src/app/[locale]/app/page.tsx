@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { CheckCircle2, FileText, Users, UsersRound } from 'lucide-react';
+import { CheckCircle2, ChevronRight, Clock, FileText, Users, UsersRound } from 'lucide-react';
 import { useRouter, Link } from '@/i18n/navigation';
-import { api, ApiError, CheckinStatus, Member, Report, Team } from '@/lib/api';
+import { api, ApiError, CheckinStatus, Member, Organization, Report, Team } from '@/lib/api';
 import { AppShell } from '@/components/AppShell';
 import { mondayOfThisWeek } from '@/components/ResponseStatus';
 import { DashboardSkeleton } from '@/components/Skeleton';
@@ -22,8 +22,11 @@ export default function TeamsPage() {
   const router = useRouter();
   const t = useTranslations('Dashboard');
   const tNav = useTranslations('Nav');
+  const tChannel = useTranslations('Channel');
+  const tDay = useTranslations('Day');
   const [teams, setTeams] = useState<Team[] | null>(null);
   const [statsByTeam, setStatsByTeam] = useState<Record<string, TeamStats>>({});
+  const [org, setOrg] = useState<Organization | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -44,6 +47,9 @@ export default function TeamsPage() {
           .catch(() => {
             /* las estadísticas del panel son un plus, no bloquean ver los equipos */
           });
+        api.getOrganization().then(setOrg).catch(() => {
+          /* el banner de horario es un plus, no bloquea ver los equipos */
+        });
       })
       .catch((err) => {
         if (err instanceof ApiError && err.status === 401) {
@@ -82,6 +88,29 @@ export default function TeamsPage() {
 
   return (
     <AppShell>
+      {org && (
+        <Link
+          href="/app/feedback"
+          className={`schedule-banner${org.delivery_target ? '' : ' schedule-banner-unset'}`}
+        >
+          <span className="stat-icon"><Clock size={18} /></span>
+          <div className="schedule-banner-body">
+            <strong>{t('scheduleBannerTitle')}</strong>
+            <span className="muted-link">
+              {org.delivery_target
+                ? t('scheduleBannerSummary', {
+                    day: tDay(String(org.reminder_dow)),
+                    time: org.cutoff_time.slice(0, 5),
+                    channel: tChannel(org.delivery_channel),
+                    target: org.delivery_target,
+                  })
+                : t('scheduleBannerUnset')}
+            </span>
+          </div>
+          <ChevronRight size={18} className="schedule-banner-chevron" />
+        </Link>
+      )}
+
       <div className="topbar">
         <h1 style={{ margin: 0 }}>{t('title')}</h1>
         {teams.length > 0 && (
