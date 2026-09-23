@@ -144,7 +144,7 @@ Técnicamente esto es una segunda llamada a la IA, con los informes de equipo ya
 - Agregación con IA en español, tono profesional-cercano.
 - Entrega por WhatsApp/email; panel web mínimo con histórico de informes.
 - Gestión básica de equipo (añadir/quitar personas).
-- Los 3 planes (Equipo / Organización / Custom) con sus límites de equipos y personas — es barato de construir desde el principio y evita el problema de migrar clientes existentes más adelante. El **resumen ejecutivo en sí** (el job que genera el consolidado) queda fuera del MVP hasta que haya demanda real (ver sección 14 de `docs/especificaciones-tecnicas.md`).
+- Los 3 planes (Equipo / Organización / Custom) con sus límites de equipos y personas — es barato de construir desde el principio y evita el problema de migrar clientes existentes más adelante. El **resumen ejecutivo en sí** (el job que genera el consolidado) ya está construido (ver paso 15 de `docs/especificaciones-tecnicas.md`), adelantado respecto al plan original — pendiente de verificar en vivo contra una organización real con varios equipos.
 
 **Fuera del MVP (v1.5 / v2):**
 - Integración con Slack (se añade en cuanto haya 3-5 clientes validados que lo pidan).

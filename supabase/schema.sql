@@ -34,9 +34,6 @@ create table if not exists organizations (
   id uuid primary key default gen_random_uuid(),
   owner_id uuid references auth.users(id) on delete set null,
   name text not null,
-  delivery_channel text not null default 'email' -- destino de CADA informe de equipo de esta cuenta (config global, ver migración 0006) — no solo del resumen ejecutivo consolidado
-    check (delivery_channel in ('email', 'telegram')),
-  delivery_target text,                          -- normalmente quien dirige la empresa
   reminder_dow smallint not null default 5       -- día de la semana del recordatorio, para TODOS los equipos de la cuenta (0=domingo .. 6=sábado; 5=viernes)
     check (reminder_dow between 0 and 6),
   reminder_time time not null default '10:00',
@@ -49,6 +46,7 @@ create table if not exists organizations (
   max_teams integer,                             -- 1 (equipo) | 5 (organización) | NULL sin límite (custom)
   max_members_per_team integer,                  -- 20 (equipo/organización) | NULL sin límite (custom)
   has_executive_summary boolean not null default false,
+  executive_summary_recipients text[] not null default '{}', -- emails que reciben el resumen ejecutivo, ver migración 0009 y sección 6.4 del doc de producto
   price_month numeric(10,2),                     -- 49.00 | 149.00 | NULL (custom, a medida)
   stripe_customer_id text,
   country text,                                  -- ISO 3166-1 alpha-2 ('ES', 'US', ...), ver migración 0004
@@ -77,6 +75,7 @@ create table if not exists teams (
   organization_id uuid not null references organizations(id) on delete cascade,
   name text not null,
   company_context text default '',              -- 2-3 líneas de contexto para el prompt de IA, sí es por equipo
+  report_recipients text[] not null default '{}', -- emails que reciben el informe semanal DE ESTE equipo, ver migración 0009
   created_at timestamptz not null default now()
 );
 
@@ -94,9 +93,9 @@ create table if not exists members (
   id uuid primary key default gen_random_uuid(),
   team_id uuid not null references teams(id) on delete cascade,
   name text not null,
-  channel text not null default 'email'          -- 'email' | 'telegram' (WhatsApp queda fuera del MVP, ver docs/especificaciones-tecnicas.md sección 0.2)
-    check (channel in ('email', 'telegram')),
-  contact text not null,                         -- email o chat_id de Telegram
+  channel text not null default 'email'          -- 'email' | 'whatsapp' | 'telegram'
+    check (channel in ('email', 'whatsapp', 'telegram')),
+  contact text not null,                         -- email, teléfono E.164 (+34...) de WhatsApp o chat_id de Telegram
   active boolean not null default true,
   created_at timestamptz not null default now()
 );

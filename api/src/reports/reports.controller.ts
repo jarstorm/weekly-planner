@@ -15,6 +15,11 @@ export class ReportsController {
     return this.reports.listForTeam(user.organizationId, teamId);
   }
 
+  @Get('executive-summary')
+  listForOrg(@CurrentUser() user: AuthedUser) {
+    return this.reports.listForOrg(user.organizationId);
+  }
+
   @Get(':id/pdf')
   async downloadPdf(
     @CurrentUser() user: AuthedUser,

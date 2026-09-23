@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
-import { api, ApiError, ChannelName, Organization } from '@/lib/api';
+import { api, ApiError, Organization } from '@/lib/api';
 import { AppShell } from '@/components/AppShell';
 import { FormSkeleton } from '@/components/Skeleton';
+import { RecipientsEditor } from '@/components/RecipientsEditor';
 
 const DOW_KEYS = ['0', '1', '2', '3', '4', '5', '6'] as const;
 
@@ -14,10 +15,13 @@ const DOW_KEYS = ['0', '1', '2', '3', '4', '5', '6'] as const;
 // más dentro de "Datos de la empresa" (pedido explícito): es lo primero
 // que alguien quiere tocar/revisar, así que tiene su propio link desde el
 // dashboard (sección 0.15 del doc técnico), no queda escondida entre
-// nombre/país/contacto de la cuenta.
+// nombre/país/contacto de la cuenta. El destino de cada informe de equipo
+// pasó a configurarse por equipo (report_recipients, migración 0009) —
+// acá solo queda el horario, común a toda la cuenta, y el resumen
+// ejecutivo (paso 15), que sigue siendo de cuenta porque consolida todos
+// los equipos.
 export default function FeedbackConfigPage() {
   const t = useTranslations('Settings');
-  const tChannel = useTranslations('Channel');
   const tDay = useTranslations('Day');
 
   const [org, setOrg] = useState<Organization | null>(null);
@@ -38,12 +42,12 @@ export default function FeedbackConfigPage() {
     setSaved(false);
     try {
       const updated = await api.updateOrganization({
-        delivery_channel: org.delivery_channel,
-        delivery_target: org.delivery_target,
         reminder_dow: org.reminder_dow,
         reminder_time: org.reminder_time,
         cutoff_time: org.cutoff_time,
         timezone: org.timezone,
+        has_executive_summary: org.has_executive_summary,
+        executive_summary_recipients: org.executive_summary_recipients,
       });
       setOrg({ ...org, ...updated });
       setSaved(true);
@@ -69,6 +73,11 @@ export default function FeedbackConfigPage() {
     );
   }
 
+  // Resumen ejecutivo: opción, nunca disponible en Plan Equipo — con un
+  // solo equipo no hay nada que consolidar (org_exec_summary_plan_check
+  // en schema.sql lo rechaza a nivel de base de datos igual).
+  const executiveSummaryAvailable = org.plan === 'organizacion' || org.plan === 'custom';
+
   return (
     <AppShell>
       <Link href="/app" className="back-link">
@@ -79,28 +88,6 @@ export default function FeedbackConfigPage() {
       <p className="muted-link">{t('feedbackConfigDescription')}</p>
       <div className="card">
         <form onSubmit={handleSubmit}>
-          <label>
-            {t('deliveryChannel')}
-            <select
-              value={org.delivery_channel}
-              onChange={(e) => setOrg({ ...org, delivery_channel: e.target.value as ChannelName })}
-            >
-              <option value="email">{tChannel('email')}</option>
-              <option value="telegram">{tChannel('telegram')}</option>
-            </select>
-          </label>
-          <label>
-            {t('deliveryTarget')}
-            <input
-              type="text"
-              placeholder={
-                org.delivery_channel === 'telegram' ? t('memberContactTelegramPlaceholder') : t('memberContactEmailPlaceholder')
-              }
-              value={org.delivery_target ?? ''}
-              onChange={(e) => setOrg({ ...org, delivery_target: e.target.value })}
-              required
-            />
-          </label>
           <label>
             {t('reminderDow')}
             <select
@@ -142,6 +129,31 @@ export default function FeedbackConfigPage() {
               required
             />
           </label>
+
+          {executiveSummaryAvailable && (
+            <>
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={org.has_executive_summary}
+                  onChange={(e) => setOrg({ ...org, has_executive_summary: e.target.checked })}
+                />
+                {t('executiveSummaryToggle')}
+              </label>
+              <p className="field-hint">{t('executiveSummaryHint')}</p>
+              <label>
+                {t('executiveSummaryRecipients')}
+                <RecipientsEditor
+                  recipients={org.executive_summary_recipients}
+                  onChange={(executive_summary_recipients) => setOrg({ ...org, executive_summary_recipients })}
+                  placeholder={t('executiveSummaryRecipientsPlaceholder')}
+                  addLabel={t('executiveSummaryRecipientsAdd')}
+                  emptyHint={t('executiveSummaryRecipientsEmpty')}
+                />
+              </label>
+            </>
+          )}
+
           {error && <p role="alert">{error}</p>}
           {saved && <p className="muted-link">{t('saved')}</p>}
           <button type="submit" disabled={saving}>

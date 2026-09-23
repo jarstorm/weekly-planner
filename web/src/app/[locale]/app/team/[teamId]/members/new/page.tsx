@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { ArrowLeft, UserPlus } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { api, ApiError, ChannelName } from '@/lib/api';
+import { useEnabledChannels } from '@/lib/useEnabledChannels';
 import { AppShell } from '@/components/AppShell';
 
 export default function NewMemberPage() {
@@ -14,6 +15,7 @@ export default function NewMemberPage() {
   const router = useRouter();
   const t = useTranslations('TeamManager');
   const tChannel = useTranslations('Channel');
+  const enabledChannels = useEnabledChannels();
 
   const [name, setName] = useState('');
   const [channel, setChannel] = useState<ChannelName>('email');
@@ -54,7 +56,8 @@ export default function NewMemberPage() {
             {t('memberChannel')}
             <select value={channel} onChange={(e) => setChannel(e.target.value as ChannelName)}>
               <option value="email">{tChannel('email')}</option>
-              <option value="telegram">{tChannel('telegram')}</option>
+              {enabledChannels.whatsapp && <option value="whatsapp">{tChannel('whatsapp')}</option>}
+              {enabledChannels.telegram && <option value="telegram">{tChannel('telegram')}</option>}
             </select>
           </label>
           {channel === 'telegram' ? (

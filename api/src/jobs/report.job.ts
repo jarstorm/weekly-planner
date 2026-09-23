@@ -11,10 +11,14 @@ import { extractBlockersSection, isMeaningfulBlocker } from './blockers.utils';
 
 const PAST_REPORTS_FOR_RECURRENCE = 3;
 
-// Simétrico a ReminderJob pero disparado por la hora de corte de la cuenta:
-// genera el informe con IA a partir de los checkins de la semana y lo
-// entrega al canal/destino de la cuenta (organizations.delivery_channel /
-// delivery_target, migración 0006 — mismo destino para todos los equipos).
+// Simétrico a ReminderJob pero disparado por la hora de corte de la cuenta
+// (organizations.reminder_dow/cutoff_time, migración 0006 — mismo horario
+// para todos los equipos): genera el informe con IA a partir de los
+// checkins de la semana y lo entrega a teams.report_recipients (lista de
+// emails por equipo, migración 0009). Al terminar la ronda de equipos,
+// intenta generar el resumen ejecutivo de cada organización que lo tenga
+// activado (sección 6.4 del doc de producto) — solo cuando TODOS sus
+// equipos ya tienen informe generado esta semana.
 @Injectable()
 export class ReportJob {
   private readonly logger = new Logger(ReportJob.name);
@@ -33,11 +37,16 @@ export class ReportJob {
     const now = new Date();
     const allTeams = await this.teams.listAll();
 
+    // organización → weekStart de esta ronda, para saber a qué organizaciones
+    // hay que intentarles el resumen ejecutivo después del loop de equipos.
+    const touchedOrgs = new Map<string, string>();
+
     for (const team of allTeams) {
       if (dowInTimezone(now, team.timezone) !== team.reminder_dow) continue;
       if (!isWithinWindow(now, team.timezone, team.cutoff_time)) continue;
 
       const weekStart = currentWeekStart(now, team.timezone);
+      touchedOrgs.set(team.organization_id, weekStart);
 
       const alreadyGenerated = await this.reportExists(team.id, weekStart);
       if (alreadyGenerated) continue;
@@ -48,6 +57,14 @@ export class ReportJob {
         this.logger.error(`Fallo generando informe para equipo ${team.id}`, err as Error);
       }
     }
+
+    for (const [organizationId, weekStart] of touchedOrgs) {
+      try {
+        await this.maybeGenerateExecutiveSummary(organizationId, weekStart);
+      } catch (err) {
+        this.logger.error(`Fallo generando resumen ejecutivo para organización ${organizationId}`, err as Error);
+      }
+    }
   }
 
   private async reportExists(teamId: string, weekStart: string): Promise<boolean> {
@@ -55,6 +72,17 @@ export class ReportJob {
       .from('reports')
       .select('id')
       .eq('team_id', teamId)
+      .eq('week_start', weekStart)
+      .maybeSingle();
+    if (error) throw error;
+    return !!data;
+  }
+
+  private async orgReportExists(organizationId: string, weekStart: string): Promise<boolean> {
+    const { data, error } = await this.supabase.db
+      .from('reports')
+      .select('id')
+      .eq('organization_id', organizationId)
       .eq('week_start', weekStart)
       .maybeSingle();
     if (error) throw error;
@@ -116,22 +144,93 @@ export class ReportJob {
     });
     if (insertError) throw insertError;
 
-    if (team.delivery_target) {
-      // El informe siempre se entrega como PDF adjunto — en los tres
-      // canales, no solo por email (decisión explícita, ver
-      // docs/especificaciones-tecnicas.md sección 0.2/3.1).
+    if (team.report_recipients?.length) {
+      // El informe siempre se entrega como PDF adjunto — a cada destinatario
+      // de la lista, siempre por email (migración 0009, decisión explícita:
+      // sin selector de canal por destinatario, simplifica).
       const title = `Resumen semanal — ${team.name} — semana del ${weekStart}`;
       const pdfBuffer = await this.pdf.fromMarkdown(content, title);
       const filename = `resumen-semanal-${weekStart}.pdf`;
       const caption = `Resumen semanal de ${team.name} — semana del ${weekStart}. Adjunto en PDF.`;
 
-      await this.channels
-        .get(team.delivery_channel)
-        .sendDocument(team.delivery_target, pdfBuffer, filename, caption);
+      for (const recipient of team.report_recipients) {
+        await this.channels.get('email').sendDocument(recipient, pdfBuffer, filename, caption);
+      }
       await this.supabase.db
         .from('reports')
         .update({ delivered_at: new Date().toISOString() })
         .eq('team_id', team.id)
+        .eq('week_start', weekStart);
+    }
+  }
+
+  // Solo si la organización tiene has_executive_summary activado, tiene más
+  // de un equipo (con uno solo no hay nada que consolidar) y TODOS sus
+  // equipos ya generaron su informe de esta semana — si falta alguno
+  // (todavía no llegó a su hora de corte, o falló su generación), se
+  // reintenta en el siguiente tick del cron sin volver a generar los que
+  // ya existen (reportExists los salta).
+  private async maybeGenerateExecutiveSummary(organizationId: string, weekStart: string) {
+    const { data: org, error: orgError } = await this.supabase.db
+      .from('organizations')
+      .select('id, name, has_executive_summary, executive_summary_recipients')
+      .eq('id', organizationId)
+      .single();
+    if (orgError) throw orgError;
+    if (!org.has_executive_summary) return;
+
+    const alreadyGenerated = await this.orgReportExists(organizationId, weekStart);
+    if (alreadyGenerated) return;
+
+    const { data: orgTeams, error: teamsError } = await this.supabase.db
+      .from('teams')
+      .select('id, name')
+      .eq('organization_id', organizationId);
+    if (teamsError) throw teamsError;
+    if (orgTeams.length < 2) return;
+
+    const { data: reports, error: reportsError } = await this.supabase.db
+      .from('reports')
+      .select('id, team_id, content_markdown')
+      .eq('week_start', weekStart)
+      .in(
+        'team_id',
+        orgTeams.map((t: any) => t.id),
+      );
+    if (reportsError) throw reportsError;
+    if (reports.length !== orgTeams.length) return;
+
+    const content = await this.aggregate.generateExecutiveSummary({
+      organizationName: org.name,
+      teamReports: orgTeams.map((t: any) => ({
+        teamName: t.name,
+        contentMarkdown: reports.find((r: any) => r.team_id === t.id)?.content_markdown ?? '',
+      })),
+    });
+
+    const { error: insertError } = await this.supabase.db.from('reports').insert({
+      organization_id: organizationId,
+      week_start: weekStart,
+      content_markdown: content,
+      source_report_ids: reports.map((r: any) => r.id),
+      generated_at: new Date().toISOString(),
+    });
+    if (insertError) throw insertError;
+
+    const recipients: string[] = org.executive_summary_recipients ?? [];
+    if (recipients.length > 0) {
+      const title = `Resumen ejecutivo — ${org.name} — semana del ${weekStart}`;
+      const pdfBuffer = await this.pdf.fromMarkdown(content, title);
+      const filename = `resumen-ejecutivo-${weekStart}.pdf`;
+      const caption = `Resumen ejecutivo de ${org.name} — semana del ${weekStart}. Adjunto en PDF.`;
+
+      for (const recipient of recipients) {
+        await this.channels.get('email').sendDocument(recipient, pdfBuffer, filename, caption);
+      }
+      await this.supabase.db
+        .from('reports')
+        .update({ delivered_at: new Date().toISOString() })
+        .eq('organization_id', organizationId)
         .eq('week_start', weekStart);
     }
   }

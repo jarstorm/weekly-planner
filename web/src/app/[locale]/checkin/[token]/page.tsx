@@ -10,7 +10,7 @@ import { BrandMark } from '@/components/BrandMark';
 // Formulario público de checkin — sin login, sin AppShell. El token de la
 // URL es la única credencial (ver docs/especificaciones-tecnicas.md,
 // sección 3.5): quien lo tiene es porque le llegó en su propio email/
-// Telegram, no hace falta cuenta.
+// WhatsApp/Telegram, no hace falta cuenta.
 export default function CheckinFormPage() {
   const params = useParams<{ token: string }>();
   const token = params?.token ?? '';

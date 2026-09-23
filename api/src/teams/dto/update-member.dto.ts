@@ -6,8 +6,8 @@ export class UpdateMemberDto {
   name?: string;
 
   @IsOptional()
-  @IsIn(['email', 'telegram'])
-  channel?: 'email' | 'telegram';
+  @IsIn(['email', 'whatsapp', 'telegram'])
+  channel?: 'email' | 'whatsapp' | 'telegram';
 
   // Igual que en el alta: para telegram esto lo rellena el bot al vincular,
   // no se edita a mano.

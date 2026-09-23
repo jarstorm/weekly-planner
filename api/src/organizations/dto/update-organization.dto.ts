@@ -1,4 +1,4 @@
-import { IsIn, IsInt, IsOptional, IsString, Length, Matches, Max, Min, MinLength } from 'class-validator';
+import { IsArray, IsBoolean, IsEmail, IsInt, IsOptional, IsString, Length, Matches, Max, Min, MinLength } from 'class-validator';
 
 export class UpdateOrganizationDto {
   @IsOptional()
@@ -7,8 +7,7 @@ export class UpdateOrganizationDto {
   name?: string;
 
   // ISO 3166-1 alpha-2 ('ES', 'US', ...) — se valida el largo, no la lista
-  // completa de países válidos (mismo criterio laxo que delivery_channel
-  // antes de sus constraints de base de datos).
+  // completa de países válidos (criterio laxo deliberado).
   @IsOptional()
   @IsString()
   @Length(2, 2)
@@ -19,16 +18,9 @@ export class UpdateOrganizationDto {
   contact_name?: string;
 
   // Configuración del "loop de feedback" — global para toda la cuenta
-  // (migración 0006), no por equipo: mismo horario y mismo destino de
-  // entrega para todos los equipos.
-  @IsOptional()
-  @IsIn(['email', 'telegram'])
-  delivery_channel?: 'email' | 'telegram';
-
-  @IsOptional()
-  @IsString()
-  delivery_target?: string;
-
+  // (migración 0006), no por equipo: mismo horario para todos los equipos
+  // (el destino de cada informe pasó a ser una lista por equipo, ver
+  // CreateTeamDto/UpdateTeamDto.report_recipients y migración 0009).
   @IsOptional()
   @IsInt()
   @Min(0)
@@ -46,4 +38,16 @@ export class UpdateOrganizationDto {
   @IsOptional()
   @IsString()
   timezone?: string;
+
+  // Resumen ejecutivo (paso 15, sección 6.4 del doc de producto) — opción,
+  // no forzada por plan; el constraint org_exec_summary_plan_check en
+  // schema.sql rechaza activarlo fuera de Plan Organización/Custom.
+  @IsOptional()
+  @IsBoolean()
+  has_executive_summary?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @IsEmail({}, { each: true })
+  executive_summary_recipients?: string[];
 }

@@ -1,6 +1,6 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3001/api';
 
-export type ChannelName = 'email' | 'telegram';
+export type ChannelName = 'email' | 'whatsapp' | 'telegram';
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -60,6 +60,10 @@ export const api = {
 
   listReports: (teamId: string) => request<Report[]>(`/reports?teamId=${teamId}`),
 
+  // Resumen ejecutivo (paso 15) — histórico a nivel organización, no de
+  // un equipo. Solo tiene datos si org.has_executive_summary está activo.
+  listExecutiveSummaries: () => request<Report[]>('/reports/executive-summary'),
+
   checkinStatus: (teamId: string, weekStart: string) =>
     request<CheckinStatus[]>(`/checkins/status?teamId=${teamId}&weekStart=${weekStart}`),
 
@@ -86,17 +90,18 @@ export const api = {
         | 'name'
         | 'country'
         | 'contact_name'
-        | 'delivery_channel'
-        | 'delivery_target'
         | 'reminder_dow'
         | 'reminder_time'
         | 'cutoff_time'
         | 'timezone'
+        | 'has_executive_summary'
+        | 'executive_summary_recipients'
       >
     >,
   ) => request<Organization>('/organizations/me', { method: 'PATCH', body: JSON.stringify(data) }),
 
   getTelegramBotUsername: () => request<{ username: string | null }>('/telegram/bot-username'),
+  getEnabledChannels: () => request<EnabledChannels>('/channels/enabled'),
 
   billingStatus: () => request<BillingStatus>('/billing/status'),
   createCheckoutSession: (plan: 'equipo' | 'organizacion') =>
@@ -109,6 +114,8 @@ export interface Team {
   id: string;
   name: string;
   company_context: string;
+  // Emails que reciben el informe semanal de este equipo (migración 0009).
+  report_recipients: string[];
 }
 
 export interface Member {
@@ -155,14 +162,26 @@ export interface Organization {
   country: string | null;
   contact_name: string | null;
   email: string;
+  plan: 'equipo' | 'organizacion' | 'custom';
   // Configuración del "loop de feedback" — global para toda la cuenta
-  // (migración 0006), no por equipo.
-  delivery_channel: ChannelName;
-  delivery_target: string | null;
+  // (migración 0006), no por equipo. El destino de cada informe pasó a ser
+  // report_recipients por equipo (migración 0009).
   reminder_dow: number;
   reminder_time: string;
   cutoff_time: string;
   timezone: string;
+  // Resumen ejecutivo (paso 15) — opción, solo disponible en Plan
+  // Organización/Custom (org_exec_summary_plan_check en schema.sql).
+  has_executive_summary: boolean;
+  executive_summary_recipients: string[];
+}
+
+// email siempre true (canal fijo) — telegram/whatsapp según ENABLE_*_CHANNEL
+// en el backend (ver channels-info.controller.ts).
+export interface EnabledChannels {
+  email: true;
+  telegram: boolean;
+  whatsapp: boolean;
 }
 
 export interface BillingStatus {

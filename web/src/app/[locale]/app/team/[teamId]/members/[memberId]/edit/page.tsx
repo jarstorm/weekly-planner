@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { ArrowLeft } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { api, ApiError, ChannelName, Member } from '@/lib/api';
+import { useEnabledChannels } from '@/lib/useEnabledChannels';
 import { AppShell } from '@/components/AppShell';
 import { FormSkeleton } from '@/components/Skeleton';
 
@@ -16,6 +17,7 @@ export default function EditMemberPage() {
   const router = useRouter();
   const t = useTranslations('TeamManager');
   const tChannel = useTranslations('Channel');
+  const enabledChannels = useEnabledChannels();
 
   const [member, setMember] = useState<Member | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -101,7 +103,12 @@ export default function EditMemberPage() {
               onChange={(e) => setMember({ ...member, channel: e.target.value as ChannelName })}
             >
               <option value="email">{tChannel('email')}</option>
-              <option value="telegram">{tChannel('telegram')}</option>
+              {(enabledChannels.whatsapp || member.channel === 'whatsapp') && (
+                <option value="whatsapp">{tChannel('whatsapp')}</option>
+              )}
+              {(enabledChannels.telegram || member.channel === 'telegram') && (
+                <option value="telegram">{tChannel('telegram')}</option>
+              )}
             </select>
           </label>
           {member.channel === 'telegram' ? (

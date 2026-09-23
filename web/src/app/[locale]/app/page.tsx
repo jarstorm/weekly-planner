@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { CheckCircle2, ChevronRight, Clock, FileText, Users, UsersRound } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronRight, Clock, FileText, Users, UsersRound } from 'lucide-react';
 import { useRouter, Link } from '@/i18n/navigation';
 import { api, ApiError, CheckinStatus, Member, Organization, Report, Team } from '@/lib/api';
 import { AppShell } from '@/components/AppShell';
@@ -22,11 +22,11 @@ export default function TeamsPage() {
   const router = useRouter();
   const t = useTranslations('Dashboard');
   const tNav = useTranslations('Nav');
-  const tChannel = useTranslations('Channel');
   const tDay = useTranslations('Day');
   const [teams, setTeams] = useState<Team[] | null>(null);
   const [statsByTeam, setStatsByTeam] = useState<Record<string, TeamStats>>({});
   const [org, setOrg] = useState<Organization | null>(null);
+  const [executiveSummaries, setExecutiveSummaries] = useState<Report[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -47,9 +47,22 @@ export default function TeamsPage() {
           .catch(() => {
             /* las estadísticas del panel son un plus, no bloquean ver los equipos */
           });
-        api.getOrganization().then(setOrg).catch(() => {
-          /* el banner de horario es un plus, no bloquea ver los equipos */
-        });
+        api
+          .getOrganization()
+          .then((o) => {
+            setOrg(o);
+            if (o.has_executive_summary) {
+              api
+                .listExecutiveSummaries()
+                .then(setExecutiveSummaries)
+                .catch(() => {
+                  /* la sección de resumen ejecutivo es un plus, no bloquea el resto */
+                });
+            }
+          })
+          .catch(() => {
+            /* el banner de horario es un plus, no bloquea ver los equipos */
+          });
       })
       .catch((err) => {
         if (err instanceof ApiError && err.status === 401) {
@@ -86,29 +99,33 @@ export default function TeamsPage() {
   );
   const weekPct = weekTotal > 0 ? Math.round((weekResponded / weekTotal) * 100) : null;
 
+  const noRecipientsAnywhere = teams.length > 0 && teams.every((team) => team.report_recipients.length === 0);
+
   return (
     <AppShell>
       {org && (
-        <Link
-          href="/app/feedback"
-          className={`schedule-banner${org.delivery_target ? '' : ' schedule-banner-unset'}`}
-        >
+        <Link href="/app/feedback" className="schedule-banner">
           <span className="stat-icon"><Clock size={18} /></span>
           <div className="schedule-banner-body">
             <strong>{t('scheduleBannerTitle')}</strong>
             <span className="muted-link">
-              {org.delivery_target
-                ? t('scheduleBannerSummary', {
-                    day: tDay(String(org.reminder_dow)),
-                    time: org.cutoff_time.slice(0, 5),
-                    channel: tChannel(org.delivery_channel),
-                    target: org.delivery_target,
-                  })
-                : t('scheduleBannerUnset')}
+              {t('scheduleBannerSummary', {
+                day: tDay(String(org.reminder_dow)),
+                time: org.cutoff_time.slice(0, 5),
+              })}
             </span>
           </div>
           <ChevronRight size={18} className="schedule-banner-chevron" />
         </Link>
+      )}
+
+      {noRecipientsAnywhere && (
+        <div className="schedule-banner schedule-banner-unset">
+          <span className="stat-icon"><AlertTriangle size={18} /></span>
+          <div className="schedule-banner-body">
+            <span className="muted-link">{t('noRecipientsWarning')}</span>
+          </div>
+        </div>
       )}
 
       <div className="topbar">
@@ -194,6 +211,31 @@ export default function TeamsPage() {
           );
         })}
       </div>
+
+      {org?.has_executive_summary && (
+        <>
+          <h2>{t('executiveSummaryTitle')}</h2>
+          <div className="card">
+            {executiveSummaries.length === 0 ? (
+              <p className="muted-link">{t('executiveSummaryNoReports')}</p>
+            ) : (
+              <ul className="report-list">
+                {executiveSummaries.map((r) => (
+                  <li key={r.id}>
+                    <div className="topbar" style={{ marginBottom: 0 }}>
+                      <strong>{t('executiveSummaryWeekOf', { date: r.week_start })}</strong>
+                      <a className="btn btn-secondary" href={api.reportPdfUrl(r.id)}>
+                        <FileText size={15} />
+                        {t('downloadPdf')}
+                      </a>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </>
+      )}
     </AppShell>
   );
 }

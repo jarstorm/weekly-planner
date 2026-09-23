@@ -5,12 +5,14 @@ import { useTranslations } from 'next-intl';
 import { CheckCircle2 } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { api, ApiError, ChannelName, Team } from '@/lib/api';
+import { useEnabledChannels } from '@/lib/useEnabledChannels';
 import { AppShell } from '@/components/AppShell';
 
 export default function OnboardingPage() {
   const router = useRouter();
   const t = useTranslations('Onboarding');
   const tChannel = useTranslations('Channel');
+  const enabledChannels = useEnabledChannels();
   const [team, setTeam] = useState<Team | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -112,7 +114,8 @@ export default function OnboardingPage() {
           {t('memberChannel')}
           <select value={memberChannel} onChange={(e) => setMemberChannel(e.target.value as ChannelName)}>
             <option value="email">{tChannel('email')}</option>
-            <option value="telegram">{tChannel('telegram')}</option>
+            {enabledChannels.whatsapp && <option value="whatsapp">{tChannel('whatsapp')}</option>}
+            {enabledChannels.telegram && <option value="telegram">{tChannel('telegram')}</option>}
           </select>
         </label>
         {memberChannel === 'telegram' ? (

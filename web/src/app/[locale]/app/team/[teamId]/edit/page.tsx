@@ -8,6 +8,7 @@ import { useRouter, Link } from '@/i18n/navigation';
 import { api, ApiError, Team } from '@/lib/api';
 import { AppShell } from '@/components/AppShell';
 import { FormSkeleton } from '@/components/Skeleton';
+import { RecipientsEditor } from '@/components/RecipientsEditor';
 
 export default function EditTeamPage() {
   const params = useParams<{ teamId: string }>();
@@ -78,6 +79,16 @@ export default function EditTeamPage() {
             <textarea
               value={team.company_context}
               onChange={(e) => setTeam({ ...team, company_context: e.target.value })}
+            />
+          </label>
+          <label>
+            {t('reportRecipients')}
+            <RecipientsEditor
+              recipients={team.report_recipients}
+              onChange={(report_recipients) => setTeam({ ...team, report_recipients })}
+              placeholder={t('reportRecipientsPlaceholder')}
+              addLabel={t('reportRecipientsAdd')}
+              emptyHint={t('reportRecipientsEmpty')}
             />
           </label>
           {error && <p role="alert">{error}</p>}

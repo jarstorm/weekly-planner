@@ -194,14 +194,17 @@ export class TeamsService {
   }
 
   // Sin scoping por organización — solo lo usan los jobs internos (cron),
-  // nunca un endpoint expuesto al front. Trae el horario/canal de entrega
-  // de la organización (migración 0006: config de cuenta, no por equipo) y
-  // lo aplana sobre el equipo, así ReminderJob/ReportJob no tienen que
-  // saber de dónde sale cada campo.
+  // nunca un endpoint expuesto al front. Trae el horario de la
+  // organización (migración 0006: config de cuenta, no por equipo) y la
+  // config del resumen ejecutivo (migración 0009) y lo aplana sobre el
+  // equipo, así ReminderJob/ReportJob no tienen que saber de dónde sale
+  // cada campo. `report_recipients` ya viene del `*` de teams.
   async listAll() {
     const { data, error } = await this.supabase.db
       .from('teams')
-      .select('*, organizations(reminder_dow, reminder_time, cutoff_time, timezone, delivery_channel, delivery_target)');
+      .select(
+        '*, organizations(reminder_dow, reminder_time, cutoff_time, timezone, has_executive_summary, executive_summary_recipients)',
+      );
     if (error) throw error;
     return (data ?? []).map((t: any) => {
       const { organizations: org, ...team } = t;
@@ -211,8 +214,8 @@ export class TeamsService {
         reminder_time: org.reminder_time,
         cutoff_time: org.cutoff_time,
         timezone: org.timezone,
-        delivery_channel: org.delivery_channel,
-        delivery_target: org.delivery_target,
+        has_executive_summary: org.has_executive_summary,
+        executive_summary_recipients: org.executive_summary_recipients,
       };
     });
   }

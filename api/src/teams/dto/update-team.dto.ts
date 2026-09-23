@@ -1,4 +1,4 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsArray, IsEmail, IsOptional, IsString } from 'class-validator';
 
 export class UpdateTeamDto {
   @IsOptional()
@@ -8,4 +8,9 @@ export class UpdateTeamDto {
   @IsOptional()
   @IsString()
   company_context?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsEmail({}, { each: true })
+  report_recipients?: string[];
 }

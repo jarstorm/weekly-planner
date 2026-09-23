@@ -233,6 +233,23 @@ label {
   color: var(--color-neutral-700);
 }
 
+/* Toggle del resumen ejecutivo (feedback/page.tsx) — el resto de <label>
+   son flex-column texto-arriba-input-abajo, este necesita el checkbox en
+   línea con su texto. */
+.checkbox-label {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.checkbox-label input[type='checkbox'] {
+  width: 1rem;
+  height: 1rem;
+  padding: 0;
+  border: none;
+  accent-color: var(--color-primary-600);
+}
+
 input,
 select,
 textarea {

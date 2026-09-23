@@ -4,8 +4,8 @@ export class CreateMemberDto {
   @IsString()
   name: string;
 
-  @IsIn(['email', 'telegram'])
-  channel: 'email' | 'telegram';
+  @IsIn(['email', 'whatsapp', 'telegram'])
+  channel: 'email' | 'whatsapp' | 'telegram';
 
   // Para telegram no se pide: se rellena solo cuando la persona abre el
   // bot (deep link con su member.id como start param, ver webhooks.controller).

@@ -3,7 +3,7 @@ import { SupabaseService } from '../supabase/supabase.service';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
 
 const SELECT_FIELDS =
-  'id, name, country, contact_name, delivery_channel, delivery_target, reminder_dow, reminder_time, cutoff_time, timezone';
+  'id, name, country, contact_name, reminder_dow, reminder_time, cutoff_time, timezone, plan, has_executive_summary, executive_summary_recipients';
 
 @Injectable()
 export class OrganizationsService {
