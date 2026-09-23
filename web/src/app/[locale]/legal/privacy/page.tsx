@@ -16,7 +16,6 @@ export default function PrivacyPage() {
       <Link href="/"><BrandMark /></Link>
       <h1>{t('privacyTitle')}</h1>
       <p className="muted-link">{t('lastUpdated')}</p>
-      <p role="alert">{t('placeholderNotice')}</p>
       {sections.map((section) => (
         <section key={section.heading}>
           <h2>{section.heading}</h2>

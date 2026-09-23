@@ -231,7 +231,6 @@
     "termsLink": "Términos",
     "privacyLink": "Privacidad",
     "lastUpdated": "Última actualización: 22 de septiembre de 2026",
-    "placeholderNotice": "Este documento tiene datos marcados entre corchetes [ASÍ] pendientes de completar por el titular del servicio antes de considerarse definitivo.",
     "termsTitle": "Términos de servicio",
     "termsSections": [
       {
@@ -240,7 +239,7 @@
       },
       {
         "heading": "2. Identificación del prestador",
-        "body": "WeeklyFeedback es prestado por [NOMBRE COMPLETO], en calidad de autónomo, con NIF [NIF] y domicilio en [DOMICILIO FISCAL]. Contacto: [EMAIL DE CONTACTO]."
+        "body": "WeeklyFeedback es prestado por Javier Abad, en calidad de autónomo, con NIF 545563340r y domicilio en c/ Uria nº8 2ºa, 33202, Oviedo. Contacto: contact@zaviren.com."
       },
       {
         "heading": "3. Cuenta y acceso",
@@ -279,7 +278,7 @@
     "privacySections": [
       {
         "heading": "1. Responsable del tratamiento",
-        "body": "[NOMBRE COMPLETO], autónomo, NIF [NIF], domicilio en [DOMICILIO FISCAL]. Contacto para temas de privacidad: [EMAIL DE CONTACTO]. No existe Delegado de Protección de Datos designado; las consultas se atienden directamente por el responsable del tratamiento."
+        "body": "Javier Abad, autónomo, NIF 545563340r, domicilio en c/ Uria nº8 2ºa, 33202, Oviedo. Contacto para temas de privacidad: contact@zaviren.com. No existe Delegado de Protección de Datos designado; las consultas se atienden directamente por el responsable del tratamiento."
       },
       {
         "heading": "2. Qué datos tratamos",
@@ -303,7 +302,7 @@
       },
       {
         "heading": "7. Derechos de las personas",
-        "body": "Cualquier persona puede ejercer sus derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad escribiendo a [EMAIL DE CONTACTO]. También puede presentar una reclamación ante la Agencia Española de Protección de Datos (aepd.es) si considera que sus derechos no han sido atendidos."
+        "body": "Cualquier persona puede ejercer sus derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad escribiendo a contact@zaviren.com. También puede presentar una reclamación ante la Agencia Española de Protección de Datos (aepd.es) si considera que sus derechos no han sido atendidos."
       },
       {
         "heading": "8. Menores de edad",

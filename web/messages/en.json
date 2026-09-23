@@ -231,7 +231,6 @@
     "termsLink": "Terms",
     "privacyLink": "Privacy",
     "lastUpdated": "Last updated: September 22, 2026",
-    "placeholderNotice": "This document has data marked in brackets [LIKE THIS] still to be filled in by the service owner before it's considered final.",
     "termsTitle": "Terms of Service",
     "termsSections": [
       {
@@ -240,7 +239,7 @@
       },
       {
         "heading": "2. Service provider",
-        "body": "WeeklyFeedback is provided by [FULL LEGAL NAME], as a sole trader (autónomo), tax ID [TAX ID], registered address at [REGISTERED ADDRESS]. Contact: [CONTACT EMAIL]."
+        "body": "WeeklyFeedback is provided by Javier Abad, as a sole trader (autónomo), tax ID 545563340r, registered address at c/ Uria nº8 2ºa, 33202, Oviedo, Spain. Contact: contact@zaviren.com."
       },
       {
         "heading": "3. Account and access",
@@ -279,7 +278,7 @@
     "privacySections": [
       {
         "heading": "1. Data controller",
-        "body": "[FULL LEGAL NAME], sole trader (autónomo), tax ID [TAX ID], registered address at [REGISTERED ADDRESS]. Contact for privacy matters: [CONTACT EMAIL]. There is no designated Data Protection Officer; requests are handled directly by the data controller."
+        "body": "Javier Abad, sole trader (autónomo), tax ID 545563340r, registered address at c/ Uria nº8 2ºa, 33202, Oviedo, Spain. Contact for privacy matters: contact@zaviren.com. There is no designated Data Protection Officer; requests are handled directly by the data controller."
       },
       {
         "heading": "2. What data we process",
@@ -303,7 +302,7 @@
       },
       {
         "heading": "7. Your rights",
-        "body": "Anyone can exercise their rights of access, rectification, erasure, objection, restriction and portability by writing to [CONTACT EMAIL]. You may also file a complaint with the Spanish Data Protection Agency (aepd.es) if you believe your rights haven't been addressed."
+        "body": "Anyone can exercise their rights of access, rectification, erasure, objection, restriction and portability by writing to contact@zaviren.com. You may also file a complaint with the Spanish Data Protection Agency (aepd.es) if you believe your rights haven't been addressed."
       },
       {
         "heading": "8. Minors",
