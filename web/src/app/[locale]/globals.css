@@ -888,6 +888,20 @@ button[type='button']:hover {
   text-decoration: underline;
 }
 
+/* Bloque de vinculación de Telegram en el campo de contacto (alta/edición
+   de miembro) — mismo hueco que ocupaba el input de texto, sin el
+   underline de .field-hint-link porque acá puede llevar un botón debajo. */
+.field-hint {
+  margin-top: -0.7rem;
+  display: grid;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+.field-hint p {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
 /* --- app shell (dashboard) --- */
 
 .app-shell {
