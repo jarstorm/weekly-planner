@@ -20,6 +20,11 @@ export default function EditMemberPage() {
   const [member, setMember] = useState<Member | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [botUsername, setBotUsername] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.getTelegramBotUsername().then((r) => setBotUsername(r.username)).catch(() => setBotUsername(null));
+  }, []);
 
   useEffect(() => {
     if (!teamId || !memberId) return;
@@ -99,23 +104,36 @@ export default function EditMemberPage() {
               <option value="telegram">{tChannel('telegram')}</option>
             </select>
           </label>
-          {member.channel === 'telegram' && (
-            <a className="field-hint-link" href="/help/telegram" target="_blank" rel="noopener noreferrer">
-              {t('telegramHelpLink')}
-            </a>
+          {member.channel === 'telegram' ? (
+            <div className="field-hint">
+              {member.contact ? (
+                <p>{t('telegramLinked')}</p>
+              ) : (
+                <p>{t('telegramNotLinked')}</p>
+              )}
+              {botUsername && (
+                <a
+                  className="btn btn-secondary"
+                  href={`https://t.me/${botUsername}?start=${member.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {member.contact ? t('telegramRelink') : t('telegramLinkNow')}
+                </a>
+              )}
+            </div>
+          ) : (
+            <label>
+              {t('memberContact')}
+              <input
+                type="text"
+                placeholder={t('memberContactEmailPlaceholder')}
+                value={member.contact ?? ''}
+                onChange={(e) => setMember({ ...member, contact: e.target.value })}
+                required
+              />
+            </label>
           )}
-          <label>
-            {t('memberContact')}
-            <input
-              type="text"
-              placeholder={
-                member.channel === 'telegram' ? t('memberContactTelegramPlaceholder') : t('memberContactEmailPlaceholder')
-              }
-              value={member.contact}
-              onChange={(e) => setMember({ ...member, contact: e.target.value })}
-              required
-            />
-          </label>
           {error && <p role="alert">{error}</p>}
           <button type="submit" disabled={saving}>
             {saving ? t('saving') : t('save')}

@@ -26,7 +26,9 @@ export default function NewMemberPage() {
     setSaving(true);
     setError(null);
     try {
-      await api.addMember(teamId, { name, channel, contact });
+      // Telegram no manda contact acá — se vincula solo cuando la persona
+      // abre el bot desde la pantalla de edición (deep link con su member.id).
+      await api.addMember(teamId, channel === 'telegram' ? { name, channel } : { name, channel, contact });
       router.push(`/app/team/${teamId}/members`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t('addMemberError'));
@@ -55,21 +57,20 @@ export default function NewMemberPage() {
               <option value="telegram">{tChannel('telegram')}</option>
             </select>
           </label>
-          {channel === 'telegram' && (
-            <a className="field-hint-link" href="/help/telegram" target="_blank" rel="noopener noreferrer">
-              {t('telegramHelpLink')}
-            </a>
+          {channel === 'telegram' ? (
+            <p className="field-hint">{t('telegramLinkAfterCreate')}</p>
+          ) : (
+            <label>
+              {t('memberContact')}
+              <input
+                type="text"
+                placeholder={t('memberContactEmailPlaceholder')}
+                value={contact}
+                onChange={(e) => setContact(e.target.value)}
+                required
+              />
+            </label>
           )}
-          <label>
-            {t('memberContact')}
-            <input
-              type="text"
-              placeholder={channel === 'telegram' ? t('memberContactTelegramPlaceholder') : t('memberContactEmailPlaceholder')}
-              value={contact}
-              onChange={(e) => setContact(e.target.value)}
-              required
-            />
-          </label>
           {error && <p role="alert">{error}</p>}
           <button type="submit" disabled={saving}>
             <UserPlus size={16} />

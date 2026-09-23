@@ -11,6 +11,10 @@ export interface IncomingMessage {
   // viene seteado, rawText llega vacío: quien llama decide si transcribe
   // o no, parseIncoming solo resuelve "quién escribió y qué mandó".
   audio?: IncomingAudio;
+  // Presente si el mensaje es un /start con parámetro (deep link de
+  // vinculación de Telegram, ver webhooks.controller#linkMember) — el
+  // member.id que hay que asociar a este contact.
+  startParam?: string;
 }
 
 export interface Channel {

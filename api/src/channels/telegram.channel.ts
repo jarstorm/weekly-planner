@@ -91,6 +91,15 @@ export class TelegramChannel implements Channel {
     }
     const contact = String(message.chat.id);
 
+    // Deep link de vinculación: t.me/<bot>?start=<member_id> hace que
+    // Telegram le mande al bot "/start <member_id>" en cuanto la persona
+    // pulsa "Iniciar" — así se resuelve el contact solo, sin que nadie
+    // tenga que ir a buscar su chat_id a mano (sección 0.13/0.14).
+    const startMatch = typeof message.text === 'string' ? message.text.match(/^\/start(?:@\S+)?(?:\s+(\S+))?/) : null;
+    if (startMatch) {
+      return { contact, rawText: '', startParam: startMatch[1] };
+    }
+
     if (message.voice) {
       const audio = await this.downloadVoice(message.voice.file_id);
       return { contact, rawText: '', audio };

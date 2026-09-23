@@ -85,6 +85,38 @@ export class TelegramWebhookController {
   @Post()
   async receive(@Body() payload: unknown) {
     const parsed = await parsePayloadOrBadRequest(this.channels, 'telegram', payload);
+
+    if (parsed.startParam) {
+      return this.linkMember(parsed.contact, parsed.startParam);
+    }
+
     return matchMemberAndSaveCheckin(this.supabase, this.checkins, this.audio, 'telegram', parsed.contact, parsed.rawText, parsed.audio);
+  }
+
+  // Vincula el chat_id de quien acaba de pulsar "Iniciar" al member cuyo id
+  // viaja como start param del deep link (ver telegram.channel.ts). Contesta
+  // siempre algo — a diferencia de un checkin sin matchear, acá quien está
+  // del otro lado espera confirmación de que la vinculación funcionó.
+  private async linkMember(chatId: string, memberId: string) {
+    const { data: member, error } = await this.supabase.db
+      .from('members')
+      .select('id')
+      .eq('id', memberId)
+      .eq('channel', 'telegram')
+      .maybeSingle();
+    if (error) throw error;
+
+    const bot = this.channels.get('telegram');
+
+    if (!member) {
+      await bot.send(chatId, 'Este enlace no es válido. Pídele a quien gestiona tu equipo en WeeklyFeedback que te mande uno nuevo.');
+      return { ok: true, linked: false };
+    }
+
+    const { error: updateError } = await this.supabase.db.from('members').update({ contact: chatId }).eq('id', member.id);
+    if (updateError) throw updateError;
+
+    await bot.send(chatId, '¡Listo! A partir de ahora vas a recibir aquí el recordatorio semanal y podrás contestar en este chat.');
+    return { ok: true, linked: true };
   }
 }

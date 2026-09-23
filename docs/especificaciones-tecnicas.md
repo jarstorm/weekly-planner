@@ -133,9 +133,20 @@ De paso, arreglado el link "volver" (`← Equipo`) de varias páginas de detalle
 
 ### 0.14 Página pública de ayuda para configurar Telegram
 
-Conseguir el `chat_id` de Telegram (sección 0.13, pendiente sin resolver automáticamente) no es evidente para alguien que nunca usó un bot — se necesitaba una explicación accesible sin sesión, tanto para quien gestiona la cuenta como para el propio miembro. Nueva página pública `/help/telegram` (`web/src/app/[locale]/help/telegram/page.tsx`, mismo patrón sin `AppShell` que `/legal/terms`|`/legal/privacy`): explica por qué hace falta iniciar la conversación uno mismo (limitación de Telegram, no del producto), enlaza a `@userinfobot` para sacar el `chat_id`, y trae un botón "Abrir @bot en Telegram" con el `@usuario` real del bot.
+Página pública `/help/telegram` (`web/src/app/[locale]/help/telegram/page.tsx`, mismo patrón sin `AppShell` que `/legal/terms`|`/legal/privacy`) para quien nunca usó un bot de Telegram, tanto para quien gestiona la cuenta como para el propio miembro.
 
 - El `@usuario` del bot no estaba expuesto en ningún sitio (solo el token, privado, vive en `TELEGRAM_BOT_TOKEN`) — en vez de dejarlo como placeholder entre corchetes (como los datos legales, sección 6) o hardcodeado, `TelegramChannel.getBotUsername()` (nuevo) lo pide a la propia API de Telegram (`getMe`) y lo cachea en memoria del proceso (el username de un bot no cambia en caliente). Expuesto público, sin `AuthGuard`, en `GET /api/telegram/bot-username` (`TelegramInfoController`) — es información que ya es pública dentro de Telegram, no hay nada que proteger.
+
+### 0.16 Vinculación de Telegram automática por deep link (`/start <member_id>`)
+
+La sección 5 dejaba anotada la alternativa a evaluar — implementada: ya no hace falta que nadie consiga un `chat_id` a mano vía `@userinfobot` ni lo pegue en "Contacto".
+
+- **Alta de miembro Telegram sin contact.** `contact` pasa a ser nullable (migración `0007_telegram_contact_nullable.sql`, con un `check` que lo sigue exigiendo para canal `email`). `CreateMemberDto`/`UpdateMemberDto` usan `@ValidateIf(o => o.channel === 'email')` sobre `contact`. Las pantallas de alta (onboarding y `members/new`) no piden contacto cuando el canal es Telegram.
+- **Deep link personal.** La ficha de edición de un miembro (`members/[memberId]/edit`) muestra un botón "Vincular Telegram" / "Volver a vincular Telegram" con `https://t.me/<bot>?start=<member.id>` (username real vía `getTelegramBotUsername`, sección 0.14). Quien gestiona la cuenta se lo pasa al miembro por el canal que sea (WhatsApp, email...).
+- **Resolución automática del `chat_id`.** Telegram traduce ese deep link en un mensaje `/start <member_id>` en cuanto la persona pulsa "Iniciar". `TelegramChannel.parseIncoming` reconoce ese patrón (con o sin `@bot_username` de por medio) y devuelve `startParam` en vez de tratarlo como checkin. `TelegramWebhookController#linkMember` busca el member por id + `channel: 'telegram'`, guarda el `chat_id` como su `contact`, y contesta confirmando la vinculación (o avisando de enlace inválido si el member no existe).
+- **Recordatorio no se manda a un Telegram sin vincular.** `ReminderJob` salta a los miembros con `contact` nulo (`if (!member.contact) continue`) — nada que enviar hasta que abran el bot.
+- La página `/help/telegram` (sección 0.14) y el texto de las pantallas de alta/edición se actualizaron para explicar este flujo en vez del manual con `@userinfobot`.
+- Cubierto con tests unitarios: `TelegramChannel.parseIncoming` (parseo de `/start`, con y sin `@bot_username`, con y sin parámetro) y `TelegramWebhookController` (vincula con member válido, avisa de enlace inválido, no toca `linkMember` en un checkin normal).
 - Las pantallas de alta/edición de miembro (sección 0.13) muestran un link a esta página justo debajo del selector de canal, solo cuando se elige Telegram (`target="_blank"`, para no perder lo escrito en el formulario).
 
 Verificado con el bot real de desarrollo: `GET /api/telegram/bot-username` devuelve el username correcto, la página pública lo usa para armar el link `t.me/<bot>`, y el link condicional aparece/desaparece al cambiar el canal en las pantallas de miembro.
@@ -381,7 +392,7 @@ Para no perder tiempo antes de validar lo esencial: sin integraciones con GitHub
 
 **Pendiente en el alta de miembros por Telegram, identificado pero no hecho:**
 
-- **Sigue sin haber una forma automática de resolver el `chat_id`.** Hay guía (sección 0.14) que explica el paso manual, pero el dueño de la cuenta o el miembro todavía tienen que conseguir el número a mano (vía `@userinfobot`) y pegarlo en "Contacto" — no hay ningún flujo que lo resuelva solo. Alternativa a evaluar: un código de invitación de un solo uso que el miembro manda al bot (`/start CODIGO`), y el backend resuelve el `chat_id` automáticamente sin pedírselo a nadie a mano.
+**Resuelto — vinculación de Telegram automática por deep link, ver sección 0.16.** La alternativa anotada acá (`/start CODIGO`) se implementó usando el propio `member.id` como código, sin generar uno aparte. *Verificado end-to-end contra Telegram real* (mismo patrón que el paso 9 del roadmap, sección 4): migración `0007` aplicada de verdad en Supabase (columna `contact` nullable + check constraint confirmados por consulta directa a `information_schema`); member de prueba puesto a `contact = null`, deep link abierto de verdad desde Telegram, `/start <member_id>` capturado con `getUpdates` (no hay URL pública para webhook en este entorno) y reenviado a `POST /api/webhooks/telegram` — el member quedó vinculado (`contact` restaurado al `chat_id` real) y el mensaje de confirmación llegó de verdad al chat.
 
 ## 6. Checklist antes de producción
 

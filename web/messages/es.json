@@ -121,7 +121,7 @@
     "memberChannel": "Canal",
     "memberContact": "Contacto",
     "memberContactEmailPlaceholder": "nombre@empresa.com",
-    "memberContactTelegramPlaceholder": "Chat ID de Telegram (ej. 123456789)",
+    "telegramLinkAfterCreate": "Se vincula solo: después de añadir a esta persona, entra a su ficha y pulsa \"Vincular Telegram\".",
     "addMemberSubmit": "Añadir miembro",
     "addMemberSubmitLoading": "Añadiendo...",
     "addMemberError": "No se pudo añadir el miembro",
@@ -195,14 +195,17 @@
     "memberChannel": "Canal",
     "memberContact": "Contacto",
     "memberContactEmailPlaceholder": "nombre@empresa.com",
-    "memberContactTelegramPlaceholder": "Chat ID de Telegram (ej. 123456789)",
+    "telegramLinkAfterCreate": "Se vincula solo: después de añadir a esta persona, entra a su ficha y pulsa \"Vincular Telegram\".",
+    "telegramLinked": "Telegram vinculado ✓",
+    "telegramNotLinked": "Todavía no ha vinculado Telegram.",
+    "telegramLinkNow": "Vincular Telegram",
+    "telegramRelink": "Volver a vincular Telegram",
     "addMember": "Añadir miembro",
     "adding": "Añadiendo...",
     "addMemberError": "No se pudo añadir el miembro",
     "addMemberTitle": "Añadir miembro",
     "editMemberTitle": "Editar miembro",
-    "notFound": "Este miembro no existe o no pertenece a este equipo",
-    "telegramHelpLink": "¿Cómo consigo el chat ID? Ver guía de Telegram"
+    "notFound": "Este miembro no existe o no pertenece a este equipo"
   },
   "Billing": {
     "title": "Facturación",
@@ -334,15 +337,14 @@
   },
   "TelegramHelp": {
     "title": "Cómo configurar Telegram",
-    "intro": "Para recibir el recordatorio semanal y contestar por Telegram, tienes que iniciar tú la conversación con el bot — es una limitación de Telegram, no de WeeklyFeedback: ningún bot puede escribirle primero a nadie.",
-    "openBot": "Abrir {bot} en Telegram",
+    "intro": "Vincular Telegram es un solo paso: quien gestiona tu equipo te da de alta en WeeklyFeedback y te pasa un enlace personal — tú solo tienes que abrirlo.",
     "steps": [
-      "Abre Telegram y busca el bot de WeeklyFeedback (o pulsa el botón de arriba, si ya aparece).",
-      "Pulsa \"Iniciar\" o mándale cualquier mensaje, por ejemplo /start.",
-      "Para darte de alta, quien gestiona tu equipo necesita tu chat_id (un número), no tu @usuario. La forma más rápida: escríbele a @userinfobot en Telegram y te devuelve tu Id.",
-      "Pásale ese número a quien gestione tu equipo en WeeklyFeedback, para que lo añada como tu contacto."
+      "Pide a quien gestiona tu equipo que te añada como miembro con canal Telegram (no necesita ningún dato tuyo de Telegram todavía).",
+      "Esa persona verá en tu ficha un botón \"Vincular Telegram\" — pídele que te pase ese enlace (por WhatsApp, email, como prefiráis).",
+      "Ábrelo desde tu móvil o desde el escritorio con Telegram instalado, y pulsa \"Iniciar\" en el chat que se abre.",
+      "Ya está: no hace falta escribirle a ningún otro bot ni pasar números a mano."
     ],
-    "note": "Una vez dado de alta, recibirás el recordatorio semanal directo en ese chat y podrás contestar ahí mismo, con texto o nota de voz."
+    "note": "Una vez vinculado, recibirás el recordatorio semanal directo en ese chat y podrás contestar ahí mismo, con texto o nota de voz."
   },
   "Settings": {
     "title": "Datos de la empresa",

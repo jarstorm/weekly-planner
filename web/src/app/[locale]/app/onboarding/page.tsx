@@ -45,7 +45,14 @@ export default function OnboardingPage() {
     setError(null);
     setLoading(true);
     try {
-      await api.addMember(team.id, { name: memberName, channel: memberChannel, contact: memberContact });
+      // Telegram se vincula después, desde la pantalla de miembros del
+      // equipo (deep link con el bot) — acá no se pide chat_id a mano.
+      await api.addMember(
+        team.id,
+        memberChannel === 'telegram'
+          ? { name: memberName, channel: memberChannel }
+          : { name: memberName, channel: memberChannel, contact: memberContact },
+      );
       setMembers((prev) => [...prev, memberName]);
       setMemberName('');
       setMemberContact('');
@@ -108,16 +115,20 @@ export default function OnboardingPage() {
             <option value="telegram">{tChannel('telegram')}</option>
           </select>
         </label>
-        <label>
-          {t('memberContact')}
-          <input
-            type="text"
-            placeholder={memberChannel === 'telegram' ? t('memberContactTelegramPlaceholder') : t('memberContactEmailPlaceholder')}
-            value={memberContact}
-            onChange={(e) => setMemberContact(e.target.value)}
-            required
-          />
-        </label>
+        {memberChannel === 'telegram' ? (
+          <p className="field-hint">{t('telegramLinkAfterCreate')}</p>
+        ) : (
+          <label>
+            {t('memberContact')}
+            <input
+              type="text"
+              placeholder={t('memberContactEmailPlaceholder')}
+              value={memberContact}
+              onChange={(e) => setMemberContact(e.target.value)}
+              required
+            />
+          </label>
+        )}
         {error && <p role="alert">{error}</p>}
         <button type="submit" disabled={loading}>
           {loading ? t('addMemberSubmitLoading') : t('addMemberSubmit')}

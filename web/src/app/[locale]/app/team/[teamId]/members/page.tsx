@@ -64,7 +64,7 @@ export default function TeamMembersPage() {
             <li key={m.id} className="member-edit-row">
               <span>{m.name}</span>
               <span className="muted-link">{tChannel(m.channel)}</span>
-              <span className="muted-link">{m.contact}</span>
+              <span className="muted-link">{m.contact ?? t('telegramNotLinked')}</span>
               <Link className="btn-ghost" href={`/app/team/${teamId}/members/${m.id}/edit`}>
                 <Pencil size={15} />
               </Link>

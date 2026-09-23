@@ -46,13 +46,13 @@ export const api = {
 
   listMembers: (teamId: string) => request<Member[]>(`/teams/${teamId}/members`),
 
-  addMember: (teamId: string, data: { name: string; channel: ChannelName; contact: string }) =>
+  addMember: (teamId: string, data: { name: string; channel: ChannelName; contact?: string }) =>
     request<Member>(`/teams/${teamId}/members`, { method: 'POST', body: JSON.stringify(data) }),
 
   updateMember: (
     teamId: string,
     memberId: string,
-    data: Partial<{ name: string; channel: ChannelName; contact: string; active: boolean }>,
+    data: Partial<{ name: string; channel: ChannelName; contact: string | null; active: boolean }>,
   ) => request<Member>(`/teams/${teamId}/members/${memberId}`, { method: 'PATCH', body: JSON.stringify(data) }),
 
   removeMember: (teamId: string, memberId: string) =>
@@ -116,7 +116,8 @@ export interface Member {
   team_id: string;
   name: string;
   channel: ChannelName;
-  contact: string;
+  // null mientras un miembro de canal telegram no ha vinculado el bot todavía.
+  contact: string | null;
   active: boolean;
 }
 

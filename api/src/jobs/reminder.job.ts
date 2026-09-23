@@ -32,6 +32,10 @@ export class ReminderJob {
       const weekStart = currentWeekStart(now, team.timezone);
       const members = await this.teams.listMembers(team.id);
       for (const member of members) {
+        // Telegram sin vincular todavía (contact null, ver webhooks.controller#linkMember)
+        // — nada que mandar hasta que la persona abra el bot.
+        if (!member.contact) continue;
+
         // El link con token propio (sección 3.5) es lo único que le
         // permite a alguien con canal email contestar — email no es
         // conversacional como Telegram, no hay a qué "responder".

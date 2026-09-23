@@ -121,7 +121,7 @@
     "memberChannel": "Channel",
     "memberContact": "Contact",
     "memberContactEmailPlaceholder": "name@company.com",
-    "memberContactTelegramPlaceholder": "Telegram chat ID (e.g. 123456789)",
+    "telegramLinkAfterCreate": "Links itself: after adding this person, open their profile and tap \"Link Telegram\".",
     "addMemberSubmit": "Add member",
     "addMemberSubmitLoading": "Adding...",
     "addMemberError": "Could not add the member",
@@ -195,14 +195,17 @@
     "memberChannel": "Channel",
     "memberContact": "Contact",
     "memberContactEmailPlaceholder": "name@company.com",
-    "memberContactTelegramPlaceholder": "Telegram chat ID (e.g. 123456789)",
+    "telegramLinkAfterCreate": "Links itself: after adding this person, open their profile and tap \"Link Telegram\".",
+    "telegramLinked": "Telegram linked ✓",
+    "telegramNotLinked": "Hasn't linked Telegram yet.",
+    "telegramLinkNow": "Link Telegram",
+    "telegramRelink": "Re-link Telegram",
     "addMember": "Add member",
     "adding": "Adding...",
     "addMemberError": "Could not add the member",
     "addMemberTitle": "Add member",
     "editMemberTitle": "Edit member",
-    "notFound": "This member doesn't exist or doesn't belong to this team",
-    "telegramHelpLink": "How do I get the chat ID? See the Telegram guide"
+    "notFound": "This member doesn't exist or doesn't belong to this team"
   },
   "Billing": {
     "title": "Billing",
@@ -334,15 +337,14 @@
   },
   "TelegramHelp": {
     "title": "How to set up Telegram",
-    "intro": "To receive the weekly reminder and reply over Telegram, you have to start the conversation with the bot yourself — that's a Telegram limitation, not a WeeklyFeedback one: no bot can message anyone first.",
-    "openBot": "Open {bot} on Telegram",
+    "intro": "Linking Telegram is a single step: whoever manages your team adds you in WeeklyFeedback and sends you a personal link — you just open it.",
     "steps": [
-      "Open Telegram and search for the WeeklyFeedback bot (or tap the button above, if it's already shown).",
-      "Tap \"Start\" or send it any message, e.g. /start.",
-      "To add you as a member, whoever manages your team needs your chat ID (a number), not your @username. Fastest way: message @userinfobot on Telegram and it replies with your Id.",
-      "Give that number to whoever manages your team in WeeklyFeedback, so they can add it as your contact."
+      "Ask whoever manages your team to add you as a member with the Telegram channel (they don't need any Telegram info from you yet).",
+      "They'll see a \"Link Telegram\" button on your profile — ask them to send you that link (WhatsApp, email, whatever's easiest).",
+      "Open it from your phone or desktop with Telegram installed, and tap \"Start\" in the chat that opens.",
+      "That's it — no need to message any other bot or hand over any numbers."
     ],
-    "note": "Once you're added, you'll get the weekly reminder straight in that chat and can reply there, with text or a voice note."
+    "note": "Once linked, you'll get the weekly reminder straight in that chat and can reply there, with text or a voice note."
   },
   "Settings": {
     "title": "Company details",
