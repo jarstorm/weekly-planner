@@ -850,6 +850,16 @@ button[type='button']:hover {
   padding-left: 0.3rem;
 }
 
+/* Link de ayuda pegado justo debajo de un campo de formulario (p. ej. el
+   selector de canal) — más pequeño que el texto normal y más cerca del
+   campo de lo que dejaría el gap uniforme de .form, sin tocar ese gap
+   para el resto de campos. */
+.field-hint-link {
+  margin-top: -0.7rem;
+  font-size: 0.8rem;
+  text-decoration: underline;
+}
+
 /* --- app shell (dashboard) --- */
 
 .app-shell {

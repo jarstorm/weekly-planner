@@ -100,7 +100,7 @@ export default function EditMemberPage() {
             </select>
           </label>
           {member.channel === 'telegram' && (
-            <a className="muted-link" href="/help/telegram" target="_blank" rel="noopener noreferrer">
+            <a className="field-hint-link" href="/help/telegram" target="_blank" rel="noopener noreferrer">
               {t('telegramHelpLink')}
             </a>
           )}
