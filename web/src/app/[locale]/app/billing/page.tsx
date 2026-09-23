@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useRouter } from '@/i18n/navigation';
+import { useRouter, Link } from '@/i18n/navigation';
 import { api, ApiError, BillingStatus } from '@/lib/api';
 import { AppShell } from '@/components/AppShell';
 import { BillingSkeleton } from '@/components/Skeleton';
@@ -105,7 +105,14 @@ export default function BillingPage() {
         <h1 style={{ margin: 0 }}>{t('title')}</h1>
       </div>
 
-      {checkoutResult === 'success' && <div className="card">{t('checkoutSuccess')}</div>}
+      {checkoutResult === 'success' && (
+        <div className="card">
+          <p style={{ margin: 0 }}>{t('checkoutSuccess')}</p>
+          <Link className="btn btn-primary" style={{ marginTop: '1rem' }} href="/app/onboarding">
+            {t('checkoutSuccessNextStep')}
+          </Link>
+        </div>
+      )}
       {checkoutResult === 'cancel' && <div className="card">{t('checkoutCancel')}</div>}
       {actionError && <p role="alert">{actionError}</p>}
 

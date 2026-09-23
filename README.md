@@ -52,4 +52,4 @@ Cubre lógica que no depende de servicios externos: cálculo de horarios/timezon
 
 ## Qué falta
 
-Ver la sección "Hoja de ruta" de `docs/especificaciones-tecnicas.md` para el estado real paso a paso. En resumen: el código de los pasos 2-11 está escrito pero sin probar contra Supabase/Resend/Anthropic reales — falta dar de alta esas cuentas (checklist en la sección 1 del mismo documento).
+Ver la sección "Hoja de ruta" de `docs/especificaciones-tecnicas.md` para el estado real paso a paso. En resumen: los pasos 1-15 (incluido el resumen ejecutivo) están verificados de punta a punta contra servicios reales (Supabase, Resend, Groq, Telegram, Stripe). Queda pendiente solo lo que depende de cuentas que todavía no existen o no están del todo activas: la cuenta de Anthropic (se usa Groq de sustituto), la verificación de WhatsApp Business en Meta (paso 12, código ya reconstruido), verificar un dominio propio en Resend (la cuenta está en modo sandbox, solo entrega al email del titular — checklist en la sección 6), y completar el registro fiscal de Stripe Tax para que el IVA automático cobre de verdad.

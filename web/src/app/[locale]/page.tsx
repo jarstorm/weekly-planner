@@ -12,6 +12,8 @@ import {
 import { Link } from '@/i18n/navigation';
 import { LocaleSwitcher } from '@/components/LocaleSwitcher';
 import { BrandMark } from '@/components/BrandMark';
+import { HeroVisual } from '@/components/HeroVisual';
+import { Reveal } from '@/components/Reveal';
 
 export default function LandingPage() {
   const t = useTranslations('Landing');
@@ -32,6 +34,11 @@ export default function LandingPage() {
       </div>
 
       <section className="hero">
+        <div className="hero-bg-blobs" aria-hidden="true">
+          <span className="hero-bg-blob hero-bg-blob-1" />
+          <span className="hero-bg-blob hero-bg-blob-2" />
+          <span className="hero-bg-blob hero-bg-blob-3" />
+        </div>
         <span className="eyebrow">{t('badge')}</span>
         <h1 className="brand-word">
           Weekly<b>Feedback</b>
@@ -45,76 +52,86 @@ export default function LandingPage() {
         <p className="trust-note">{t('trustNote')}</p>
 
         <div className="hero-visual">
-          <div className="report-mock report-mock-photo">
-            <img src="/landing/report-sample-hero.png" alt={t('sampleAlt')} />
-          </div>
+          <HeroVisual src="/landing/report-sample-hero.png" alt={t('sampleAlt')} />
         </div>
       </section>
 
       <section className="proof-band">
         <div className="proof-inner">
-          <h2>{t('proofTitle')}</h2>
-          <p>{t('proofDesc')}</p>
+          <Reveal>
+            <h2>{t('proofTitle')}</h2>
+            <p>{t('proofDesc')}</p>
+          </Reveal>
           <div className="proof-grid">
-            <div className="proof-item">
+            <Reveal className="proof-item" delay={0}>
               <span className="proof-icon"><ShieldCheck size={20} /></span>
               <strong>{t('proof1Title')}</strong>
               <p>{t('proof1Desc')}</p>
-            </div>
-            <div className="proof-item">
+            </Reveal>
+            <Reveal className="proof-item" delay={80}>
               <span className="proof-icon"><Sparkles size={20} /></span>
               <strong>{t('proof2Title')}</strong>
               <p>{t('proof2Desc')}</p>
-            </div>
-            <div className="proof-item">
+            </Reveal>
+            <Reveal className="proof-item" delay={160}>
               <span className="proof-icon"><Smartphone size={20} /></span>
               <strong>{t('proof3Title')}</strong>
               <p>{t('proof3Desc')}</p>
-            </div>
-            <div className="proof-item">
+            </Reveal>
+            <Reveal className="proof-item" delay={240}>
               <span className="proof-icon"><RefreshCw size={20} /></span>
               <strong>{t('proof4Title')}</strong>
               <p>{t('proof4Desc')}</p>
-            </div>
+            </Reveal>
           </div>
         </div>
       </section>
 
       <section className="landing-section" id="how-it-works">
-        <h2>{t('howItWorksTitle')}</h2>
-        <p className="section-desc">{t('howItWorksDesc')}</p>
+        <Reveal>
+          <h2>{t('howItWorksTitle')}</h2>
+          <p className="section-desc">{t('howItWorksDesc')}</p>
+        </Reveal>
         <ol className="steps">
           <li>
-            <div className="step-top">
-              <span className="step-number">1</span>
-              <span className="step-icon"><CalendarClock size={20} /></span>
-            </div>
-            <strong>{t('step1Title')}</strong>
-            <p>{t('step1')}</p>
+            <Reveal delay={0}>
+              <div className="step-top">
+                <span className="step-number">1</span>
+                <span className="step-icon"><CalendarClock size={20} /></span>
+              </div>
+              <strong>{t('step1Title')}</strong>
+              <p>{t('step1')}</p>
+            </Reveal>
           </li>
           <li>
-            <div className="step-top">
-              <span className="step-number">2</span>
-              <span className="step-icon"><MessageCircle size={20} /></span>
-            </div>
-            <strong>{t('step2Title')}</strong>
-            <p>{t('step2')}</p>
+            <Reveal delay={100}>
+              <div className="step-top">
+                <span className="step-number">2</span>
+                <span className="step-icon"><MessageCircle size={20} /></span>
+              </div>
+              <strong>{t('step2Title')}</strong>
+              <p>{t('step2')}</p>
+            </Reveal>
           </li>
           <li>
-            <div className="step-top">
-              <span className="step-number">3</span>
-              <span className="step-icon"><FileCheck2 size={20} /></span>
-            </div>
-            <strong>{t('step3Title')}</strong>
-            <p>{t('step3')}</p>
+            <Reveal delay={200}>
+              <div className="step-top">
+                <span className="step-number">3</span>
+                <span className="step-icon"><FileCheck2 size={20} /></span>
+              </div>
+              <strong>{t('step3Title')}</strong>
+              <p>{t('step3')}</p>
+            </Reveal>
           </li>
         </ol>
       </section>
 
       <section className="landing-section landing-section-sample">
-        <h2>{t('sampleTitle')}</h2>
-        <p className="section-desc">{t('sampleDesc')}</p>
-        <div className="report-mock report-mock-full">
+        <Reveal>
+          <h2>{t('sampleTitle')}</h2>
+          <p className="section-desc">{t('sampleDesc')}</p>
+        </Reveal>
+        <Reveal delay={120} className="report-mock report-mock-full">
           <div className="report-mock-photo-frame">
             <img src="/landing/report-sample-full.png" alt={t('sampleAlt')} />
           </div>
@@ -123,31 +140,39 @@ export default function LandingPage() {
             <li className="responded"><CheckCircle2 size={14} /> Bruno</li>
             <li className="responded"><CheckCircle2 size={14} /> Carla</li>
           </ul>
-        </div>
+        </Reveal>
       </section>
 
       <section className="landing-section" id="pricing">
-        <h2>{t('pricingTitle')}</h2>
-        <p className="section-desc">{t('pricingDesc')}</p>
+        <Reveal>
+          <h2>{t('pricingTitle')}</h2>
+          <p className="section-desc">{t('pricingDesc')}</p>
+        </Reveal>
         <ul className="pricing-grid">
           <li>
-            <strong>{t('planTeam')}</strong>
-            <span className="price">{t('planTeamPrice')}</span>
-            <p style={{ margin: '0.5rem 0 0' }}>{t('planTeamDesc')}</p>
+            <Reveal delay={0}>
+              <strong>{t('planTeam')}</strong>
+              <span className="price">{t('planTeamPrice')}</span>
+              <p style={{ margin: '0.5rem 0 0' }}>{t('planTeamDesc')}</p>
+            </Reveal>
           </li>
           <li className="pricing-featured">
-            <strong>{t('planOrg')}</strong>
-            <span className="price">{t('planOrgPrice')}</span>
-            <p style={{ margin: '0.5rem 0 0' }}>{t('planOrgDesc')}</p>
-            <span className="plan-badge plan-badge-bottom">{t('planPopular')}</span>
+            <Reveal delay={100}>
+              <strong>{t('planOrg')}</strong>
+              <span className="price">{t('planOrgPrice')}</span>
+              <p style={{ margin: '0.5rem 0 0' }}>{t('planOrgDesc')}</p>
+              <span className="plan-badge plan-badge-bottom">{t('planPopular')}</span>
+            </Reveal>
           </li>
         </ul>
         <p className="muted-link price-note">{t('priceNote')}</p>
       </section>
 
       <section className="landing-section" id="faq">
-        <h2>{t('faqTitle')}</h2>
-        <div className="faq-list">
+        <Reveal>
+          <h2>{t('faqTitle')}</h2>
+        </Reveal>
+        <Reveal delay={100} className="faq-list">
           <div className="faq-item">
             <strong>{t('faq1Q')}</strong>
             <p>{t('faq1A')}</p>
@@ -168,15 +193,15 @@ export default function LandingPage() {
             <strong>{t('faq5Q')}</strong>
             <p>{t('faq5A')}</p>
           </div>
-        </div>
+        </Reveal>
       </section>
 
       <section className="final-cta">
-        <div className="final-cta-inner">
+        <Reveal className="final-cta-inner">
           <h2>{t('finalCtaTitle')}</h2>
           <p>{t('finalCtaDesc')}</p>
           <Link className="btn btn-primary btn-lg" href="/register">{t('cta')}</Link>
-        </div>
+        </Reveal>
       </section>
 
       <footer className="landing-footer">
