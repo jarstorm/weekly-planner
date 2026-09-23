@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import * as PDFDocument from 'pdfkit';
 import { marked } from 'marked';
+import { sanitizeText } from './text.utils';
 
 const DISCLAIMER = 'Generado por la IA de WeeklyFeedback a partir de la información de los empleados.';
 
@@ -47,7 +48,7 @@ export class PdfService {
 
       this.addHeader(doc, title);
 
-      const tokens = marked.lexer(markdown) as unknown as BlockToken[];
+      const tokens = marked.lexer(sanitizeText(markdown)) as unknown as BlockToken[];
       this.renderBlocks(doc, tokens);
 
       this.addFooter(doc);

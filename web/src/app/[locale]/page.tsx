@@ -44,22 +44,9 @@ export default function LandingPage() {
         </div>
         <p className="trust-note">{t('trustNote')}</p>
 
-        <div className="hero-visual" aria-hidden="true">
-          <div className="report-mock">
-            <div className="report-mock-header">
-              <span className="report-mock-badge">{t('sampleBadge')}</span>
-              <span className="muted-link">{t('sampleFooter')}</span>
-            </div>
-            <strong>{t('sampleReportTitle')}</strong>
-            <p className="report-mock-section-title">{t('sampleWinsTitle')}</p>
-            <ul>
-              <li>{t('sampleWin1')}</li>
-              <li>{t('sampleWin2')}</li>
-            </ul>
-            <p className="report-mock-section-title">{t('sampleBlockersTitle')}</p>
-            <ul>
-              <li>{t('sampleBlocker1')}</li>
-            </ul>
+        <div className="hero-visual">
+          <div className="report-mock report-mock-photo">
+            <img src="/landing/report-sample-hero.png" alt={t('sampleAlt')} />
           </div>
         </div>
       </section>
@@ -128,25 +115,9 @@ export default function LandingPage() {
         <h2>{t('sampleTitle')}</h2>
         <p className="section-desc">{t('sampleDesc')}</p>
         <div className="report-mock report-mock-full">
-          <div className="report-mock-header">
-            <span className="report-mock-badge">{t('sampleBadge')}</span>
-            <span className="muted-link">{t('sampleFooter')}</span>
+          <div className="report-mock-photo-frame">
+            <img src="/landing/report-sample-full.png" alt={t('sampleAlt')} />
           </div>
-          <strong>{t('sampleReportTitle')}</strong>
-          <p className="report-mock-section-title">{t('sampleWinsTitle')}</p>
-          <ul>
-            <li>{t('sampleWin1')}</li>
-            <li>{t('sampleWin2')}</li>
-          </ul>
-          <p className="report-mock-section-title">{t('sampleBlockersTitle')}</p>
-          <ul>
-            <li>{t('sampleBlocker1')}</li>
-          </ul>
-          <p className="report-mock-section-title">{t('sampleNextTitle')}</p>
-          <ul>
-            <li>{t('sampleNext1')}</li>
-            <li>{t('sampleNext2')}</li>
-          </ul>
           <ul className="member-status-list">
             <li className="responded"><CheckCircle2 size={14} /> Ana</li>
             <li className="responded"><CheckCircle2 size={14} /> Bruno</li>
