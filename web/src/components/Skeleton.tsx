@@ -88,6 +88,30 @@ export function TeamDetailSkeleton() {
   );
 }
 
+export function ReportDetailSkeleton() {
+  return (
+    <>
+      <Skeleton className="skeleton-text" style={{ width: '20%', marginBottom: '1rem' }} />
+      <div className="topbar">
+        <Skeleton className="skeleton-title" style={{ marginBottom: 0 }} />
+        <Skeleton className="skeleton-button" style={{ width: 160 }} />
+      </div>
+      <ul className="conversation-list">
+        {[0, 1, 2].map((i) => (
+          <li className="conversation-item" key={i}>
+            <div className="conversation-item-header">
+              <Skeleton className="skeleton-text" style={{ width: '30%' }} />
+              <Skeleton className="skeleton-text" style={{ width: '20%' }} />
+            </div>
+            <Skeleton className="skeleton-text" style={{ width: '100%' }} />
+            <Skeleton className="skeleton-text" style={{ width: '80%' }} />
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
 export function FormSkeleton({ rows = 4 }: { rows?: number }) {
   return (
     <>

@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
+import { AudioService } from '../audio/audio.service';
 import { CreateCheckinDto } from './dto/create-checkin.dto';
 
 export interface MemberCheckinStatus {
@@ -12,11 +13,15 @@ export interface MemberCheckinStatus {
   blockerText: string | null;
   rawText: string | null;
   receivedAt: string | null;
+  audioUrl: string | null;
 }
 
 @Injectable()
 export class CheckinsService {
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly audio: AudioService,
+  ) {}
 
   private async assertTeamOwnership(teamId: string, organizationId: string) {
     const { data: team, error } = await this.supabase.db
@@ -87,20 +92,25 @@ export class CheckinsService {
 
     const byMember = new Map((checkins ?? []).map((c: any) => [c.member_id, c]));
 
-    return (members ?? []).map((m: any) => {
-      const c = byMember.get(m.id);
-      return {
-        memberId: m.id,
-        memberName: m.name,
-        channel: m.channel,
-        responded: !!c,
-        doneText: c?.done_text ?? null,
-        nextText: c?.next_text ?? null,
-        blockerText: c?.blocker_text ?? null,
-        rawText: c?.raw_text ?? null,
-        receivedAt: c?.received_at ?? null,
-      };
-    });
+    return Promise.all(
+      (members ?? []).map(async (m: any) => {
+        const c = byMember.get(m.id);
+        return {
+          memberId: m.id,
+          memberName: m.name,
+          channel: m.channel,
+          responded: !!c,
+          doneText: c?.done_text ?? null,
+          nextText: c?.next_text ?? null,
+          blockerText: c?.blocker_text ?? null,
+          rawText: c?.raw_text ?? null,
+          receivedAt: c?.received_at ?? null,
+          // Signed URL bajo demanda (sección 0.3/audio.service.ts) — solo se
+          // pide si de verdad hubo nota de voz, no en cada checkin de texto.
+          audioUrl: c?.audio_path ? await this.audio.getSignedUrl(c.audio_path) : null,
+        };
+      }),
+    );
   }
 
   // Descarga de todas las conversaciones completas de un equipo — todas

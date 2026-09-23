@@ -50,4 +50,13 @@ export class AudioService {
     if (error) throw error;
     return path;
   }
+
+  // Un link temporal para reproducir un audio concreto desde el panel (vista
+  // de detalle de un informe) — 1h de validez, de sobra para una sesión de
+  // revisión, sin dejar el bucket accesible de forma permanente.
+  async getSignedUrl(path: string): Promise<string> {
+    const { data, error } = await this.supabase.db.storage.from(STORAGE_BUCKET).createSignedUrl(path, 3600);
+    if (error) throw error;
+    return data.signedUrl;
+  }
 }

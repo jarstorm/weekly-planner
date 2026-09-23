@@ -318,6 +318,16 @@
       }
     ]
   },
+  "ReportDetail": {
+    "loadError": "No se pudo cargar el informe",
+    "notFound": "Este informe no existe o no pertenece a este equipo",
+    "responded": "Respondió",
+    "notResponded": "Sin responder",
+    "transcript": "Transcripción del audio",
+    "done": "Qué hizo",
+    "next": "Qué hará",
+    "blocker": "Bloqueo"
+  },
   "Settings": {
     "title": "Datos de la empresa",
     "loading": "Cargando...",

@@ -135,6 +135,7 @@ export interface CheckinStatus {
   blockerText: string | null;
   rawText: string | null;
   receivedAt: string | null;
+  audioUrl: string | null;
 }
 
 export interface Organization {

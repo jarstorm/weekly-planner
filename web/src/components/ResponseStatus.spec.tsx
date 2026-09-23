@@ -24,6 +24,7 @@ function makeStatus(overrides: Partial<CheckinStatus> = {}): CheckinStatus {
     blockerText: null,
     rawText: null,
     receivedAt: null,
+    audioUrl: null,
     ...overrides,
   };
 }

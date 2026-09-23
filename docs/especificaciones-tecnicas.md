@@ -101,6 +101,16 @@ Tres mejoras del panel autenticado (`AppShell`), pedidas juntas:
 - **Ficha de la empresa** (`web/src/app/[locale]/app/settings/page.tsx`, ruta `/app/settings`, nuevo `OrganizationsController`/`OrganizationsService` en el backend con `GET/PATCH /api/organizations/me`): nombre de la empresa editable, email de registro (de solo lectura, viene de `auth.users` vía el usuario autenticado, no se duplica en la tabla `organizations`), nombre de contacto y país. País guardado como ISO 3166-1 alpha-2 (`organizations.country`, migración `0004`; `contact_name`, migración `0005`) — el desplegable usa `Intl.DisplayNames` (nativo del navegador, sin librería ni lista de nombres mantenida a mano) para mostrar los ~249 países localizados en el idioma activo del panel, ordenados alfabéticamente en ese idioma.
 - **Estados de carga con skeleton** (`web/src/components/Skeleton.tsx`) en vez de un `<p>Cargando...</p>` de texto plano, en todas las páginas del panel (dashboard, ficha de empresa, detalle de equipo, editar equipo, miembros, facturación) — cada skeleton calca la forma real de su página (misma grid de stats, misma lista de reports, etc.) para que no haya salto de layout cuando llegan los datos.
 
+### 0.11 Vista de detalle de un informe: conversación completa por miembro
+
+Desde el histórico de un equipo, la fecha de cada informe (`web/src/app/[locale]/app/team/[teamId]/page.tsx`) es un link a `/app/team/[teamId]/report/[reportId]` — página nueva con el listado de miembros de esa semana (quién respondió y quién no, reutilizando `checkinStatus`) y, por cada uno, su conversación completa:
+
+- **Respuesta de texto** (formulario de 3 campos o mensaje único): campos "qué hizo"/"qué hará"/"bloqueo" si vinieron estructurados, o el texto plano si no.
+- **Respuesta por nota de voz**: el audio original reproducible (`<audio controls>`) **y** la transcripción debajo — no solo una u otra. El audio ya se guardaba (`checkins.audio_path` en Supabase Storage, sección 0.7) y la transcripción ya se guardaba en `raw_text`, así que la vista es nueva pero los datos ya existían.
+- `AudioService.getSignedUrl` (nuevo) genera un link firmado de 1h para reproducir el audio desde el bucket privado — se pide bajo demanda por `CheckinsService.statusForTeamWeek`, solo para los checkins que de verdad tienen `audio_path` (no genera signed URLs de más).
+
+Verificado end-to-end con datos reales: equipo de prueba con un checkin de texto estructurado, un checkin de nota de voz (audio sintetizado subido al bucket `checkin-audio`) y uno sin responder — la página de detalle mostró los tres estados correctamente y el audio se reprodujo en el navegador desde el signed URL. Datos de prueba borrados (org, usuario, fichero de audio) al terminar.
+
 ## 1. Qué hace falta crear antes de tocar código
 
 | Cuenta / servicio | Para qué | Coste al arrancar |
@@ -326,10 +336,6 @@ Para no perder tiempo antes de validar lo esencial: sin integraciones con GitHub
 **Pendiente en la landing (`web/src/app/[locale]/page.tsx`), identificado pero no hecho:**
 
 - **Screenshot real del producto en vez del mock armado a mano.** El hero y la sección "Here's what your report looks like" usan un `.report-mock` construido en HTML/CSS con contenido de ejemplo (marcado "Example"). Un comprador B2B escéptico distingue un mock de un screenshot real de la app funcionando — y la app ya funciona, así que no hay excusa técnica, solo falta capturarlo.
-
-**Pendiente en el panel, identificado pero no hecho:**
-
-- **Vista de detalle de un informe generado**, pedida por el usuario: desde el histórico de un equipo (`web/src/app/[locale]/app/team/[teamId]/page.tsx`), poder hacer click en la fecha de un informe concreto y ver una página de detalle con el listado de miembros de ese equipo (quién respondió y quién no — el dato ya existe, `checkinStatus` por `week_start`) y, por cada miembro, su conversación completa de esa semana: si respondió por texto, el texto; si respondió por nota de voz, el audio original reproducible **y** la transcripción (el audio ya se guarda — `checkins.audio_path` en Supabase Storage, sección 0.7 — y la transcripción ya se guarda como `raw_text`/`done_text` del checkin, así que es una vista nueva sobre datos que ya existen, no hace falta tocar el pipeline de captura).
 
 ## 6. Checklist antes de producción
 

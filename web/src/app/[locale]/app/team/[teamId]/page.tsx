@@ -92,7 +92,9 @@ export default function TeamDashboardPage() {
         {reports.map((r) => (
           <li key={r.id}>
             <div className="topbar" style={{ marginBottom: '0.5rem' }}>
-              <strong>{t('weekOf', { date: r.week_start })}</strong>
+              <Link href={`/app/team/${teamId}/report/${r.id}`}>
+                <strong>{t('weekOf', { date: r.week_start })}</strong>
+              </Link>
               <div className="hero-actions" style={{ marginTop: 0 }}>
                 <a className="btn btn-secondary" href={api.reportPdfUrl(r.id)}>
                   <FileText size={15} />

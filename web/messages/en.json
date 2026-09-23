@@ -318,6 +318,16 @@
       }
     ]
   },
+  "ReportDetail": {
+    "loadError": "Could not load the report",
+    "notFound": "This report doesn't exist or doesn't belong to this team",
+    "responded": "Responded",
+    "notResponded": "No response yet",
+    "transcript": "Audio transcript",
+    "done": "What they did",
+    "next": "What's next",
+    "blocker": "Blocker"
+  },
   "Settings": {
     "title": "Company details",
     "loading": "Loading...",
