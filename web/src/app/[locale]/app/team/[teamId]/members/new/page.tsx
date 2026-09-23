@@ -55,6 +55,11 @@ export default function NewMemberPage() {
               <option value="telegram">{tChannel('telegram')}</option>
             </select>
           </label>
+          {channel === 'telegram' && (
+            <a className="muted-link" href="/help/telegram" target="_blank" rel="noopener noreferrer">
+              {t('telegramHelpLink')}
+            </a>
+          )}
           <label>
             {t('memberContact')}
             <input

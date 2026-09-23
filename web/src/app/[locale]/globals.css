@@ -840,6 +840,16 @@ button[type='button']:hover {
   margin: 1rem 0 0;
 }
 
+.help-steps {
+  margin: 1.5rem 0;
+  padding-left: 1.4rem;
+  display: grid;
+  gap: 0.75rem;
+}
+.help-steps li {
+  padding-left: 0.3rem;
+}
+
 /* --- app shell (dashboard) --- */
 
 .app-shell {

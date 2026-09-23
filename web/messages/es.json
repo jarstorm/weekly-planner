@@ -198,7 +198,8 @@
     "addMemberError": "No se pudo añadir el miembro",
     "addMemberTitle": "Añadir miembro",
     "editMemberTitle": "Editar miembro",
-    "notFound": "Este miembro no existe o no pertenece a este equipo"
+    "notFound": "Este miembro no existe o no pertenece a este equipo",
+    "telegramHelpLink": "¿Cómo consigo el chat ID? Ver guía de Telegram"
   },
   "Billing": {
     "title": "Facturación",
@@ -327,6 +328,18 @@
     "done": "Qué hizo",
     "next": "Qué hará",
     "blocker": "Bloqueo"
+  },
+  "TelegramHelp": {
+    "title": "Cómo configurar Telegram",
+    "intro": "Para recibir el recordatorio semanal y contestar por Telegram, tienes que iniciar tú la conversación con el bot — es una limitación de Telegram, no de WeeklyFeedback: ningún bot puede escribirle primero a nadie.",
+    "openBot": "Abrir {bot} en Telegram",
+    "steps": [
+      "Abre Telegram y busca el bot de WeeklyFeedback (o pulsa el botón de arriba, si ya aparece).",
+      "Pulsa \"Iniciar\" o mándale cualquier mensaje, por ejemplo /start.",
+      "Para darte de alta, quien gestiona tu equipo necesita tu chat_id (un número), no tu @usuario. La forma más rápida: escríbele a @userinfobot en Telegram y te devuelve tu Id.",
+      "Pásale ese número a quien gestione tu equipo en WeeklyFeedback, para que lo añada como tu contacto."
+    ],
+    "note": "Una vez dado de alta, recibirás el recordatorio semanal directo en ese chat y podrás contestar ahí mismo, con texto o nota de voz."
   },
   "Settings": {
     "title": "Datos de la empresa",

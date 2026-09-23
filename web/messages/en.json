@@ -198,7 +198,8 @@
     "addMemberError": "Could not add the member",
     "addMemberTitle": "Add member",
     "editMemberTitle": "Edit member",
-    "notFound": "This member doesn't exist or doesn't belong to this team"
+    "notFound": "This member doesn't exist or doesn't belong to this team",
+    "telegramHelpLink": "How do I get the chat ID? See the Telegram guide"
   },
   "Billing": {
     "title": "Billing",
@@ -327,6 +328,18 @@
     "done": "What they did",
     "next": "What's next",
     "blocker": "Blocker"
+  },
+  "TelegramHelp": {
+    "title": "How to set up Telegram",
+    "intro": "To receive the weekly reminder and reply over Telegram, you have to start the conversation with the bot yourself — that's a Telegram limitation, not a WeeklyFeedback one: no bot can message anyone first.",
+    "openBot": "Open {bot} on Telegram",
+    "steps": [
+      "Open Telegram and search for the WeeklyFeedback bot (or tap the button above, if it's already shown).",
+      "Tap \"Start\" or send it any message, e.g. /start.",
+      "To add you as a member, whoever manages your team needs your chat ID (a number), not your @username. Fastest way: message @userinfobot on Telegram and it replies with your Id.",
+      "Give that number to whoever manages your team in WeeklyFeedback, so they can add it as your contact."
+    ],
+    "note": "Once you're added, you'll get the weekly reminder straight in that chat and can reply there, with text or a voice note."
   },
   "Settings": {
     "title": "Company details",

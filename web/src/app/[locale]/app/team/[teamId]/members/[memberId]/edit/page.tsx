@@ -99,6 +99,11 @@ export default function EditMemberPage() {
               <option value="telegram">{tChannel('telegram')}</option>
             </select>
           </label>
+          {member.channel === 'telegram' && (
+            <a className="muted-link" href="/help/telegram" target="_blank" rel="noopener noreferrer">
+              {t('telegramHelpLink')}
+            </a>
+          )}
           <label>
             {t('memberContact')}
             <input

@@ -11,8 +11,38 @@ import { Channel, IncomingMessage } from './channel.interface';
 @Injectable()
 export class TelegramChannel implements Channel {
   private readonly logger = new Logger(TelegramChannel.name);
+  private cachedUsername: string | null | undefined;
 
   constructor(private readonly config: ConfigService) {}
+
+  // Expuesto vía GET /api/telegram/bot-username (público, sin auth — el
+  // @usuario de un bot ya es visible para cualquiera dentro de Telegram)
+  // para que la página de ayuda pública pueda enlazar directo a t.me/<bot>
+  // en vez de tener el nombre del bot hardcodeado o como placeholder entre
+  // corchetes. Se cachea en memoria del proceso: el username de un bot no
+  // cambia en caliente, no hace falta pedirlo a Telegram en cada visita.
+  async getBotUsername(): Promise<string | null> {
+    if (this.cachedUsername !== undefined) return this.cachedUsername;
+
+    const token = this.config.get<string>('TELEGRAM_BOT_TOKEN');
+    if (!token) {
+      this.cachedUsername = null;
+      return null;
+    }
+
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+      if (!res.ok) throw new Error(`Telegram Bot API (getMe) respondió ${res.status}`);
+      const { result } = (await res.json()) as { result?: { username?: string } };
+      this.cachedUsername = result?.username ?? null;
+      return this.cachedUsername;
+    } catch (err) {
+      // No se cachea el fallo — puede ser un corte transitorio de red, la
+      // próxima visita a la página de ayuda lo reintenta solo.
+      this.logger.error('No se pudo resolver el username del bot de Telegram', err as Error);
+      return null;
+    }
+  }
 
   async send(contact: string, message: string): Promise<void> {
     const token = this.config.get<string>('TELEGRAM_BOT_TOKEN');

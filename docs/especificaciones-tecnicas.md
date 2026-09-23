@@ -131,6 +131,15 @@ Pedido explícito: la página de "Gestionar miembros" (`team/[teamId]/members`) 
 
 De paso, arreglado el link "volver" (`← Equipo`) de varias páginas de detalle: usaba la clase `btn-ghost` sola, sin la clase base `.btn` que le da el layout (`inline-flex`+`gap`) — sin eso el icono y el texto no se alineaban bien y el espaciado con el título de debajo dependía de un `style={{marginBottom}}` suelto y repetido en cada página. Nueva clase `.back-link` centraliza layout + espaciado, aplicada en las 4 páginas que tienen un link de "volver" (miembros, editar equipo, detalle de informe, y las 2 pantallas nuevas de miembros).
 
+### 0.14 Página pública de ayuda para configurar Telegram
+
+Conseguir el `chat_id` de Telegram (sección 0.13, pendiente sin resolver automáticamente) no es evidente para alguien que nunca usó un bot — se necesitaba una explicación accesible sin sesión, tanto para quien gestiona la cuenta como para el propio miembro. Nueva página pública `/help/telegram` (`web/src/app/[locale]/help/telegram/page.tsx`, mismo patrón sin `AppShell` que `/legal/terms`|`/legal/privacy`): explica por qué hace falta iniciar la conversación uno mismo (limitación de Telegram, no del producto), enlaza a `@userinfobot` para sacar el `chat_id`, y trae un botón "Abrir @bot en Telegram" con el `@usuario` real del bot.
+
+- El `@usuario` del bot no estaba expuesto en ningún sitio (solo el token, privado, vive en `TELEGRAM_BOT_TOKEN`) — en vez de dejarlo como placeholder entre corchetes (como los datos legales, sección 6) o hardcodeado, `TelegramChannel.getBotUsername()` (nuevo) lo pide a la propia API de Telegram (`getMe`) y lo cachea en memoria del proceso (el username de un bot no cambia en caliente). Expuesto público, sin `AuthGuard`, en `GET /api/telegram/bot-username` (`TelegramInfoController`) — es información que ya es pública dentro de Telegram, no hay nada que proteger.
+- Las pantallas de alta/edición de miembro (sección 0.13) muestran un link a esta página justo debajo del selector de canal, solo cuando se elige Telegram (`target="_blank"`, para no perder lo escrito en el formulario).
+
+Verificado con el bot real de desarrollo: `GET /api/telegram/bot-username` devuelve el username correcto, la página pública lo usa para armar el link `t.me/<bot>`, y el link condicional aparece/desaparece al cambiar el canal en las pantallas de miembro.
+
 ## 1. Qué hace falta crear antes de tocar código
 
 | Cuenta / servicio | Para qué | Coste al arrancar |
@@ -359,7 +368,7 @@ Para no perder tiempo antes de validar lo esencial: sin integraciones con GitHub
 
 **Pendiente en el alta de miembros por Telegram, identificado pero no hecho:**
 
-- **No hay forma en el panel de resolver el `chat_id` de un miembro a partir de su @usuario.** La API de bots de Telegram no permite mandar mensajes a un @handle — hace falta el `chat_id` numérico, que solo se obtiene después de que esa persona le escriba al bot (ver `webhooks.controller.ts`, `matchMemberAndSaveCheckin`, que matchea por `contact` exacto). Hoy el dueño de la cuenta tiene que conseguir ese número a mano (pedirle al miembro que hable con `@userinfobot`, o mirar los logs del bot) y pegarlo en el campo "Contacto" — el placeholder del campo ya lo indica, pero no hay un flujo guiado. Alternativa a evaluar: un código de invitación de un solo uso que el miembro manda al bot (`/start CODIGO`), y el backend resuelve el `chat_id` solo, sin pedírselo a nadie a mano.
+- **Sigue sin haber una forma automática de resolver el `chat_id`.** Hay guía (sección 0.14) que explica el paso manual, pero el dueño de la cuenta o el miembro todavía tienen que conseguir el número a mano (vía `@userinfobot`) y pegarlo en "Contacto" — no hay ningún flujo que lo resuelva solo. Alternativa a evaluar: un código de invitación de un solo uso que el miembro manda al bot (`/start CODIGO`), y el backend resuelve el `chat_id` automáticamente sin pedírselo a nadie a mano.
 
 ## 6. Checklist antes de producción
 

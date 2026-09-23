@@ -96,6 +96,8 @@ export const api = {
     >,
   ) => request<Organization>('/organizations/me', { method: 'PATCH', body: JSON.stringify(data) }),
 
+  getTelegramBotUsername: () => request<{ username: string | null }>('/telegram/bot-username'),
+
   billingStatus: () => request<BillingStatus>('/billing/status'),
   createCheckoutSession: (plan: 'equipo' | 'organizacion') =>
     request<{ url: string }>('/billing/checkout', { method: 'POST', body: JSON.stringify({ plan }) }),
