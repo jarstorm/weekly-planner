@@ -5,7 +5,8 @@
     "logout": "Log out",
     "dashboard": "Dashboard",
     "newTeam": "New team",
-    "billing": "Billing"
+    "billing": "Billing",
+    "settings": "Company"
   },
   "Channel": {
     "email": "Email",
@@ -150,7 +151,15 @@
     "downloadConversations": "Download conversations",
     "downloadAllConversations": "Download all conversations",
     "editTeam": "Edit team",
-    "manageMembers": "Manage members"
+    "manageMembers": "Manage members",
+    "statTeams": "Teams",
+    "statTotalMembers": "Total members",
+    "statReports": "Reports generated",
+    "statAvgResponse": "Response rate this week",
+    "cardMembers": "{count} {count, plural, one {member} other {members}}",
+    "cardResponseThisWeek": "{responded}/{total} responded this week",
+    "cardLastReport": "Report from {date}",
+    "cardNoReports": "No reports yet"
   },
   "CheckinForm": {
     "loading": "Loading...",
@@ -308,5 +317,20 @@
         "body": "This policy may be updated to reflect changes to the service or applicable regulations; the last-updated date appears at the top of the document."
       }
     ]
+  },
+  "Settings": {
+    "title": "Company details",
+    "loading": "Loading...",
+    "loadError": "Could not load your company details",
+    "saveError": "Could not save the changes, try again.",
+    "companyName": "Company name",
+    "registeredEmail": "Registered email",
+    "contactName": "Contact name",
+    "contactNamePlaceholder": "Who receives notices and support",
+    "country": "Country",
+    "countryUnset": "Not set",
+    "saved": "Changes saved.",
+    "saving": "Saving...",
+    "save": "Save changes"
   }
 }

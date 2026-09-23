@@ -11,7 +11,7 @@ const LOCALES = [
   { code: 'en', flag: '🇺🇸', short: 'EN', label: 'English' },
 ] as const;
 
-export function LocaleSwitcher() {
+export function LocaleSwitcher({ openDirection = 'down' }: { openDirection?: 'down' | 'up' }) {
   const locale = useLocale();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -42,7 +42,7 @@ export function LocaleSwitcher() {
         <ChevronDown size={14} />
       </button>
       {open && (
-        <div className="locale-dropdown-menu" role="listbox">
+        <div className={`locale-dropdown-menu${openDirection === 'up' ? ' locale-dropdown-menu-up' : ''}`} role="listbox">
           {LOCALES.map((l) => {
             const isActive = l.code === locale;
             return (

@@ -8,6 +8,7 @@ import { Link } from '@/i18n/navigation';
 import { api, ApiError, CheckinStatus, Report, Team } from '@/lib/api';
 import { AppShell } from '@/components/AppShell';
 import { ResponsePercent, ResponseRate, ResponseStatusList, mondayOfThisWeek } from '@/components/ResponseStatus';
+import { TeamDetailSkeleton } from '@/components/Skeleton';
 
 export default function TeamDashboardPage() {
   const params = useParams<{ teamId: string }>();
@@ -53,7 +54,7 @@ export default function TeamDashboardPage() {
   if (!team) {
     return (
       <AppShell>
-        <p>{t('loading')}</p>
+        <TeamDetailSkeleton />
       </AppShell>
     );
   }

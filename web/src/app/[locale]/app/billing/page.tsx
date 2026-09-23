@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
 import { api, ApiError, BillingStatus } from '@/lib/api';
 import { AppShell } from '@/components/AppShell';
+import { BillingSkeleton } from '@/components/Skeleton';
 
 // Checkout hospedado por Stripe (Stripe Checkout), no Elements a medida —
 // para el MVP no hace falta un formulario de tarjeta propio, y Checkout
@@ -88,7 +89,7 @@ export default function BillingPage() {
   if (status === null) {
     return (
       <AppShell>
-        <p>{t('loading')}</p>
+        <BillingSkeleton />
       </AppShell>
     );
   }

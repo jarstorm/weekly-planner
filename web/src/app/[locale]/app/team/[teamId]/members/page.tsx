@@ -7,6 +7,7 @@ import { ArrowLeft, Pencil, Trash2, UserPlus, X } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { api, ApiError, ChannelName, Member, Team } from '@/lib/api';
 import { AppShell } from '@/components/AppShell';
+import { FormSkeleton } from '@/components/Skeleton';
 
 export default function TeamMembersPage() {
   const params = useParams<{ teamId: string }>();
@@ -83,11 +84,7 @@ export default function TeamMembersPage() {
   }
 
   if (!team || members === null) {
-    return (
-      <AppShell>
-        {error ? <p role="alert">{error}</p> : <p>{t('loading')}</p>}
-      </AppShell>
-    );
+    return <AppShell>{error ? <p role="alert">{error}</p> : <FormSkeleton rows={3} />}</AppShell>;
   }
 
   return (

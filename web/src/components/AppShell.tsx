@@ -1,6 +1,6 @@
 'use client';
 
-import { LayoutDashboard, UserPlus, LogOut, CreditCard } from 'lucide-react';
+import { LayoutDashboard, UserPlus, LogOut, CreditCard, Building2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, Link } from '@/i18n/navigation';
 import { api } from '@/lib/api';
@@ -34,9 +34,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <CreditCard size={18} />
             <span>{t('billing')}</span>
           </Link>
+          <Link href="/app/settings" className={pathname === '/app/settings' ? 'active' : ''}>
+            <Building2 size={18} />
+            <span>{t('settings')}</span>
+          </Link>
         </nav>
         <div className="app-sidebar-footer">
-          <LocaleSwitcher />
+          <LocaleSwitcher openDirection="up" />
           <button type="button" className="btn-ghost" onClick={handleLogout}>
             <LogOut size={16} />
             <span>{t('logout')}</span>

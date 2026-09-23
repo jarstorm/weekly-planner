@@ -13,6 +13,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
 import { ReportsModule } from './reports/reports.module';
 import { CheckinFormModule } from './checkin-form/checkin-form.module';
 import { BillingModule } from './billing/billing.module';
+import { OrganizationsModule } from './organizations/organizations.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { BillingModule } from './billing/billing.module';
     ReportsModule,
     CheckinFormModule,
     BillingModule,
+    OrganizationsModule,
   ],
   controllers: [HealthController],
 })

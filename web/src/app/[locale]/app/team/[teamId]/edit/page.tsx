@@ -7,6 +7,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useRouter, Link } from '@/i18n/navigation';
 import { api, ApiError, ChannelName, Team } from '@/lib/api';
 import { AppShell } from '@/components/AppShell';
+import { FormSkeleton } from '@/components/Skeleton';
 
 const DOW_KEYS = ['0', '1', '2', '3', '4', '5', '6'] as const;
 
@@ -53,7 +54,7 @@ export default function EditTeamPage() {
   if (!team) {
     return (
       <AppShell>
-        <p>{t('loading')}</p>
+        <FormSkeleton rows={7} />
       </AppShell>
     );
   }

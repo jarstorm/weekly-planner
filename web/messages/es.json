@@ -5,7 +5,8 @@
     "logout": "Salir",
     "dashboard": "Panel",
     "newTeam": "Nuevo equipo",
-    "billing": "Facturación"
+    "billing": "Facturación",
+    "settings": "Empresa"
   },
   "Channel": {
     "email": "Email",
@@ -150,7 +151,15 @@
     "downloadConversations": "Descargar conversaciones",
     "downloadAllConversations": "Descargar todas las conversaciones",
     "editTeam": "Editar equipo",
-    "manageMembers": "Gestionar miembros"
+    "manageMembers": "Gestionar miembros",
+    "statTeams": "Equipos",
+    "statTotalMembers": "Miembros totales",
+    "statReports": "Informes generados",
+    "statAvgResponse": "Respuesta esta semana",
+    "cardMembers": "{count} {count, plural, one {miembro} other {miembros}}",
+    "cardResponseThisWeek": "{responded}/{total} respondieron esta semana",
+    "cardLastReport": "Informe del {date}",
+    "cardNoReports": "Sin informes todavía"
   },
   "CheckinForm": {
     "loading": "Cargando...",
@@ -308,5 +317,20 @@
         "body": "Esta política puede actualizarse para reflejar cambios en el servicio o en la normativa aplicable; la fecha de última actualización figura al principio del documento."
       }
     ]
+  },
+  "Settings": {
+    "title": "Datos de la empresa",
+    "loading": "Cargando...",
+    "loadError": "No se pudieron cargar los datos de la empresa",
+    "saveError": "No se pudieron guardar los cambios, prueba de nuevo.",
+    "companyName": "Nombre de la empresa",
+    "registeredEmail": "Email de registro",
+    "contactName": "Nombre de contacto",
+    "contactNamePlaceholder": "Quién recibe avisos y soporte",
+    "country": "País",
+    "countryUnset": "Sin especificar",
+    "saved": "Cambios guardados.",
+    "saving": "Guardando...",
+    "save": "Guardar cambios"
   }
 }

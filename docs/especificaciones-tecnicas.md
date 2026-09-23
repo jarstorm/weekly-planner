@@ -82,6 +82,25 @@ Cada cambio de esquema (agregar `telegram` a un `check`, la columna `audio_path`
 
 Para agregar un cambio de esquema nuevo: un archivo más en `supabase/migrations/`, numerado después del último. No hace falta tocar `schema.sql` (que queda como referencia de "esquema completo desde cero" para altas nuevas) ni pedirle nada al usuario — la próxima vez que arranque el backend, se aplica solo.
 
+### 0.9 PDF del informe con diseño corporativo (logo, colores de marca)
+
+El PDF que genera `PdfService` (sección 0.5) tenía formato genérico — sin logo, sin colores de marca, títulos de sección detectados mal para el markdown real de la IA. Rediseñado para que se vea como parte del mismo producto que la web:
+
+- **Logo vectorial redibujado con pdfkit**, no una imagen rasterizada: `drawLogo` usa el mismo `path` SVG que `web/src/components/BrandMark.tsx` y `web/src/app/icon.svg` (burbuja + check), con `doc.linearGradient()` + `translate()/scale()` — los tres quedan sincronizados copiando el mismo path si el logo cambia algún día. A 22px de alto se veía en blanco (detalle perdido al escalar, no un bug de renderizado); a 30px se ve bien.
+- **Paleta de marca** (mismos valores que `globals.css`) en vez de negro/gris plano: títulos de sección en verde de marca, pie de página en gris muted, regla divisoria bajo la cabecera.
+- **Detección de "títulos de sección" en negrita**: el prompt de `AggregateService` genera los títulos como `**Logros de la semana**` seguido de un salto de línea duro (dos espacios), no un heading `##` real — `marked.lexer` tokeniza eso como un `strong` seguido de un token de texto residual (solo espacios), no un único token. La detección tolera ese texto en blanco después del `strong` (probado contra markdown real de un informe generado por Groq, no solo contra markdown de prueba a mano).
+- Pie de página con disclaimer + paginación (`bufferedPageRange`), en todas las páginas.
+
+Verificado end-to-end con datos reales: equipo de prueba, checkins guardados, `ReportJob` disparado (generación real con Groq), PDF descargado de `GET /api/reports/:id/pdf` y renderizado a PNG con `pdftoppm` para inspección visual — logo, títulos en verde, viñetas y pie de página correctos, en informes de una y de varias páginas.
+
+### 0.10 Panel: estadísticas del dashboard, ficha de la empresa, estados de carga con skeleton
+
+Tres mejoras del panel autenticado (`AppShell`), pedidas juntas:
+
+- **Dashboard con datos reales, no solo la lista de equipos** (`web/src/app/[locale]/app/page.tsx`): una fila de estadísticas agregadas (equipos, miembros totales, informes generados, % de respuesta de la semana) y, en cada card de equipo, el número de miembros, cuántos respondieron esta semana y un link directo para descargar el PDF del último informe (`api.reportPdfUrl`, con `stopPropagation` para no disparar la navegación de la card). Los datos por equipo (miembros, informes, estado de la semana) se piden en paralelo tras cargar la lista de equipos — no bloquean el render inicial de las cards.
+- **Ficha de la empresa** (`web/src/app/[locale]/app/settings/page.tsx`, ruta `/app/settings`, nuevo `OrganizationsController`/`OrganizationsService` en el backend con `GET/PATCH /api/organizations/me`): nombre de la empresa editable, email de registro (de solo lectura, viene de `auth.users` vía el usuario autenticado, no se duplica en la tabla `organizations`), nombre de contacto y país. País guardado como ISO 3166-1 alpha-2 (`organizations.country`, migración `0004`; `contact_name`, migración `0005`) — el desplegable usa `Intl.DisplayNames` (nativo del navegador, sin librería ni lista de nombres mantenida a mano) para mostrar los ~249 países localizados en el idioma activo del panel, ordenados alfabéticamente en ese idioma.
+- **Estados de carga con skeleton** (`web/src/components/Skeleton.tsx`) en vez de un `<p>Cargando...</p>` de texto plano, en todas las páginas del panel (dashboard, ficha de empresa, detalle de equipo, editar equipo, miembros, facturación) — cada skeleton calca la forma real de su página (misma grid de stats, misma lista de reports, etc.) para que no haya salto de layout cuando llegan los datos.
+
 ## 1. Qué hace falta crear antes de tocar código
 
 | Cuenta / servicio | Para qué | Coste al arrancar |
@@ -307,4 +326,13 @@ Para no perder tiempo antes de validar lo esencial: sin integraciones con GitHub
 **Pendiente en la landing (`web/src/app/[locale]/page.tsx`), identificado pero no hecho:**
 
 - **Screenshot real del producto en vez del mock armado a mano.** El hero y la sección "Here's what your report looks like" usan un `.report-mock` construido en HTML/CSS con contenido de ejemplo (marcado "Example"). Un comprador B2B escéptico distingue un mock de un screenshot real de la app funcionando — y la app ya funciona, así que no hay excusa técnica, solo falta capturarlo.
-- **Términos de servicio y Política de privacidad.** El footer no tiene links legales — es de las primeras cosas que un comprador B2B busca, y su ausencia hoy resta confianza más que cualquier detalle visual. La política de privacidad se puede escribir honesta y específica sin inventar nada (subprocesadores reales del producto: Supabase, Stripe, Resend, Groq, Telegram — ver sección 0.2-0.3), pero hace falta que el dueño del producto confirme antes datos legales propios (razón social, si aplica DPO, etc.) — no es algo que se pueda completar sin esa información.
+
+**Pendiente en el panel, identificado pero no hecho:**
+
+- **Vista de detalle de un informe generado**, pedida por el usuario: desde el histórico de un equipo (`web/src/app/[locale]/app/team/[teamId]/page.tsx`), poder hacer click en la fecha de un informe concreto y ver una página de detalle con el listado de miembros de ese equipo (quién respondió y quién no — el dato ya existe, `checkinStatus` por `week_start`) y, por cada miembro, su conversación completa de esa semana: si respondió por texto, el texto; si respondió por nota de voz, el audio original reproducible **y** la transcripción (el audio ya se guarda — `checkins.audio_path` en Supabase Storage, sección 0.7 — y la transcripción ya se guarda como `raw_text`/`done_text` del checkin, así que es una vista nueva sobre datos que ya existen, no hace falta tocar el pipeline de captura).
+
+## 6. Checklist antes de producción
+
+Cosas que están hechas pero no listas para un usuario real todavía — no son bugs, son huecos conocidos que hay que cerrar antes de lanzar de verdad:
+
+- **Términos de servicio y Política de privacidad con datos reales.** `/legal/terms` y `/legal/privacy` (`web/src/app/[locale]/legal/`) existen y están enlazados desde el footer, con contenido honesto y específico (subprocesadores reales: Supabase, Stripe, Resend, Groq, Telegram — ver sección 0.2-0.3), pero tienen placeholders entre corchetes (`[NOMBRE COMPLETO]`, `[NIF]`, `[DOMICILIO FISCAL]`, `[EMAIL DE CONTACTO]`) donde faltan los datos legales propios del titular del servicio. Cada página muestra un aviso visible de que tiene placeholders pendientes — hay que quitar ese aviso y completar los datos reales antes de que un cliente real pueda verlas. *Hecho cuando:* ambas páginas no tienen ningún `[...]` sin completar y el aviso de placeholders se quitó del código.

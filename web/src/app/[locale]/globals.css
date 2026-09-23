@@ -313,6 +313,45 @@ button[type='button']:hover {
   margin: 0;
 }
 
+/* --- skeletons (estado de carga del panel) --- */
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+.skeleton {
+  display: block;
+  background: var(--color-neutral-100);
+  border-radius: var(--radius-sm);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.skeleton-text {
+  height: 0.9rem;
+  border-radius: 4px;
+  margin: 0.4rem 0;
+}
+
+.skeleton-title {
+  height: 1.6rem;
+  width: 40%;
+  border-radius: 5px;
+  margin-bottom: 1.25rem;
+}
+
+.skeleton-button {
+  height: 2.5rem;
+  width: 140px;
+  border-radius: 999px;
+}
+
+.skeleton-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-sm);
+}
+
 /* --- landing --- */
 
 @keyframes fadeInUp {
@@ -405,7 +444,7 @@ button[type='button']:hover {
 }
 
 .trust-note {
-  margin: 1rem 0 0;
+  margin: 1.5rem 0 0;
   font-size: 0.85rem;
   color: var(--color-text-muted);
   font-weight: 600;
@@ -1046,6 +1085,11 @@ button[type='button']:hover {
   z-index: 30;
 }
 
+.locale-dropdown-menu-up {
+  top: auto;
+  bottom: calc(100% + 0.4rem);
+}
+
 .locale-dropdown-item {
   display: flex;
   align-items: center;
@@ -1136,7 +1180,7 @@ button[type='button']:hover {
 
 .team-card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 1rem;
 }
 
@@ -1162,6 +1206,22 @@ button[type='button']:hover {
 }
 .team-card strong {
   font-size: 1.05rem;
+}
+.team-card-report {
+  display: block;
+  width: 100%;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-border);
+}
+.team-card-report a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+}
+.team-card-report a:hover {
+  color: var(--color-primary-700);
+  text-decoration: underline;
 }
 
 .member-status-list {

@@ -46,6 +46,8 @@ create table if not exists organizations (
   has_executive_summary boolean not null default false,
   price_month numeric(10,2),                     -- 49.00 | 149.00 | NULL (custom, a medida)
   stripe_customer_id text,
+  country text,                                  -- ISO 3166-1 alpha-2 ('ES', 'US', ...), ver migración 0004
+  contact_name text,                             -- persona de contacto, ver migración 0005
   created_at timestamptz not null default now(),
 
   -- el resumen ejecutivo nunca puede activarse en Plan Equipo

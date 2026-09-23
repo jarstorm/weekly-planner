@@ -78,6 +78,10 @@ export const api = {
   submitCheckinForm: (token: string, data: { doneText?: string; nextText?: string; blockerText?: string }) =>
     request('/checkins/form', { method: 'POST', body: JSON.stringify({ token, ...data }) }),
 
+  getOrganization: () => request<Organization>('/organizations/me'),
+  updateOrganization: (data: Partial<Pick<Organization, 'name' | 'country' | 'contact_name'>>) =>
+    request<Organization>('/organizations/me', { method: 'PATCH', body: JSON.stringify(data) }),
+
   billingStatus: () => request<BillingStatus>('/billing/status'),
   createCheckoutSession: (plan: 'equipo' | 'organizacion') =>
     request<{ url: string }>('/billing/checkout', { method: 'POST', body: JSON.stringify({ plan }) }),
@@ -131,6 +135,14 @@ export interface CheckinStatus {
   blockerText: string | null;
   rawText: string | null;
   receivedAt: string | null;
+}
+
+export interface Organization {
+  id: string;
+  name: string;
+  country: string | null;
+  contact_name: string | null;
+  email: string;
 }
 
 export interface BillingStatus {
