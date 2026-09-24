@@ -16,9 +16,12 @@ Estos campos son enteros libres por organización (`organizations.max_teams` / `
 
 **Cómo darlo de alta hoy:** no hay UI de autoservicio para esto. Se hace con una consulta directa a la organización ya creada (o insertando la fila a mano), fijando `plan='custom'`, `max_teams`, `max_members_per_team`, `price_month` y las opciones que aplique. No hay checklist automatizado — es trabajo manual del equipo, no del cliente.
 
+## Decisión de producto: nunca más de una encuesta al mes
+
+El diseño es deliberado — una única encuesta por cuenta, un solo `survey_day_of_month`, un solo set de preguntas (`organizations.survey_questions`). No se ofrece "dos encuestas al mes" ni frecuencias distintas ni aunque un cliente lo pida para Custom — no es un límite técnico a levantar más adelante, es la decisión tomada.
+
 ## Necesita desarrollo antes de poder ofrecerlo
 
-- **Más de una encuesta al mes, o distinta frecuencia**: el diseño actual es una única encuesta por cuenta, con un solo `survey_day_of_month` y un solo set de preguntas (`organizations.survey_questions`). Pedir "dos encuestas al mes" o "una encuesta trimestral además de la mensual" no encaja en el modelo — haría falta una tabla de configuraciones de encuesta (varias por cuenta, cada una con su día/frecuencia/preguntas) en vez de columnas sueltas en `organizations`.
 - **Resumen ejecutivo con reglas propias** (p. ej. un resumen semanal Y otro mensual, o resumen por departamento en vez de por organización entera): el `ReportJob` solo genera un consolidado por organización y por semana. Cualquier variante de cadencia o de agrupación es desarrollo nuevo.
 - **Límites distintos por equipo dentro de la misma cuenta** (p. ej. un equipo con 50 personas y otro con 10): hoy `max_members_per_team` es un único valor por organización, aplica igual a todos sus equipos. Límites por equipo individual requeriría mover ese campo a la tabla `teams`.
 - **Canales de respuesta adicionales** (Slack, Microsoft Teams, etc.): el código ya está preparado para añadir conectores sin tocar el resto (`ChannelsService`, sección 3.1 de `especificaciones-tecnicas.md`), pero cada canal nuevo es una integración real, no una opción de configuración.
