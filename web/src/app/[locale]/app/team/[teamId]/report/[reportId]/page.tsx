@@ -86,9 +86,11 @@ export default function ReportDetailPage() {
               )}
             </div>
 
-            {m.responded && m.audioUrl && (
+            {m.responded && m.audioUrls.length > 0 && (
               <>
-                <audio className="conversation-audio" controls src={m.audioUrl} />
+                {m.audioUrls.map((url, i) => (
+                  <audio key={i} className="conversation-audio" controls src={url} />
+                ))}
                 <div className="conversation-field">
                   <div className="conversation-field-label">{t('transcript')}</div>
                   <p>{m.rawText}</p>
@@ -96,7 +98,7 @@ export default function ReportDetailPage() {
               </>
             )}
 
-            {m.responded && !m.audioUrl && (m.doneText || m.nextText || m.blockerText) && (
+            {m.responded && m.audioUrls.length === 0 && (m.doneText || m.nextText || m.blockerText) && (
               <>
                 {m.doneText && (
                   <div className="conversation-field">
@@ -119,7 +121,7 @@ export default function ReportDetailPage() {
               </>
             )}
 
-            {m.responded && !m.audioUrl && !m.doneText && !m.nextText && !m.blockerText && (
+            {m.responded && m.audioUrls.length === 0 && !m.doneText && !m.nextText && !m.blockerText && (
               <div className="conversation-field">
                 <p>{m.rawText}</p>
               </div>

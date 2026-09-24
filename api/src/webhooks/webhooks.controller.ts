@@ -52,22 +52,28 @@ async function matchMemberAndSaveCheckin(
   const timezone = (member as any).teams?.organizations?.timezone ?? 'Europe/Madrid';
   const weekStart = currentWeekStart(new Date(), timezone);
 
-  let finalText = rawText;
+  let finalText: string | undefined = rawText;
   let audioPath: string | undefined;
   if (audio) {
-    audioPath = `${member.id}/${weekStart}.${audio.extension}`;
+    // Un sufijo por mensaje (Date.now()), no solo member.id/weekStart — con
+    // varias notas de voz la misma semana, un nombre fijo pisaría el
+    // fichero anterior en Storage aunque ahora se guarden varias rutas
+    // (migración 0014).
+    audioPath = `${member.id}/${weekStart}-${Date.now()}.${audio.extension}`;
     // Se guarda el audio primero — si falla la transcripción, el audio
     // original no se pierde y se puede reintentar/revisar a mano.
     await audioService.store(audio.buffer, audioPath, audio.mimeType);
     finalText = await audioService.transcribe(audio.buffer, `checkin.${audio.extension}`, audio.mimeType);
   }
 
-  await checkins.saveInternal({
+  // Se concatena con lo que ya hubiera esta semana, en vez de pisarlo
+  // (pedido explícito, migración 0014) — ver CheckinsService.appendIncoming.
+  await checkins.appendIncoming({
     team_id: member.team_id,
     member_id: member.id,
     week_start: weekStart,
-    raw_text: finalText,
-    audio_path: audioPath,
+    text: finalText,
+    audioPath,
   });
 
   return { ok: true, matched: true };

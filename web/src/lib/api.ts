@@ -188,7 +188,8 @@ export interface CheckinStatus {
   blockerText: string | null;
   rawText: string | null;
   receivedAt: string | null;
-  audioUrl: string | null;
+  // Una URL por nota de voz de la semana — antes una sola (migración 0014).
+  audioUrls: string[];
 }
 
 export interface Organization {

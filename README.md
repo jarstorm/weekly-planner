@@ -44,7 +44,14 @@ cd api
 npm test
 ```
 
-Cubre lógica que no depende de servicios externos: cálculo de horarios/timezone (`src/jobs/date.utils.spec.ts`), el prompt de agregación con IA (`src/aggregate/aggregate.service.spec.ts`), y los límites de plan (`src/teams/teams.service.spec.ts`). El frontend no tiene tests todavía.
+Cubre lógica que no depende de servicios externos: cálculo de horarios/timezone (`src/jobs/date.utils.spec.ts`), el prompt de agregación con IA (`src/aggregate/aggregate.service.spec.ts`), los límites de plan (`src/teams/teams.service.spec.ts`), cambio de plan y borrado de equipos al bajar (`src/billing/billing.service.spec.ts`), retención del histórico (`src/jobs/retention.job.spec.ts`) y concatenación de mensajes entrantes (`src/checkins/checkins.service.spec.ts`).
+
+```bash
+cd web
+npm test
+```
+
+Con Vitest + Testing Library: utilidades de fecha y estado de respuesta (`src/components/ResponseStatus.spec.tsx`) y el cliente de API (`src/lib/api.spec.ts`). Cobertura parcial — la mayoría de páginas todavía no tiene tests propios.
 
 ## CI
 

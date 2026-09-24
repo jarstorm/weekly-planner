@@ -9,9 +9,10 @@ import { SurveyModule } from '../survey/survey.module';
 import { ReminderJob } from './reminder.job';
 import { ReportJob } from './report.job';
 import { SurveyJob } from './survey.job';
+import { RetentionJob } from './retention.job';
 
 @Module({
   imports: [TeamsModule, CheckinsModule, ChannelsModule, AggregateModule, PdfModule, CheckinFormModule, SurveyModule],
-  providers: [ReminderJob, ReportJob, SurveyJob],
+  providers: [ReminderJob, ReportJob, SurveyJob, RetentionJob],
 })
 export class JobsModule {}

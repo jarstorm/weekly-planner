@@ -8,9 +8,12 @@ export type BillingPlan = 'equipo' | 'organizacion';
 // Límites por plan — reflejan mvp-resumen-semanal-equipos.md sección 11.
 // El Plan Custom no se vende por Checkout (precio a medida, negociado
 // aparte), así que solo Equipo y Organización pasan por Stripe.
-const PLAN_CONFIG: Record<BillingPlan, { maxTeams: number; maxMembersPerTeam: number; priceMonth: number }> = {
-  equipo: { maxTeams: 1, maxMembersPerTeam: 10, priceMonth: 49 },
-  organizacion: { maxTeams: 5, maxMembersPerTeam: 20, priceMonth: 149 },
+const PLAN_CONFIG: Record<
+  BillingPlan,
+  { maxTeams: number; maxMembersPerTeam: number; priceMonth: number; historyRetentionMonths: number }
+> = {
+  equipo: { maxTeams: 1, maxMembersPerTeam: 10, priceMonth: 49, historyRetentionMonths: 1 },
+  organizacion: { maxTeams: 5, maxMembersPerTeam: 20, priceMonth: 149, historyRetentionMonths: 6 },
 };
 
 // Orden de los planes de autoservicio, para saber si un cambio es subir o
@@ -158,6 +161,7 @@ export class BillingService {
         max_teams: planConfig.maxTeams,
         max_members_per_team: planConfig.maxMembersPerTeam,
         price_month: planConfig.priceMonth,
+        history_retention_months: planConfig.historyRetentionMonths,
       })
       .eq('id', organizationId);
 
@@ -251,6 +255,7 @@ export class BillingService {
             max_teams: planConfig.maxTeams,
             max_members_per_team: planConfig.maxMembersPerTeam,
             price_month: planConfig.priceMonth,
+            history_retention_months: planConfig.historyRetentionMonths,
             stripe_customer_id: session.customer as string,
             stripe_subscription_id: session.subscription as string,
           })

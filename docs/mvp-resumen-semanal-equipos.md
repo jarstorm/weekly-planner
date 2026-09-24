@@ -239,15 +239,16 @@ Bloqueos de semanas anteriores para detectar recurrencia:
 
 Tres planes, todos con la misma app y el mismo flujo por debajo — lo que cambia es cuánto caben (equipos, personas) y si incluye el resumen ejecutivo:
 
-| Plan | Equipos | Personas | Resumen ejecutivo | Precio |
-|---|---|---|---|---|
-| **Equipo** | 1 | hasta 10 | No disponible | 49€/mes |
-| **Organización** | hasta 5 | hasta 20 por equipo (100 en total) | Opcional, se puede activar o no | 149€/mes |
-| **Custom** | sin límite | sin límite | Opcional, se puede activar o no | A medida |
+| Plan | Equipos | Personas | Resumen ejecutivo | Retención del histórico | Precio |
+|---|---|---|---|---|---|
+| **Equipo** | 1 | hasta 10 | No disponible | 1 mes | 49€/mes |
+| **Organización** | hasta 5 | hasta 20 por equipo (100 en total) | Opcional, se puede activar o no | 6 meses | 149€/mes |
+| **Custom** | sin límite | sin límite | Opcional, se puede activar o no | Sin límite | A medida |
 
 - **Plan Equipo:** 49€/mes, un equipo, hasta 10 personas. Sin coste por asiento. Pensado para un equipo suelto o una empresa pequeña que funciona como un solo bloque. No incluye resumen ejecutivo — con un solo equipo no hay nada que consolidar.
 - **Plan Organización:** 149€/mes, hasta 5 equipos dentro de la misma empresa, hasta 20 personas por equipo. Incluye la opción de activar el **resumen ejecutivo** (ver 6.4), que NO está disponible en el Plan Equipo. Sale a ~30€/equipo, un descuento real frente a pagar 5 planes Equipo sueltos (245€/mes), para que a una empresa con varios departamentos le compense estar en el plan que junta todo en vez de fragmentarse en equipos sueltos.
 - **Plan Custom:** equipos y miembros ilimitados, para empresas más grandes que ya no encajan en el Plan Organización (6+ equipos, o equipos de más de 20 personas). Precio a medida, conversación comercial — no tiene sentido fijar un precio de catálogo hasta tener el primer cliente de este tamaño. Incluye la misma opción de resumen ejecutivo que el Plan Organización, y con varios equipos es habitual que sí les interese activarlo. Alta gestionada a mano (no hay flujo de autoservicio para este plan).
+- **Retención del histórico:** `RetentionJob` (`api/src/jobs/retention.job.ts`, migración 0013) borra checkins, informes y respuestas de encuesta más antiguos que `organizations.history_retention_months` — 1 mes en Equipo, 6 en Organización, sin límite en Custom (`NULL`, la organización ni se consulta). Corre una vez al día. No borra los audios ya subidos a Supabase Storage que esos checkins pudieran referenciar — limpieza de Storage pendiente.
 - Sin permanencia, cancelable en cualquier momento — reduce la fricción de la primera venta.
 - Prueba gratuita de 3 semanas en el Plan Equipo, 4 semanas en el Plan Organización y Custom (hay más piezas moviéndose y conviene que les dé tiempo a ver el resumen ejecutivo un par de veces, si lo activan, antes de decidir).
 - Cuando exista integración con Slack y personalización avanzada (v2), se puede revisar el precio de los planes, no antes.

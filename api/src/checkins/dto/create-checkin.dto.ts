@@ -25,8 +25,4 @@ export class CreateCheckinDto {
   @IsOptional()
   @IsString()
   blocker_text?: string;
-
-  @IsOptional()
-  @IsString()
-  audio_path?: string; // path en el bucket privado "checkin-audio", si vino por nota de voz
 }

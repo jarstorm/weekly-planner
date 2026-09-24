@@ -11,6 +11,7 @@ Estos campos son enteros libres por organización (`organizations.max_teams` / `
 - **Resumen ejecutivo** (`has_executive_summary`): opción binaria, se activa o no. Ya soporta cualquier número de equipos (el constraint `org_exec_summary_plan_check` en `schema.sql` solo lo bloquea en Plan Equipo, nunca en Organización/Custom).
 - **Encuesta mensual anónima** (`has_monthly_survey`): opción binaria, hasta 5 preguntas, un día del mes configurable (`survey_day_of_month`). Igual que el resumen ejecutivo, disponible sin cambios para Custom.
 - **Idioma de la cuenta** (`organizations.language`, es/en): preguntas, encuesta e informes en ese idioma.
+- **Retención del histórico** (`organizations.history_retention_months`): 1 mes en Equipo, 6 en Organización, `NULL` (sin límite) en Custom. `RetentionJob` borra checkins/informes/respuestas de encuesta más antiguos que ese corte, una vez al día.
 - **Precio**: campo libre (`price_month`), a medida — no hay lógica de precio de catálogo para Custom.
 
 **Cómo darlo de alta hoy:** no hay UI de autoservicio para esto. Se hace con una consulta directa a la organización ya creada (o insertando la fila a mano), fijando `plan='custom'`, `max_teams`, `max_members_per_team`, `price_month` y las opciones que aplique. No hay checklist automatizado — es trabajo manual del equipo, no del cliente.

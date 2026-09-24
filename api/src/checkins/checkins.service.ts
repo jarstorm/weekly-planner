@@ -13,7 +13,15 @@ export interface MemberCheckinStatus {
   blockerText: string | null;
   rawText: string | null;
   receivedAt: string | null;
-  audioUrl: string | null;
+  audioUrls: string[];
+}
+
+export interface AppendIncomingCheckinInput {
+  team_id: string;
+  member_id: string;
+  week_start: string;
+  text?: string;
+  audioPath?: string;
 }
 
 @Injectable()
@@ -52,6 +60,46 @@ export class CheckinsService {
     const { data, error } = await this.supabase.db
       .from('checkins')
       .upsert(dto, { onConflict: 'member_id,week_start' })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  // Usado por el webhook de Telegram/WhatsApp (matchMemberAndSaveCheckin):
+  // cada mensaje entrante de la semana se CONCATENA al raw_text existente
+  // en vez de pisarlo, y cada nota de voz se añade a audio_paths en vez de
+  // reemplazar la anterior — pedido explícito, antes solo se guardaba el
+  // último mensaje (migración 0014). Lectura-modificación-escritura, no
+  // atómico a nivel de base de datos: dos mensajes casi simultáneos del
+  // mismo miembro podrían perder uno en una condición de carrera muy
+  // improbable en el uso real (una persona no manda dos mensajes en el
+  // mismo instante). El formulario web y el endpoint manual de pruebas
+  // siguen usando saveInternal, sin concatenar.
+  async appendIncoming(input: AppendIncomingCheckinInput) {
+    const { data: existing, error: fetchError } = await this.supabase.db
+      .from('checkins')
+      .select('raw_text, audio_paths')
+      .eq('member_id', input.member_id)
+      .eq('week_start', input.week_start)
+      .maybeSingle();
+    if (fetchError) throw fetchError;
+
+    const raw_text = input.text
+      ? existing?.raw_text
+        ? `${existing.raw_text}\n\n${input.text}`
+        : input.text
+      : (existing?.raw_text ?? null);
+    const audio_paths = input.audioPath
+      ? [...(existing?.audio_paths ?? []), input.audioPath]
+      : (existing?.audio_paths ?? []);
+
+    const { data, error } = await this.supabase.db
+      .from('checkins')
+      .upsert(
+        { team_id: input.team_id, member_id: input.member_id, week_start: input.week_start, raw_text, audio_paths },
+        { onConflict: 'member_id,week_start' },
+      )
       .select()
       .single();
     if (error) throw error;
@@ -105,9 +153,10 @@ export class CheckinsService {
           blockerText: c?.blocker_text ?? null,
           rawText: c?.raw_text ?? null,
           receivedAt: c?.received_at ?? null,
-          // Signed URL bajo demanda (sección 0.3/audio.service.ts) — solo se
-          // pide si de verdad hubo nota de voz, no en cada checkin de texto.
-          audioUrl: c?.audio_path ? await this.audio.getSignedUrl(c.audio_path) : null,
+          // Una signed URL por nota de voz de la semana (sección 0.3/
+          // audio.service.ts), bajo demanda — antes una sola, ahora puede
+          // haber varias (migración 0014).
+          audioUrls: await Promise.all((c?.audio_paths ?? []).map((p: string) => this.audio.getSignedUrl(p))),
         };
       }),
     );

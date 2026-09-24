@@ -165,6 +165,16 @@ export default function LandingPage() {
               <span className="plan-badge plan-badge-bottom">{t('planPopular')}</span>
             </Reveal>
           </li>
+          <li>
+            <Reveal delay={200}>
+              <strong>{t('planCustom')}</strong>
+              <span className="price">{t('planCustomPrice')}</span>
+              <p style={{ margin: '0.5rem 0 0' }}>{t('planCustomDesc')}</p>
+              <a className="btn btn-secondary" style={{ marginTop: '0.75rem' }} href="mailto:contact@zaviren.com">
+                {t('planCustomCta')}
+              </a>
+            </Reveal>
+          </li>
         </ul>
         <p className="muted-link price-note">{t('priceNote')}</p>
 
@@ -176,6 +186,7 @@ export default function LandingPage() {
                 <th>{t('compareFeature')}</th>
                 <th>{t('planTeam')}</th>
                 <th>{t('planOrg')}</th>
+                <th>{t('planCustom')}</th>
               </tr>
             </thead>
             <tbody>
@@ -183,14 +194,17 @@ export default function LandingPage() {
                 <td>{t('compareTeams')}</td>
                 <td>{t('compareTeamsTeam')}</td>
                 <td>{t('compareTeamsOrg')}</td>
+                <td>{t('compareTeamsCustom')}</td>
               </tr>
               <tr>
                 <td>{t('compareMembers')}</td>
                 <td>{t('compareMembersTeam')}</td>
                 <td>{t('compareMembersOrg')}</td>
+                <td>{t('compareMembersCustom')}</td>
               </tr>
               <tr>
                 <td>{t('compareChannels')}</td>
+                <td>{t('compareChannelsValue')}</td>
                 <td>{t('compareChannelsValue')}</td>
                 <td>{t('compareChannelsValue')}</td>
               </tr>
@@ -198,25 +212,28 @@ export default function LandingPage() {
                 <td>{t('compareReports')}</td>
                 <td><CheckCircle2 size={16} className="plan-compare-yes" /></td>
                 <td><CheckCircle2 size={16} className="plan-compare-yes" /></td>
+                <td><CheckCircle2 size={16} className="plan-compare-yes" /></td>
               </tr>
               <tr>
                 <td>{t('compareExecSummary')}</td>
                 <td><X size={16} className="plan-compare-no" /></td>
+                <td><CheckCircle2 size={16} className="plan-compare-yes" /></td>
                 <td><CheckCircle2 size={16} className="plan-compare-yes" /></td>
               </tr>
               <tr>
                 <td>{t('compareSurvey')}</td>
                 <td><X size={16} className="plan-compare-no" /></td>
                 <td><CheckCircle2 size={16} className="plan-compare-yes" /></td>
+                <td><CheckCircle2 size={16} className="plan-compare-yes" /></td>
               </tr>
               <tr>
                 <td>{t('comparePrice')}</td>
                 <td>{t('planTeamPrice')}</td>
                 <td>{t('planOrgPrice')}</td>
+                <td>{t('planCustomPrice')}</td>
               </tr>
             </tbody>
           </table>
-          <p className="muted-link" style={{ textAlign: 'center', marginTop: '1rem' }}>{t('compareCustomNote')}</p>
         </Reveal>
       </section>
 
