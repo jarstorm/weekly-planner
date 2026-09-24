@@ -8,6 +8,7 @@ import {
   Smartphone,
   RefreshCw,
   CheckCircle2,
+  X,
 } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { LocaleSwitcher } from '@/components/LocaleSwitcher';
@@ -166,6 +167,56 @@ export default function LandingPage() {
           </li>
         </ul>
         <p className="muted-link price-note">{t('priceNote')}</p>
+
+        <Reveal delay={150} className="plan-compare-wrap">
+          <h3 className="plan-compare-title">{t('compareTitle')}</h3>
+          <table className="plan-compare-table">
+            <thead>
+              <tr>
+                <th>{t('compareFeature')}</th>
+                <th>{t('planTeam')}</th>
+                <th>{t('planOrg')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>{t('compareTeams')}</td>
+                <td>{t('compareTeamsTeam')}</td>
+                <td>{t('compareTeamsOrg')}</td>
+              </tr>
+              <tr>
+                <td>{t('compareMembers')}</td>
+                <td>{t('compareMembersValue')}</td>
+                <td>{t('compareMembersValue')}</td>
+              </tr>
+              <tr>
+                <td>{t('compareChannels')}</td>
+                <td>{t('compareChannelsValue')}</td>
+                <td>{t('compareChannelsValue')}</td>
+              </tr>
+              <tr>
+                <td>{t('compareReports')}</td>
+                <td><CheckCircle2 size={16} className="plan-compare-yes" /></td>
+                <td><CheckCircle2 size={16} className="plan-compare-yes" /></td>
+              </tr>
+              <tr>
+                <td>{t('compareExecSummary')}</td>
+                <td><X size={16} className="plan-compare-no" /></td>
+                <td><CheckCircle2 size={16} className="plan-compare-yes" /></td>
+              </tr>
+              <tr>
+                <td>{t('compareSurvey')}</td>
+                <td><X size={16} className="plan-compare-no" /></td>
+                <td><CheckCircle2 size={16} className="plan-compare-yes" /></td>
+              </tr>
+              <tr>
+                <td>{t('comparePrice')}</td>
+                <td>{t('planTeamPrice')}</td>
+                <td>{t('planOrgPrice')}</td>
+              </tr>
+            </tbody>
+          </table>
+        </Reveal>
       </section>
 
       <section className="landing-section" id="faq">

@@ -96,9 +96,22 @@ export const api = {
         | 'timezone'
         | 'has_executive_summary'
         | 'executive_summary_recipients'
+        | 'has_monthly_survey'
+        | 'survey_questions'
+        | 'survey_day_of_month'
       >
     >,
   ) => request<Organization>('/organizations/me', { method: 'PATCH', body: JSON.stringify(data) }),
+
+  // Formulario público de la encuesta mensual anónima — el token es la
+  // credencial, no hay sesión de por medio (mismo criterio que checkins/form).
+  getSurveyForm: (token: string) => request<SurveyFormInfo>(`/survey/form?token=${encodeURIComponent(token)}`),
+  submitSurveyForm: (token: string, answers: string[]) =>
+    request('/survey/form', { method: 'POST', body: JSON.stringify({ token, answers }) }),
+
+  listSurveyPeriods: () => request<string[]>('/survey/periods'),
+  getSurveyResults: (period: string) =>
+    request<SurveyResults>(`/survey/results?period=${encodeURIComponent(period)}`),
 
   getTelegramBotUsername: () => request<{ username: string | null }>('/telegram/bot-username'),
   getEnabledChannels: () => request<EnabledChannels>('/channels/enabled'),
@@ -174,6 +187,28 @@ export interface Organization {
   // Organización/Custom (org_exec_summary_plan_check en schema.sql).
   has_executive_summary: boolean;
   executive_summary_recipients: string[];
+  // Encuesta mensual anónima — opción, solo disponible en Plan
+  // Organización/Custom (org_survey_plan_check en schema.sql). De cuenta,
+  // no por equipo: mismas preguntas para todos los equipos.
+  has_monthly_survey: boolean;
+  survey_questions: string[];
+  survey_day_of_month: number;
+}
+
+export interface SurveyFormInfo {
+  memberName: string;
+  organizationName: string;
+  questions: string[];
+  alreadySubmitted: boolean;
+}
+
+export interface SurveyResults {
+  period: string;
+  questions: string[];
+  answersByQuestion: string[][];
+  responseCount: number;
+  submittedCount: number;
+  totalActiveMembers: number;
 }
 
 // email siempre true (canal fijo) — telegram/whatsapp según ENABLE_*_CHANNEL

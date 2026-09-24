@@ -8,8 +8,10 @@ import { api, ApiError, Organization } from '@/lib/api';
 import { AppShell } from '@/components/AppShell';
 import { FormSkeleton } from '@/components/Skeleton';
 import { RecipientsEditor } from '@/components/RecipientsEditor';
+import { QuestionsEditor } from '@/components/QuestionsEditor';
 
 const DOW_KEYS = ['0', '1', '2', '3', '4', '5', '6'] as const;
+const DAY_OF_MONTH_OPTIONS = Array.from({ length: 28 }, (_, i) => i + 1);
 
 // Configuración del "loop de feedback" — pantalla propia, no una sección
 // más dentro de "Datos de la empresa" (pedido explícito): es lo primero
@@ -48,6 +50,9 @@ export default function FeedbackConfigPage() {
         timezone: org.timezone,
         has_executive_summary: org.has_executive_summary,
         executive_summary_recipients: org.executive_summary_recipients,
+        has_monthly_survey: org.has_monthly_survey,
+        survey_questions: org.survey_questions,
+        survey_day_of_month: org.survey_day_of_month,
       });
       setOrg({ ...org, ...updated });
       setSaved(true);
@@ -77,6 +82,9 @@ export default function FeedbackConfigPage() {
   // solo equipo no hay nada que consolidar (org_exec_summary_plan_check
   // en schema.sql lo rechaza a nivel de base de datos igual).
   const executiveSummaryAvailable = org.plan === 'organizacion' || org.plan === 'custom';
+  // Encuesta mensual anónima: misma disponibilidad que el resumen
+  // ejecutivo (org_survey_plan_check en schema.sql).
+  const monthlySurveyAvailable = org.plan === 'organizacion' || org.plan === 'custom';
 
   return (
     <AppShell>
@@ -151,6 +159,47 @@ export default function FeedbackConfigPage() {
                   emptyHint={t('executiveSummaryRecipientsEmpty')}
                 />
               </label>
+            </>
+          )}
+
+          {monthlySurveyAvailable && (
+            <>
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={org.has_monthly_survey}
+                  onChange={(e) => setOrg({ ...org, has_monthly_survey: e.target.checked })}
+                />
+                {t('monthlySurveyToggle')}
+              </label>
+              <p className="field-hint">{t('monthlySurveyHint')}</p>
+              <label>
+                {t('monthlySurveyDayOfMonth')}
+                <select
+                  value={org.survey_day_of_month}
+                  onChange={(e) => setOrg({ ...org, survey_day_of_month: Number(e.target.value) })}
+                >
+                  {DAY_OF_MONTH_OPTIONS.map((day) => (
+                    <option key={day} value={day}>
+                      {day}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                {t('monthlySurveyQuestions')}
+                <QuestionsEditor
+                  questions={org.survey_questions}
+                  onChange={(survey_questions) => setOrg({ ...org, survey_questions })}
+                  placeholder={t('monthlySurveyQuestionsPlaceholder')}
+                  addLabel={t('monthlySurveyQuestionsAdd')}
+                  emptyHint={t('monthlySurveyQuestionsEmpty')}
+                  limitHint={t('monthlySurveyQuestionsLimit')}
+                />
+              </label>
+              <Link href="/app/survey" className="muted-link">
+                {t('monthlySurveyResultsLink')}
+              </Link>
             </>
           )}
 

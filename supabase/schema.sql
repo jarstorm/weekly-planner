@@ -47,6 +47,10 @@ create table if not exists organizations (
   max_members_per_team integer,                  -- 20 (equipo/organización) | NULL sin límite (custom)
   has_executive_summary boolean not null default false,
   executive_summary_recipients text[] not null default '{}', -- emails que reciben el resumen ejecutivo, ver migración 0009 y sección 6.4 del doc de producto
+  has_monthly_survey boolean not null default false, -- encuesta mensual anónima, opción de Organización/Custom, ver migración 0010
+  survey_questions text[] not null default '{}', -- hasta 5, de cuenta (no por equipo)
+  survey_day_of_month smallint not null default 1
+    check (survey_day_of_month between 1 and 28),
   price_month numeric(10,2),                     -- 49.00 | 149.00 | NULL (custom, a medida)
   stripe_customer_id text,
   country text,                                  -- ISO 3166-1 alpha-2 ('ES', 'US', ...), ver migración 0004
@@ -56,6 +60,13 @@ create table if not exists organizations (
   -- el resumen ejecutivo nunca puede activarse en Plan Equipo
   constraint org_exec_summary_plan_check check (
     not has_executive_summary or plan in ('organizacion', 'custom')
+  ),
+  -- la encuesta mensual, tampoco
+  constraint org_survey_plan_check check (
+    not has_monthly_survey or plan in ('organizacion', 'custom')
+  ),
+  constraint org_survey_questions_max check (
+    array_length(survey_questions, 1) is null or array_length(survey_questions, 1) <= 5
   )
 );
 
@@ -149,6 +160,34 @@ create unique index if not exists reports_org_week_unique
   on reports(organization_id, week_start) where organization_id is not null;
 create index if not exists idx_reports_org_week on reports(organization_id, week_start);
 
+-- ---------------------------------------------------------------------
+-- survey_submissions: marca "esta persona ya respondió este mes", SIN
+-- guardar qué contestó. survey_responses: el contenido, sin member_id ni
+-- team_id de quien respondió — nada en la base de datos conecta una
+-- persona con un contenido, ver migración 0010.
+-- ---------------------------------------------------------------------
+create table if not exists survey_submissions (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references organizations(id) on delete cascade,
+  member_id uuid not null references members(id) on delete cascade,
+  period date not null,
+  submitted_at timestamptz not null default now(),
+  unique (member_id, period)
+);
+
+create index if not exists idx_survey_submissions_org_period on survey_submissions(organization_id, period);
+
+create table if not exists survey_responses (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references organizations(id) on delete cascade,
+  period date not null,
+  questions text[] not null,                     -- copia de las preguntas vigentes al responder
+  answers text[] not null,                        -- mismo orden que questions
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_survey_responses_org_period on survey_responses(organization_id, period);
+
 -- =====================================================================
 -- Row Level Security
 -- =====================================================================
@@ -157,6 +196,8 @@ alter table teams enable row level security;
 alter table members enable row level security;
 alter table checkins enable row level security;
 alter table reports enable row level security;
+alter table survey_submissions enable row level security;
+alter table survey_responses enable row level security;
 
 create policy "owner puede ver y editar su cuenta"
   on organizations for all
@@ -196,5 +237,14 @@ create policy "owner puede ver los informes de sus equipos y su organización"
     or organization_id in (select id from organizations where owner_id = auth.uid())
   );
 
--- Nota: los INSERT de checkins y reports los hace el backend con la
--- service_role key (que salta RLS), no el usuario final desde el navegador.
+create policy "owner puede ver las participaciones de su organización"
+  on survey_submissions for select
+  using (organization_id in (select id from organizations where owner_id = auth.uid()));
+
+create policy "owner puede ver las respuestas anónimas de su organización"
+  on survey_responses for select
+  using (organization_id in (select id from organizations where owner_id = auth.uid()));
+
+-- Nota: los INSERT de checkins, reports y de las tablas de encuesta los
+-- hace el backend con la service_role key (que salta RLS), no el usuario
+-- final desde el navegador.

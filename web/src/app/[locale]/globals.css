@@ -1040,6 +1040,57 @@ button[type='button']:hover {
   letter-spacing: -0.02em;
 }
 
+.plan-compare-wrap {
+  max-width: 720px;
+  margin: 2.5rem auto 0;
+  overflow-x: auto;
+}
+
+.plan-compare-title {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.plan-compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.plan-compare-table th,
+.plan-compare-table td {
+  padding: 0.75rem 1rem;
+  text-align: center;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.9rem;
+}
+
+.plan-compare-table th:first-child,
+.plan-compare-table td:first-child {
+  text-align: left;
+  font-weight: 500;
+}
+
+.plan-compare-table thead th {
+  font-weight: 700;
+  background: var(--color-primary-50);
+}
+
+.plan-compare-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.plan-compare-yes {
+  color: var(--color-brand);
+}
+
+.plan-compare-no {
+  color: var(--color-text-muted);
+}
+
 .faq-list {
   max-width: 720px;
   margin: 0 auto;
@@ -1734,4 +1785,27 @@ button[type='button']:hover {
   .hero-bg-blobs {
     display: none;
   }
+}
+
+/* Resultados de la encuesta mensual anónima — respuestas de texto libre,
+   una por línea (no chips inline como .member-list, pensado para emails
+   cortos). Ver web/src/app/[locale]/app/survey/page.tsx. */
+.survey-question-block {
+  margin-bottom: 1.5rem;
+}
+
+.survey-answers-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.survey-answers-list li {
+  background: var(--color-primary-50);
+  border: 1px solid var(--color-primary-200);
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.9rem;
 }

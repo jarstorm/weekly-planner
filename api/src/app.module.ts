@@ -14,6 +14,7 @@ import { ReportsModule } from './reports/reports.module';
 import { CheckinFormModule } from './checkin-form/checkin-form.module';
 import { BillingModule } from './billing/billing.module';
 import { OrganizationsModule } from './organizations/organizations.module';
+import { SurveyModule } from './survey/survey.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { OrganizationsModule } from './organizations/organizations.module';
     CheckinFormModule,
     BillingModule,
     OrganizationsModule,
+    SurveyModule,
   ],
   controllers: [HealthController],
 })
