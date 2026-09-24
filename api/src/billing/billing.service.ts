@@ -9,9 +9,14 @@ export type BillingPlan = 'equipo' | 'organizacion';
 // El Plan Custom no se vende por Checkout (precio a medida, negociado
 // aparte), así que solo Equipo y Organización pasan por Stripe.
 const PLAN_CONFIG: Record<BillingPlan, { maxTeams: number; maxMembersPerTeam: number; priceMonth: number }> = {
-  equipo: { maxTeams: 1, maxMembersPerTeam: 20, priceMonth: 49 },
+  equipo: { maxTeams: 1, maxMembersPerTeam: 10, priceMonth: 49 },
   organizacion: { maxTeams: 5, maxMembersPerTeam: 20, priceMonth: 149 },
 };
+
+// Orden de los planes de autoservicio, para saber si un cambio es subir o
+// bajar de plan — Custom no entra aquí (alta gestionada a mano, nunca pasa
+// por este flujo).
+const PLAN_RANK: Record<BillingPlan, number> = { equipo: 1, organizacion: 2 };
 
 // Trial con tarjeta: se pide la tarjeta en el Checkout (comportamiento por
 // defecto de Stripe en modo subscription) pero no se cobra hasta que pasan
@@ -97,6 +102,81 @@ export class BillingService {
 
     if (!session.url) throw new BadRequestException('No se pudo crear la sesión de pago');
     return { url: session.url };
+  }
+
+  // Cambio de plan para una organización que YA tiene una suscripción de
+  // Stripe — a diferencia de createCheckoutSession (que crea una sesión de
+  // pago nueva), esto modifica la suscripción existente en el sitio.
+  // Crear una segunda sesión de Checkout con un customer que ya tiene
+  // suscripción activa generaría una SEGUNDA suscripción en paralelo (Stripe
+  // permite varias por customer) — se cobrarían las dos.
+  //
+  // Subir de plan (pedido explícito): termina el trial ya mismo
+  // (`trial_end: 'now'`) y facturas la diferencia al momento
+  // (`proration_behavior: 'always_invoice'`) — no se regalan más días
+  // gratis solo por subir de plan a mitad de un trial.
+  //
+  // Bajar de plan (pedido explícito): la cuenta se queda solo con el
+  // equipo más antiguo — el resto de equipos (y en cascada sus miembros,
+  // checkins, informes y respuestas de encuesta) se borran. El aviso al
+  // usuario de que esto va a pasar lo hace el frontend ANTES de llamar
+  // aquí; este método ya asume que se confirmó.
+  async changePlan(organizationId: string, newPlan: BillingPlan, email: string) {
+    const { data: org, error } = await this.supabase.db
+      .from('organizations')
+      .select('id, plan, stripe_customer_id, stripe_subscription_id')
+      .eq('id', organizationId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!org) throw new NotFoundException('Organización no encontrada');
+    if (org.plan === newPlan) throw new BadRequestException('Ya estás en ese plan');
+
+    // Sin suscripción todavía (registro sin terminar el checkout, o
+    // checkout cancelado) — mismo camino que el alta normal, con trial.
+    if (!org.stripe_subscription_id) {
+      return this.createCheckoutSession(organizationId, email, newPlan);
+    }
+
+    const isUpgrade = PLAN_RANK[newPlan] > PLAN_RANK[org.plan as BillingPlan];
+    const planConfig = PLAN_CONFIG[newPlan];
+
+    const subscription = await this.stripe.subscriptions.retrieve(org.stripe_subscription_id);
+    const itemId = subscription.items.data[0]?.id;
+    if (!itemId) throw new BadRequestException('No se pudo leer la suscripción en Stripe');
+
+    await this.stripe.subscriptions.update(org.stripe_subscription_id, {
+      items: [{ id: itemId, price: this.priceIdFor(newPlan) }],
+      proration_behavior: 'always_invoice',
+      ...(isUpgrade ? { trial_end: 'now' } : {}),
+      metadata: { organizationId, plan: newPlan },
+    });
+
+    await this.supabase.db
+      .from('organizations')
+      .update({
+        plan: newPlan,
+        max_teams: planConfig.maxTeams,
+        max_members_per_team: planConfig.maxMembersPerTeam,
+        price_month: planConfig.priceMonth,
+      })
+      .eq('id', organizationId);
+
+    if (!isUpgrade) {
+      const { data: teams, error: teamsError } = await this.supabase.db
+        .from('teams')
+        .select('id')
+        .eq('organization_id', organizationId)
+        .order('created_at', { ascending: true });
+      if (teamsError) throw teamsError;
+
+      const teamsToDelete = (teams ?? []).slice(planConfig.maxTeams).map((t: any) => t.id);
+      if (teamsToDelete.length > 0) {
+        const { error: deleteError } = await this.supabase.db.from('teams').delete().in('id', teamsToDelete);
+        if (deleteError) throw deleteError;
+      }
+    }
+
+    return { ok: true, isUpgrade };
   }
 
   async createPortalSession(organizationId: string) {

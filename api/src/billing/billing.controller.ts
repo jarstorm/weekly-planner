@@ -21,6 +21,14 @@ export class BillingController {
     return this.billing.createCheckoutSession(user.organizationId, user.email, dto.plan);
   }
 
+  // Cambiar de plan teniendo YA una suscripción — a diferencia de /checkout,
+  // no crea una sesión de pago nueva, modifica la existente (ver
+  // BillingService.changePlan).
+  @Post('change-plan')
+  changePlan(@CurrentUser() user: AuthedUser, @Body() dto: CreateCheckoutDto) {
+    return this.billing.changePlan(user.organizationId, dto.plan, user.email);
+  }
+
   @Post('portal')
   portal(@CurrentUser() user: AuthedUser) {
     return this.billing.createPortalSession(user.organizationId);

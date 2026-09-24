@@ -6,13 +6,12 @@ export function Skeleton({ className = '', style }: { className?: string; style?
   return <span className={`skeleton ${className}`} style={style} />;
 }
 
+// Calcado al orden real del dashboard (web/src/app/[locale]/app/page.tsx):
+// Estadísticas -> Horario del informe -> Equipos.
 export function DashboardSkeleton() {
   return (
     <>
-      <div className="topbar">
-        <Skeleton className="skeleton-title" style={{ marginBottom: 0 }} />
-        <Skeleton className="skeleton-button" />
-      </div>
+      <Skeleton className="skeleton-title" />
       <div className="stats-row">
         {[0, 1, 2, 3].map((i) => (
           <div className="stat-card" key={i}>
@@ -24,9 +23,32 @@ export function DashboardSkeleton() {
           </div>
         ))}
       </div>
+
+      <div className="dashboard-two-col">
+        <div>
+          <Skeleton className="skeleton-title" />
+          <div className="schedule-banner" style={{ cursor: 'default', pointerEvents: 'none' }}>
+            <Skeleton className="skeleton-icon" />
+            <div className="schedule-banner-body" style={{ flex: 1 }}>
+              <Skeleton className="skeleton-text" style={{ width: '55%' }} />
+              <Skeleton className="skeleton-text" style={{ width: '45%' }} />
+            </div>
+          </div>
+        </div>
+        <div>
+          <Skeleton className="skeleton-title" />
+          <div className="stat-card stat-card-channels">
+            <Skeleton className="skeleton-text" style={{ width: '60%' }} />
+            <Skeleton className="skeleton-text" style={{ width: '60%' }} />
+            <Skeleton className="skeleton-text" style={{ width: '60%' }} />
+          </div>
+        </div>
+      </div>
+
+      <Skeleton className="skeleton-title" />
       <div className="team-card-grid">
         {[0, 1, 2].map((i) => (
-          <div className="team-card" key={i} style={{ cursor: 'default' }}>
+          <div className="team-card" key={i} style={{ cursor: 'default', pointerEvents: 'none' }}>
             <Skeleton className="skeleton-icon" />
             <Skeleton className="skeleton-text" style={{ width: '65%', height: '1.05rem' }} />
             <Skeleton className="skeleton-text" style={{ width: '85%' }} />

@@ -241,11 +241,11 @@ Tres planes, todos con la misma app y el mismo flujo por debajo — lo que cambi
 
 | Plan | Equipos | Personas | Resumen ejecutivo | Precio |
 |---|---|---|---|---|
-| **Equipo** | 1 | hasta 20 | No disponible | 49€/mes |
+| **Equipo** | 1 | hasta 10 | No disponible | 49€/mes |
 | **Organización** | hasta 5 | hasta 20 por equipo (100 en total) | Opcional, se puede activar o no | 149€/mes |
 | **Custom** | sin límite | sin límite | Opcional, se puede activar o no | A medida |
 
-- **Plan Equipo:** 49€/mes, un equipo, hasta 20 personas. Sin coste por asiento. Pensado para un equipo suelto o una empresa pequeña que funciona como un solo bloque. No incluye resumen ejecutivo — con un solo equipo no hay nada que consolidar.
+- **Plan Equipo:** 49€/mes, un equipo, hasta 10 personas. Sin coste por asiento. Pensado para un equipo suelto o una empresa pequeña que funciona como un solo bloque. No incluye resumen ejecutivo — con un solo equipo no hay nada que consolidar.
 - **Plan Organización:** 149€/mes, hasta 5 equipos dentro de la misma empresa, hasta 20 personas por equipo. Incluye la opción de activar el **resumen ejecutivo** (ver 6.4), que NO está disponible en el Plan Equipo. Sale a ~30€/equipo, un descuento real frente a pagar 5 planes Equipo sueltos (245€/mes), para que a una empresa con varios departamentos le compense estar en el plan que junta todo en vez de fragmentarse en equipos sueltos.
 - **Plan Custom:** equipos y miembros ilimitados, para empresas más grandes que ya no encajan en el Plan Organización (6+ equipos, o equipos de más de 20 personas). Precio a medida, conversación comercial — no tiene sentido fijar un precio de catálogo hasta tener el primer cliente de este tamaño. Incluye la misma opción de resumen ejecutivo que el Plan Organización, y con varios equipos es habitual que sí les interese activarlo. Alta gestionada a mano (no hay flujo de autoservicio para este plan).
 - Sin permanencia, cancelable en cualquier momento — reduce la fricción de la primera venta.

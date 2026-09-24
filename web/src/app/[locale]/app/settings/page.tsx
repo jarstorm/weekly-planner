@@ -32,6 +32,7 @@ export default function SettingsPage() {
         name: org.name,
         country: org.country,
         contact_name: org.contact_name,
+        language: org.language,
       });
       setOrg({ ...org, ...updated });
       setSaved(true);
@@ -98,6 +99,17 @@ export default function SettingsPage() {
               ))}
             </select>
           </label>
+          <label>
+            {t('accountLanguage')}
+            <select
+              value={org.language}
+              onChange={(e) => setOrg({ ...org, language: e.target.value as 'es' | 'en' })}
+            >
+              <option value="es">{t('accountLanguageEs')}</option>
+              <option value="en">{t('accountLanguageEn')}</option>
+            </select>
+          </label>
+          <p className="field-hint">{t('accountLanguageHint')}</p>
           {error && <p role="alert">{error}</p>}
           {saved && <p className="muted-link">{t('saved')}</p>}
           <button type="submit" disabled={saving}>

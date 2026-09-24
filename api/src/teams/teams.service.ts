@@ -156,6 +156,14 @@ export class TeamsService {
     if (dto.active === true) {
       await this.assertMemberLimit(teamId, organizationId);
     }
+    // Mover de equipo: el equipo de destino tiene que ser de la misma
+    // organización (assertOwnership ya lo comprueba) y respetar su propio
+    // max_members_per_team — sin este chequeo, mover sería una forma de
+    // saltarse el límite del plan en el equipo de destino.
+    if (dto.team_id && dto.team_id !== teamId) {
+      await this.assertOwnership(dto.team_id, organizationId);
+      await this.assertMemberLimit(dto.team_id, organizationId);
+    }
     const { data, error } = await this.supabase.db
       .from('members')
       .update(dto)
@@ -203,7 +211,7 @@ export class TeamsService {
     const { data, error } = await this.supabase.db
       .from('teams')
       .select(
-        '*, organizations(reminder_dow, reminder_time, cutoff_time, timezone, has_executive_summary, executive_summary_recipients)',
+        '*, organizations(reminder_dow, reminder_time, cutoff_time, timezone, language, has_executive_summary, executive_summary_recipients)',
       );
     if (error) throw error;
     return (data ?? []).map((t: any) => {
@@ -214,6 +222,7 @@ export class TeamsService {
         reminder_time: org.reminder_time,
         cutoff_time: org.cutoff_time,
         timezone: org.timezone,
+        language: org.language,
         has_executive_summary: org.has_executive_summary,
         executive_summary_recipients: org.executive_summary_recipients,
       };

@@ -164,7 +164,7 @@ svg {
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
   padding: 1rem 1.25rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.75rem;
   color: var(--color-text);
   text-decoration: none;
   transition: box-shadow var(--transition), border-color var(--transition);
@@ -393,6 +393,36 @@ button[type='button']:hover {
 .btn-ghost:hover {
   background: var(--color-neutral-100);
   color: var(--color-text);
+}
+
+.btn-danger,
+.btn-danger:hover {
+  color: #fff;
+}
+.btn-danger {
+  background: #c0392b;
+}
+.btn-danger:hover {
+  background: #a5311f;
+  text-decoration: none;
+}
+
+/* Modal de confirmación (ConfirmDialog) — usado antes de acciones
+   destructivas (borrar un miembro, etc.), pedido explícito tras un borrado
+   accidental con el botón directo. */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 20, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 100;
+}
+.modal-card {
+  max-width: 420px;
+  width: 100%;
 }
 
 /* Link "volver" arriba de una página de detalle — necesita el layout base
@@ -1083,6 +1113,53 @@ button[type='button']:hover {
   border-bottom: none;
 }
 
+/* Tabla de datos genérica (listados con acciones) — a diferencia de
+   .plan-compare-table (comparación, texto centrado), esto es una tabla de
+   filas normal: alineada a la izquierda, sin fondo en la cabecera. */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.data-table th,
+.data-table td {
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.9rem;
+}
+.data-table th {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.data-table tbody tr:hover {
+  background: var(--color-neutral-50, var(--color-bg-subtle));
+}
+.data-table td.data-table-actions {
+  display: flex;
+  gap: 0.35rem;
+  justify-content: flex-end;
+}
+.data-table th.data-table-actions-header {
+  text-align: right;
+}
+
+.data-table-filters {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.data-table-filters input,
+.data-table-filters select {
+  padding: 0.5rem 0.7rem;
+}
+
 .plan-compare-yes {
   color: var(--color-brand);
 }
@@ -1329,7 +1406,7 @@ button[type='button']:hover {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .stat-card {
@@ -1367,6 +1444,49 @@ button[type='button']:hover {
   font-size: 0.78rem;
   color: var(--color-text-muted);
   font-weight: 600;
+}
+
+/* Card de estadísticas con 3 valores (uno por canal) en vez de un único
+   número grande — mismo contenedor .stat-card, layout propio por dentro. */
+.stat-card-channels {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+.stat-channels-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.stat-channels-list span {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--color-text);
+}
+.stat-channels-list strong {
+  margin-left: auto;
+}
+
+.dashboard-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 1.5rem;
+  align-items: start;
+}
+.dashboard-two-col .stat-card {
+  margin-bottom: 0.75rem;
+}
+.dashboard-section-title {
+  margin: 1.25rem 0 0.6rem;
+}
+.dashboard-section-title:first-child {
+  margin-top: 0;
+}
+@media (max-width: 640px) {
+  .dashboard-two-col {
+    grid-template-columns: 1fr;
+  }
 }
 
 .progress-track {
@@ -1408,6 +1528,37 @@ button[type='button']:hover {
   font-size: 0.92rem;
   color: var(--color-text);
   margin: 0.75rem 0 0;
+}
+
+/* Informe generado por la IA (content_markdown), renderizado de verdad
+   en vez de texto plano en un <pre> — ver web/src/app/[locale]/app/team/[teamId]/page.tsx. */
+.report-markdown {
+  margin-top: 0.75rem;
+  font-size: 0.92rem;
+  color: var(--color-text);
+}
+.report-markdown > *:first-child {
+  margin-top: 0;
+}
+.report-markdown h1,
+.report-markdown h2,
+.report-markdown h3 {
+  font-size: 1rem;
+  margin: 1rem 0 0.4rem;
+}
+.report-markdown p {
+  margin: 0.4rem 0;
+}
+.report-markdown ul,
+.report-markdown ol {
+  margin: 0.4rem 0;
+  padding-left: 1.25rem;
+}
+.report-markdown li {
+  margin: 0.15rem 0;
+}
+.report-markdown strong {
+  color: var(--color-neutral-900);
 }
 
 .member-list {
@@ -1612,6 +1763,23 @@ button[type='button']:hover {
   padding-top: 0.5rem;
   border-top: 1px solid var(--color-border);
 }
+.team-card-new {
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+  gap: 0.6rem;
+  background: transparent;
+  border: 1.5px dashed var(--color-border);
+  box-shadow: none;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+.team-card-new:hover {
+  border-color: var(--color-brand);
+  color: var(--color-brand);
+  box-shadow: none;
+}
+
 .team-card-report a {
   display: inline-flex;
   align-items: center;

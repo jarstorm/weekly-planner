@@ -4,6 +4,7 @@ import { SupabaseService } from '../supabase/supabase.service';
 import { ChannelsService } from '../channels/channels.service';
 import { SurveyFormService } from '../survey/survey-form.service';
 import { currentMonthStart, domInTimezone, isWithinWindow } from './date.utils';
+import { surveyMessage } from '../account-language';
 
 // Simétrico a ReminderJob (sección 4, paso 9) pero mensual: recorre las
 // organizaciones con has_monthly_survey activado y manda el link de la
@@ -27,7 +28,7 @@ export class SurveyJob {
 
     const { data: orgs, error } = await this.supabase.db
       .from('organizations')
-      .select('id, name, timezone, reminder_time, survey_day_of_month, survey_questions')
+      .select('id, name, timezone, reminder_time, survey_day_of_month, survey_questions, language')
       .eq('has_monthly_survey', true);
     if (error) throw error;
 
@@ -73,8 +74,8 @@ export class SurveyJob {
       if (!member.contact) continue; // Telegram sin vincular todavía
       if (alreadySubmitted.has(member.id)) continue;
 
-      const link = this.surveyForm.buildLink(member.id, period);
-      const message = `Hola ${member.name} 👋 Encuesta mensual anónima de ${org.name}. Tus respuestas no quedan asociadas a tu nombre — nadie en tu empresa puede ver quién contestó qué.\n\nResponde aquí: ${link}`;
+      const link = this.surveyForm.buildLink(member.id, period, org.language);
+      const message = surveyMessage(org.language, member.name, org.name, link);
       try {
         await this.channels.get(member.channel).send(member.contact, message);
       } catch (err) {

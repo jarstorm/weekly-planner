@@ -4,6 +4,7 @@ import { SupabaseService } from '../supabase/supabase.service';
 import { CheckinsService } from '../checkins/checkins.service';
 import { signCheckinToken, verifyCheckinToken } from './token.util';
 import { SubmitCheckinFormDto } from './dto/submit-checkin-form.dto';
+import { AccountLanguage, localePrefix } from '../account-language';
 
 export interface CheckinFormInfo {
   memberName: string;
@@ -26,10 +27,10 @@ export class CheckinFormService {
     return secret;
   }
 
-  buildLink(memberId: string, weekStart: string): string {
+  buildLink(memberId: string, weekStart: string, language: AccountLanguage = 'es'): string {
     const token = signCheckinToken({ memberId, weekStart }, this.secret());
     const base = this.config.get<string>('APP_BASE_URL') ?? '';
-    return `${base}/checkin/${token}`;
+    return `${base}${localePrefix(language)}/checkin/${token}`;
   }
 
   private async resolveMember(token: string) {

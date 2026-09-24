@@ -23,6 +23,10 @@ export default function BillingPage() {
   const [promoStatus, setPromoStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoSuccess, setPromoSuccess] = useState(false);
+  // Bajar de plan borra el resto de equipos de la cuenta (ver
+  // BillingService.changePlan) — se pide confirmación explícita antes de
+  // llamar al backend, no se borra nada al primer clic.
+  const [confirmingDowngradeTo, setConfirmingDowngradeTo] = useState<'equipo' | 'organizacion' | null>(null);
 
   useEffect(() => {
     api
@@ -39,14 +43,35 @@ export default function BillingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
-  async function subscribe(plan: 'equipo' | 'organizacion') {
+  const PLAN_RANK = { equipo: 1, organizacion: 2 } as const;
+
+  function subscribe(plan: 'equipo' | 'organizacion') {
+    // Bajar de plan (Organización -> Equipo) se lleva por delante el resto
+    // de equipos de la cuenta — se avisa antes de tocar nada.
+    if (status && PLAN_RANK[plan] < PLAN_RANK[status.plan as 'equipo' | 'organizacion']) {
+      setConfirmingDowngradeTo(plan);
+      return;
+    }
+    void changePlan(plan);
+  }
+
+  async function changePlan(plan: 'equipo' | 'organizacion') {
     setActionError(null);
     setPendingPlan(plan);
     try {
-      const { url } = await api.createCheckoutSession(plan);
-      window.location.href = url;
+      const result = await api.changePlan(plan);
+      if ('url' in result) {
+        window.location.href = result.url;
+        return;
+      }
+      // Cambio hecho en el sitio (ya había suscripción) — se refresca el
+      // estado en vez de redirigir a Stripe.
+      const updated = await api.billingStatus();
+      setStatus(updated);
+      setConfirmingDowngradeTo(null);
     } catch {
       setActionError(t('checkoutError'));
+    } finally {
       setPendingPlan(null);
     }
   }
@@ -151,6 +176,29 @@ export default function BillingPage() {
 
       {status.status === 'trial' && <p className="muted-link">{t('trialNote', { days: 30 })}</p>}
 
+      {confirmingDowngradeTo && (
+        <div className="card" style={{ borderColor: 'var(--color-danger, crimson)' }}>
+          <p style={{ margin: 0 }}>
+            {t('downgradeWarning', {
+              plan: confirmingDowngradeTo === 'equipo' ? t('planEquipo') : t('planOrganizacion'),
+            })}
+          </p>
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+            <button type="button" className="btn btn-secondary" onClick={() => setConfirmingDowngradeTo(null)}>
+              {t('downgradeCancel')}
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={pendingPlan === confirmingDowngradeTo}
+              onClick={() => changePlan(confirmingDowngradeTo)}
+            >
+              {pendingPlan === confirmingDowngradeTo ? t('processing') : t('downgradeConfirm')}
+            </button>
+          </div>
+        </div>
+      )}
+
       <ul className="pricing-grid">
         <li className={status.plan === 'equipo' ? 'current-plan' : ''}>
           <strong>{t('planEquipo')}</strong>
@@ -160,7 +208,7 @@ export default function BillingPage() {
             <span className="muted-link">{t('currentPlanBadge')}</span>
           ) : (
             <button type="button" className="btn btn-primary" disabled={pendingPlan === 'equipo'} onClick={() => subscribe('equipo')}>
-              {pendingPlan === 'equipo' ? t('redirecting') : t('subscribe')}
+              {pendingPlan === 'equipo' ? t('processing') : t('subscribe')}
             </button>
           )}
         </li>
@@ -177,7 +225,7 @@ export default function BillingPage() {
               disabled={pendingPlan === 'organizacion'}
               onClick={() => subscribe('organizacion')}
             >
-              {pendingPlan === 'organizacion' ? t('redirecting') : t('subscribe')}
+              {pendingPlan === 'organizacion' ? t('processing') : t('subscribe')}
             </button>
           )}
         </li>

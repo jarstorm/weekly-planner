@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { SupabaseService } from '../supabase/supabase.service';
 import { signSurveyToken, verifySurveyToken } from './token.util';
 import { SubmitSurveyFormDto } from './dto/submit-survey-form.dto';
+import { AccountLanguage, localePrefix } from '../account-language';
 
 export interface SurveyFormInfo {
   memberName: string;
@@ -24,10 +25,10 @@ export class SurveyFormService {
     return secret;
   }
 
-  buildLink(memberId: string, period: string): string {
+  buildLink(memberId: string, period: string, language: AccountLanguage = 'es'): string {
     const token = signSurveyToken({ memberId, period }, this.secret());
     const base = this.config.get<string>('APP_BASE_URL') ?? '';
-    return `${base}/survey/${token}`;
+    return `${base}${localePrefix(language)}/survey/${token}`;
   }
 
   private async resolveMember(token: string) {

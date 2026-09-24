@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/navigation';
-import { api, ApiError, ChannelName, Member } from '@/lib/api';
+import { api, ApiError, ChannelName, Member, Team } from '@/lib/api';
 import { useEnabledChannels } from '@/lib/useEnabledChannels';
 import { AppShell } from '@/components/AppShell';
 import { FormSkeleton } from '@/components/Skeleton';
@@ -20,12 +20,17 @@ export default function EditMemberPage() {
   const enabledChannels = useEnabledChannels();
 
   const [member, setMember] = useState<Member | null>(null);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [botUsername, setBotUsername] = useState<string | null>(null);
 
   useEffect(() => {
     api.getTelegramBotUsername().then((r) => setBotUsername(r.username)).catch(() => setBotUsername(null));
+    // Todos los equipos de la cuenta — para poder mover el miembro a otro.
+    api.listTeams().then(setTeams).catch(() => {
+      /* si falla, simplemente no se ofrece el selector de equipo */
+    });
   }, []);
 
   useEffect(() => {
@@ -54,8 +59,9 @@ export default function EditMemberPage() {
         name: member.name,
         channel: member.channel,
         contact: member.contact,
+        team_id: member.team_id !== teamId ? member.team_id : undefined,
       });
-      router.push(`/app/team/${teamId}/members`);
+      router.push(`/app/team/${member.team_id}/members`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t('saveMemberError'));
     } finally {
@@ -96,6 +102,21 @@ export default function EditMemberPage() {
               required
             />
           </label>
+          {teams.length > 1 && (
+            <label>
+              {t('memberTeam')}
+              <select
+                value={member.team_id}
+                onChange={(e) => setMember({ ...member, team_id: e.target.value })}
+              >
+                {teams.map((team) => (
+                  <option key={team.id} value={team.id}>
+                    {team.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <label>
             {t('memberChannel')}
             <select

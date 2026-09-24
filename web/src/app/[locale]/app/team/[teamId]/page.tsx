@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Download, FileText, Settings, UsersRound } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { Link } from '@/i18n/navigation';
 import { api, ApiError, CheckinStatus, Report, Team } from '@/lib/api';
 import { AppShell } from '@/components/AppShell';
@@ -108,7 +109,13 @@ export default function TeamDashboardPage() {
             </div>
             <ResponsePercent status={statusByWeek[r.week_start] ?? []} />
             <ResponseStatusList status={statusByWeek[r.week_start] ?? []} />
-            <pre>{r.content_markdown ?? t('reportPending')}</pre>
+            {r.content_markdown ? (
+              <div className="report-markdown">
+                <ReactMarkdown>{r.content_markdown}</ReactMarkdown>
+              </div>
+            ) : (
+              <p className="muted-link">{t('reportPending')}</p>
+            )}
           </li>
         ))}
       </ul>

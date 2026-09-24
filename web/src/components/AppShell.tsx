@@ -1,6 +1,6 @@
 'use client';
 
-import { LayoutDashboard, UserPlus, LogOut, CreditCard, Building2 } from 'lucide-react';
+import { LayoutDashboard, LogOut, CreditCard, Building2, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, Link } from '@/i18n/navigation';
 import { api } from '@/lib/api';
@@ -26,9 +26,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <LayoutDashboard size={18} />
             <span>{t('dashboard')}</span>
           </Link>
-          <Link href="/app/onboarding" className={pathname === '/app/onboarding' ? 'active' : ''}>
-            <UserPlus size={18} />
-            <span>{t('newTeam')}</span>
+          <Link href="/app/members" className={pathname === '/app/members' ? 'active' : ''}>
+            <Users size={18} />
+            <span>{t('members')}</span>
           </Link>
           <Link href="/app/billing" className={pathname === '/app/billing' ? 'active' : ''}>
             <CreditCard size={18} />

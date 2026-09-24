@@ -3,6 +3,7 @@ import {
   IsArray,
   IsBoolean,
   IsEmail,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -51,6 +52,13 @@ export class UpdateOrganizationDto {
   @IsOptional()
   @IsString()
   timezone?: string;
+
+  // Idioma de la cuenta — preguntas del check-in, encuesta mensual e
+  // informes con IA. No controla el idioma de la interfaz del panel
+  // (eso sigue siendo el selector de next-intl, por navegador).
+  @IsOptional()
+  @IsIn(['es', 'en'])
+  language?: 'es' | 'en';
 
   // Resumen ejecutivo (paso 15, sección 6.4 del doc de producto) — opción,
   // no forzada por plan; el constraint org_exec_summary_plan_check en

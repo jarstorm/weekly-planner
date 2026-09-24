@@ -8,6 +8,7 @@ import { PdfService } from '../pdf/pdf.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { currentWeekStart, dowInTimezone, isWithinWindow } from './date.utils';
 import { extractBlockersSection, isMeaningfulBlocker } from './blockers.utils';
+import { executiveSummaryDeliveryText, reportDeliveryText } from '../account-language';
 
 const PAST_REPORTS_FOR_RECURRENCE = 3;
 
@@ -126,6 +127,7 @@ export class ReportJob {
     const content = await this.aggregate.generateReport({
       teamName: team.name,
       companyContext: team.company_context ?? '',
+      language: team.language,
       checkins: rows.map((r: any) => ({
         memberName: r.members?.name ?? 'desconocido',
         doneText: r.done_text ?? r.raw_text,
@@ -148,10 +150,8 @@ export class ReportJob {
       // El informe siempre se entrega como PDF adjunto — a cada destinatario
       // de la lista, siempre por email (migración 0009, decisión explícita:
       // sin selector de canal por destinatario, simplifica).
-      const title = `Resumen semanal — ${team.name} — semana del ${weekStart}`;
+      const { title, filename, caption } = reportDeliveryText(team.language, team.name, weekStart);
       const pdfBuffer = await this.pdf.fromMarkdown(content, title);
-      const filename = `resumen-semanal-${weekStart}.pdf`;
-      const caption = `Resumen semanal de ${team.name} — semana del ${weekStart}. Adjunto en PDF.`;
 
       for (const recipient of team.report_recipients) {
         await this.channels.get('email').sendDocument(recipient, pdfBuffer, filename, caption);
@@ -173,7 +173,7 @@ export class ReportJob {
   private async maybeGenerateExecutiveSummary(organizationId: string, weekStart: string) {
     const { data: org, error: orgError } = await this.supabase.db
       .from('organizations')
-      .select('id, name, has_executive_summary, executive_summary_recipients')
+      .select('id, name, language, has_executive_summary, executive_summary_recipients')
       .eq('id', organizationId)
       .single();
     if (orgError) throw orgError;
@@ -202,6 +202,7 @@ export class ReportJob {
 
     const content = await this.aggregate.generateExecutiveSummary({
       organizationName: org.name,
+      language: org.language,
       teamReports: orgTeams.map((t: any) => ({
         teamName: t.name,
         contentMarkdown: reports.find((r: any) => r.team_id === t.id)?.content_markdown ?? '',
@@ -219,10 +220,8 @@ export class ReportJob {
 
     const recipients: string[] = org.executive_summary_recipients ?? [];
     if (recipients.length > 0) {
-      const title = `Resumen ejecutivo — ${org.name} — semana del ${weekStart}`;
+      const { title, filename, caption } = executiveSummaryDeliveryText(org.language, org.name, weekStart);
       const pdfBuffer = await this.pdf.fromMarkdown(content, title);
-      const filename = `resumen-ejecutivo-${weekStart}.pdf`;
-      const caption = `Resumen ejecutivo de ${org.name} — semana del ${weekStart}. Adjunto en PDF.`;
 
       for (const recipient of recipients) {
         await this.channels.get('email').sendDocument(recipient, pdfBuffer, filename, caption);

@@ -8,12 +8,17 @@ export interface CheckinInput {
   blockerText: string | null;
 }
 
+export type ReportLanguage = 'es' | 'en';
+
 export interface AggregateInput {
   teamName: string;
   companyContext: string;
   checkins: CheckinInput[];
   membersWithoutResponse: string[];
   pastBlockers: string[];
+  // Idioma de la cuenta (organizations.language, migración 0012) — 'es' si
+  // se omite, mismo comportamiento que antes de que existiera el campo.
+  language?: ReportLanguage;
 }
 
 export interface TeamReportInput {
@@ -24,6 +29,7 @@ export interface TeamReportInput {
 export interface ExecutiveSummaryInput {
   organizationName: string;
   teamReports: TeamReportInput[];
+  language?: ReportLanguage;
 }
 
 @Injectable()
@@ -33,7 +39,43 @@ export class AggregateService {
   constructor(private readonly config: ConfigService) {}
 
   // Prompt tomado literalmente de docs/mvp-resumen-semanal-equipos.md, sección 10.
+  // Variante en inglés para cuentas con organizations.language = 'en'
+  // (migración 0012) — misma estructura y tono, no una traducción literal
+  // palabra por palabra (para que el modelo escriba en inglés natural).
   private buildPrompt(input: AggregateInput): string {
+    const language = input.language ?? 'es';
+
+    if (language === 'en') {
+      const responses = input.checkins
+        .map(
+          (c) =>
+            `- ${c.memberName}: done: ${c.doneText ?? '(no data)'} | next: ${c.nextText ?? '(no data)'} | blocker: ${c.blockerText ?? '(none)'}`,
+        )
+        .join('\n');
+
+      return `You are the assistant writing the weekly summary for the "${input.teamName}" team.
+Company context: ${input.companyContext}
+
+Here are this week's individual replies:
+${responses}
+
+Write a weekly report in English, with this exact format:
+1. "This week's wins" — group by project or client where possible, don't
+   just repeat each reply verbatim, synthesize.
+2. "Blockers" — only if there are any. If a blocker already showed up in
+   previous weeks (listed below), flag it as recurring.
+3. "Next week" — priorities grouped by person.
+4. If someone hasn't replied, mention it at the end in one line, no drama.
+
+Tone: professional but approachable, like a team lead who respects the
+reader's time. Max 200 words. No generic filler like "great teamwork this week".
+
+No response this week: ${input.membersWithoutResponse.join(', ') || 'nobody — everyone replied'}.
+
+Blockers from previous weeks, to detect recurrence:
+${input.pastBlockers.join('\n') || '(none recorded)'}`;
+    }
+
     const respuestas = input.checkins
       .map(
         (c) =>
@@ -70,9 +112,24 @@ ${input.pastBlockers.join('\n') || '(ninguno registrado)'}`;
   // primera agregación, el texto de partida ya viene resumido (sección 6.4
   // del doc de producto). Literal del ejemplo de esa sección.
   private buildExecutiveSummaryPrompt(input: ExecutiveSummaryInput): string {
+    const language = input.language ?? 'es';
     const informes = input.teamReports
       .map((t) => `--- ${t.teamName} ---\n${t.contentMarkdown}`)
       .join('\n\n');
+
+    if (language === 'en') {
+      return `You are the assistant writing the weekly executive summary for "${input.organizationName}", based on the reports already generated for each of its teams this week.
+
+This week's reports, by team:
+${informes}
+
+Write an executive summary in English, with this exact format:
+1. A one-line headline per team — the most relevant thing about their week.
+2. "Cross-team risk" — only if you detect a blocker or dependency affecting more than one team. If there's none, omit this section entirely.
+3. "Most urgent this week" — 2-3 company-level items.
+
+Tone: professional, direct, for someone running the company who doesn't have time to read each team's report separately. Max 150 words. Don't repeat detail already in each team's report — synthesize at the company level, don't rephrase every line.`;
+    }
 
     return `Eres el asistente que redacta el resumen ejecutivo semanal de la empresa "${input.organizationName}", a partir de los informes ya generados de cada uno de sus equipos esta semana.
 

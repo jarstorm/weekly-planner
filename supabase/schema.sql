@@ -39,12 +39,14 @@ create table if not exists organizations (
   reminder_time time not null default '10:00',
   cutoff_time time not null default '13:00',     -- hora de corte para generar los informes, para todos los equipos
   timezone text not null default 'Europe/Madrid',
+  language text not null default 'es'
+    check (language in ('es', 'en')),           -- idioma de las preguntas/informes de esta cuenta, ver migración 0012 — independiente del idioma de la interfaz del panel (next-intl, por navegador)
   plan text not null default 'equipo'
     check (plan in ('equipo', 'organizacion', 'custom')),
   status text not null default 'trial'
     check (status in ('trial', 'active', 'canceled')),
   max_teams integer,                             -- 1 (equipo) | 5 (organización) | NULL sin límite (custom)
-  max_members_per_team integer,                  -- 20 (equipo/organización) | NULL sin límite (custom)
+  max_members_per_team integer,                  -- 10 (equipo) | 20 (organización) | NULL sin límite (custom)
   has_executive_summary boolean not null default false,
   executive_summary_recipients text[] not null default '{}', -- emails que reciben el resumen ejecutivo, ver migración 0009 y sección 6.4 del doc de producto
   has_monthly_survey boolean not null default false, -- encuesta mensual anónima, opción de Organización/Custom, ver migración 0010

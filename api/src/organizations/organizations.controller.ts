@@ -20,4 +20,12 @@ export class OrganizationsController {
   updateOwn(@CurrentUser() user: AuthedUser, @Body() dto: UpdateOrganizationDto) {
     return this.organizations.updateOwn(user.organizationId, dto);
   }
+
+  // Listado de todas las personas de la cuenta, de todos los equipos a la
+  // vez — nombre, equipo y canal por el que reciben el feedback. Pedido
+  // explícito: antes solo se podía ver equipo por equipo.
+  @Get('members')
+  listMembers(@CurrentUser() user: AuthedUser) {
+    return this.organizations.listMembers(user.organizationId);
+  }
 }

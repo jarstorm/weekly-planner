@@ -34,7 +34,7 @@ export class AuthService {
       plan: 'equipo',
       status: 'trial',
       max_teams: 1,
-      max_members_per_team: 20,
+      max_members_per_team: 10,
     });
     if (orgError) {
       // Sin esto, un fallo acá deja un usuario de Auth huérfano (sin

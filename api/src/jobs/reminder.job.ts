@@ -4,6 +4,7 @@ import { TeamsService } from '../teams/teams.service';
 import { ChannelsService } from '../channels/channels.service';
 import { CheckinFormService } from '../checkin-form/checkin-form.service';
 import { currentWeekStart, dowInTimezone, isWithinWindow } from './date.utils';
+import { reminderMessage } from '../account-language';
 
 // Recorre todos los equipos cada 15 min y manda el recordatorio semanal a
 // los miembros activos de los que están en su día/hora configurados —
@@ -41,8 +42,8 @@ export class ReminderJob {
         // conversacional como WhatsApp/Telegram, no hay a qué "responder".
         // Se manda igual en los tres canales, no solo email: no molesta
         // en un chat y da una alternativa si prefieren no escribir texto libre.
-        const link = this.checkinForm.buildLink(member.id, weekStart);
-        const message = `Hola ${member.name} 👋 Resumen semanal de ${team.name}.\n1️⃣ ¿Qué has hecho esta semana?\n2️⃣ ¿Qué harás la semana que viene?\n3️⃣ ¿Algo bloqueado o que necesites de alguien?\n\nTambién puedes responder aquí: ${link}`;
+        const link = this.checkinForm.buildLink(member.id, weekStart, team.language);
+        const message = reminderMessage(team.language, member.name, team.name, link);
         try {
           await this.channels.get(member.channel).send(member.contact, message);
         } catch (err) {

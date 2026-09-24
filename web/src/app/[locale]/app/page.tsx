@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { AlertTriangle, CheckCircle2, ChevronRight, Clock, FileText, Users, UsersRound } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronRight, Clock, FileText, Mail, MessageCircle, Plus, Send, Users, UsersRound } from 'lucide-react';
 import { useRouter, Link } from '@/i18n/navigation';
-import { api, ApiError, CheckinStatus, Member, Organization, Report, Team } from '@/lib/api';
+import { api, ApiError, ChannelName, CheckinStatus, Member, Organization, Report, Team } from '@/lib/api';
 import { AppShell } from '@/components/AppShell';
 import { mondayOfThisWeek } from '@/components/ResponseStatus';
 import { DashboardSkeleton } from '@/components/Skeleton';
@@ -23,11 +23,17 @@ export default function TeamsPage() {
   const t = useTranslations('Dashboard');
   const tNav = useTranslations('Nav');
   const tDay = useTranslations('Day');
+  const tChannel = useTranslations('Channel');
   const [teams, setTeams] = useState<Team[] | null>(null);
   const [statsByTeam, setStatsByTeam] = useState<Record<string, TeamStats>>({});
   const [org, setOrg] = useState<Organization | null>(null);
   const [executiveSummaries, setExecutiveSummaries] = useState<Report[]>([]);
   const [error, setError] = useState<string | null>(null);
+  // Se espera a que org también haya resuelto (éxito o error) antes de
+  // salir del skeleton — si no, el primer paint real llega con org todavía
+  // en null y cosas como la card "Nuevo equipo" (depende de max_teams) se
+  // muestran de más y desaparecen de golpe en cuanto org llega.
+  const [orgSettled, setOrgSettled] = useState(false);
 
   useEffect(() => {
     api
@@ -62,7 +68,8 @@ export default function TeamsPage() {
           })
           .catch(() => {
             /* el banner de horario es un plus, no bloquea ver los equipos */
-          });
+          })
+          .finally(() => setOrgSettled(true));
       })
       .catch((err) => {
         if (err instanceof ApiError && err.status === 401) {
@@ -81,16 +88,25 @@ export default function TeamsPage() {
       </AppShell>
     );
   }
-  if (teams === null) {
+  const statsLoaded = teams !== null && (teams.length === 0 || Object.keys(statsByTeam).length === teams.length);
+
+  if (teams === null || !orgSettled || !statsLoaded) {
     return (
       <AppShell>
         <DashboardSkeleton />
       </AppShell>
     );
   }
-
-  const statsLoaded = teams.length === 0 || Object.keys(statsByTeam).length === teams.length;
   const totalMembers = Object.values(statsByTeam).reduce((sum, s) => sum + s.members.length, 0);
+  const membersByChannel = Object.values(statsByTeam).reduce(
+    (acc, s) => {
+      s.members.forEach((m) => {
+        acc[m.channel] = (acc[m.channel] ?? 0) + 1;
+      });
+      return acc;
+    },
+    { email: 0, whatsapp: 0, telegram: 0 } as Record<ChannelName, number>,
+  );
   const totalReports = Object.values(statsByTeam).reduce((sum, s) => sum + s.reports.length, 0);
   const weekTotal = Object.values(statsByTeam).reduce((sum, s) => sum + s.weekStatus.length, 0);
   const weekResponded = Object.values(statsByTeam).reduce(
@@ -101,24 +117,10 @@ export default function TeamsPage() {
 
   const noRecipientsAnywhere = teams.length > 0 && teams.every((team) => team.report_recipients.length === 0);
 
+  const atTeamLimit = org != null && org.max_teams !== null && teams.length >= org.max_teams;
+
   return (
     <AppShell>
-      {org && (
-        <Link href="/app/feedback" className="schedule-banner">
-          <span className="stat-icon"><Clock size={18} /></span>
-          <div className="schedule-banner-body">
-            <strong>{t('scheduleBannerTitle')}</strong>
-            <span className="muted-link">
-              {t('scheduleBannerSummary', {
-                day: tDay(String(org.reminder_dow)),
-                time: org.cutoff_time.slice(0, 5),
-              })}
-            </span>
-          </div>
-          <ChevronRight size={18} className="schedule-banner-chevron" />
-        </Link>
-      )}
-
       {noRecipientsAnywhere && (
         <div className="schedule-banner schedule-banner-unset">
           <span className="stat-icon"><AlertTriangle size={18} /></span>
@@ -128,50 +130,89 @@ export default function TeamsPage() {
         </div>
       )}
 
-      <div className="topbar">
-        <h1 style={{ margin: 0 }}>{t('title')}</h1>
-        {teams.length > 0 && (
-          <Link className="btn btn-primary" href="/app/onboarding">{tNav('newTeam')}</Link>
-        )}
-      </div>
+      {teams.length > 0 && statsLoaded && (
+        <>
+          <h2 className="dashboard-section-title">{t('statsTitle')}</h2>
+          <div className="stats-row">
+            <div className="stat-card">
+              <span className="stat-icon"><UsersRound size={18} /></span>
+              <div>
+                <div className="stat-value">{teams.length}</div>
+                <div className="stat-label">{t('statTeams')}</div>
+              </div>
+            </div>
+            <div className="stat-card">
+              <span className="stat-icon"><Users size={18} /></span>
+              <div>
+                <div className="stat-value">{totalMembers}</div>
+                <div className="stat-label">{t('statTotalMembers')}</div>
+              </div>
+            </div>
+            <div className="stat-card">
+              <span className="stat-icon"><FileText size={18} /></span>
+              <div>
+                <div className="stat-value">{totalReports}</div>
+                <div className="stat-label">{t('statReports')}</div>
+              </div>
+            </div>
+            <div className="stat-card">
+              <span className="stat-icon"><CheckCircle2 size={18} /></span>
+              <div>
+                <div className="stat-value">{weekPct !== null ? `${weekPct}%` : '—'}</div>
+                <div className="stat-label">{t('statAvgResponse')}</div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {(org || (teams.length > 0 && statsLoaded)) && (
+        <div className="dashboard-two-col">
+          {org && (
+            <div>
+              <h2 className="dashboard-section-title">{t('scheduleBannerTitle')}</h2>
+              <Link href="/app/feedback" className="schedule-banner">
+                <span className="stat-icon"><Clock size={18} /></span>
+                <div className="schedule-banner-body">
+                  <span className="muted-link">
+                    {t('scheduleReminderSummary', {
+                      day: tDay(String(org.reminder_dow)),
+                      time: org.reminder_time.slice(0, 5),
+                    })}
+                  </span>
+                  <span className="muted-link">
+                    {t('scheduleReportSummary', {
+                      day: tDay(String(org.reminder_dow)),
+                      time: org.cutoff_time.slice(0, 5),
+                    })}
+                  </span>
+                </div>
+                <ChevronRight size={18} className="schedule-banner-chevron" />
+              </Link>
+            </div>
+          )}
+
+          {teams.length > 0 && statsLoaded && (
+            <div>
+              <h2 className="dashboard-section-title">{t('statMembersByChannel')}</h2>
+              <div className="stat-card stat-card-channels">
+                <div className="stat-channels-list">
+                  <span><Mail size={14} /> {tChannel('email')} <strong>{membersByChannel.email}</strong></span>
+                  <span><MessageCircle size={14} /> {tChannel('whatsapp')} <strong>{membersByChannel.whatsapp}</strong></span>
+                  <span><Send size={14} /> {tChannel('telegram')} <strong>{membersByChannel.telegram}</strong></span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <h2 className="dashboard-section-title">{t('teamsTitle')}</h2>
 
       {teams.length === 0 && (
         <div className="card">
           <p>{t('noTeams')}</p>
           <Link className="btn btn-primary" href="/app/onboarding">{t('createFirstTeam')}</Link>
-        </div>
-      )}
-
-      {teams.length > 0 && statsLoaded && (
-        <div className="stats-row">
-          <div className="stat-card">
-            <span className="stat-icon"><UsersRound size={18} /></span>
-            <div>
-              <div className="stat-value">{teams.length}</div>
-              <div className="stat-label">{t('statTeams')}</div>
-            </div>
-          </div>
-          <div className="stat-card">
-            <span className="stat-icon"><Users size={18} /></span>
-            <div>
-              <div className="stat-value">{totalMembers}</div>
-              <div className="stat-label">{t('statTotalMembers')}</div>
-            </div>
-          </div>
-          <div className="stat-card">
-            <span className="stat-icon"><FileText size={18} /></span>
-            <div>
-              <div className="stat-value">{totalReports}</div>
-              <div className="stat-label">{t('statReports')}</div>
-            </div>
-          </div>
-          <div className="stat-card">
-            <span className="stat-icon"><CheckCircle2 size={18} /></span>
-            <div>
-              <div className="stat-value">{weekPct !== null ? `${weekPct}%` : '—'}</div>
-              <div className="stat-label">{t('statAvgResponse')}</div>
-            </div>
-          </div>
         </div>
       )}
 
@@ -210,11 +251,18 @@ export default function TeamsPage() {
             </Link>
           );
         })}
+
+        {teams.length > 0 && !atTeamLimit && (
+          <Link href="/app/onboarding" className="team-card team-card-new">
+            <span className="stat-icon"><Plus size={18} /></span>
+            <strong>{tNav('newTeam')}</strong>
+          </Link>
+        )}
       </div>
 
       {org?.has_executive_summary && (
         <>
-          <h2>{t('executiveSummaryTitle')}</h2>
+          <h2 className="dashboard-section-title">{t('executiveSummaryTitle')}</h2>
           <div className="card">
             {executiveSummaries.length === 0 ? (
               <p className="muted-link">{t('executiveSummaryNoReports')}</p>

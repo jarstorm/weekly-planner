@@ -110,6 +110,49 @@ describe('TeamsService — límites de plan', () => {
     ).rejects.toThrow(ForbiddenException);
   });
 
+  it('mueve un miembro a otro equipo de la misma organización', async () => {
+    const supabase = fakeSupabase([
+      { data: { id: 'team-1', organization_id: orgId }, error: null }, // assertOwnership (team-1)
+      { data: { id: 'member-1', team_id: 'team-1' }, error: null }, // assertMemberOwnership
+      { data: { id: 'team-2', organization_id: orgId }, error: null }, // assertOwnership (team-2, destino)
+      { data: { max_members_per_team: 5 }, error: null }, // organizations.select (límite destino)
+      { count: 1, error: null }, // members count del equipo destino
+      { data: { id: 'member-1', team_id: 'team-2' }, error: null }, // update
+    ]);
+    const service = new TeamsService(supabase);
+
+    const member = await service.updateMember(orgId, 'team-1', 'member-1', { team_id: 'team-2' } as any);
+    expect(member).toEqual({ id: 'member-1', team_id: 'team-2' });
+  });
+
+  it('rechaza mover a un equipo que ya alcanzó max_members_per_team', async () => {
+    const supabase = fakeSupabase([
+      { data: { id: 'team-1', organization_id: orgId }, error: null }, // assertOwnership (team-1)
+      { data: { id: 'member-1', team_id: 'team-1' }, error: null }, // assertMemberOwnership
+      { data: { id: 'team-2', organization_id: orgId }, error: null }, // assertOwnership (team-2, destino)
+      { data: { max_members_per_team: 1 }, error: null }, // organizations.select
+      { count: 1, error: null }, // members count del equipo destino, ya lleno
+    ]);
+    const service = new TeamsService(supabase);
+
+    await expect(
+      service.updateMember(orgId, 'team-1', 'member-1', { team_id: 'team-2' } as any),
+    ).rejects.toThrow(ForbiddenException);
+  });
+
+  it('rechaza mover a un equipo de otra organización', async () => {
+    const supabase = fakeSupabase([
+      { data: { id: 'team-1', organization_id: orgId }, error: null }, // assertOwnership (team-1)
+      { data: { id: 'member-1', team_id: 'team-1' }, error: null }, // assertMemberOwnership
+      { data: { id: 'team-2', organization_id: 'otra-org' }, error: null }, // assertOwnership (team-2, destino ajeno)
+    ]);
+    const service = new TeamsService(supabase);
+
+    await expect(
+      service.updateMember(orgId, 'team-1', 'member-1', { team_id: 'team-2' } as any),
+    ).rejects.toThrow(ForbiddenException);
+  });
+
   it('removeMember hace soft delete (active: false), no borra la fila', async () => {
     const supabase = fakeSupabase([
       { data: { id: 'team-1', organization_id: orgId }, error: null }, // assertOwnership

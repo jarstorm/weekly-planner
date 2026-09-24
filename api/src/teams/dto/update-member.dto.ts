@@ -1,9 +1,16 @@
-import { IsBoolean, IsIn, IsOptional, IsString, ValidateIf } from 'class-validator';
+import { IsBoolean, IsIn, IsOptional, IsString, IsUUID, ValidateIf } from 'class-validator';
 
 export class UpdateMemberDto {
   @IsOptional()
   @IsString()
   name?: string;
+
+  // Mover a otro equipo — tiene que ser de la MISMA organización (se valida
+  // en TeamsService.updateMember, igual que el equipo actual) y respetar
+  // max_members_per_team del equipo de destino.
+  @IsOptional()
+  @IsUUID()
+  team_id?: string;
 
   @IsOptional()
   @IsIn(['email', 'whatsapp', 'telegram'])

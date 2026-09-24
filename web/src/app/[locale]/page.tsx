@@ -186,8 +186,8 @@ export default function LandingPage() {
               </tr>
               <tr>
                 <td>{t('compareMembers')}</td>
-                <td>{t('compareMembersValue')}</td>
-                <td>{t('compareMembersValue')}</td>
+                <td>{t('compareMembersTeam')}</td>
+                <td>{t('compareMembersOrg')}</td>
               </tr>
               <tr>
                 <td>{t('compareChannels')}</td>
@@ -216,6 +216,7 @@ export default function LandingPage() {
               </tr>
             </tbody>
           </table>
+          <p className="muted-link" style={{ textAlign: 'center', marginTop: '1rem' }}>{t('compareCustomNote')}</p>
         </Reveal>
       </section>
 
@@ -243,6 +244,10 @@ export default function LandingPage() {
           <div className="faq-item">
             <strong>{t('faq5Q')}</strong>
             <p>{t('faq5A')}</p>
+          </div>
+          <div className="faq-item">
+            <strong>{t('faq6Q')}</strong>
+            <p>{t('faq6A')}</p>
           </div>
         </Reveal>
       </section>

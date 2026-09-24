@@ -10,10 +10,12 @@ Precios sin IVA (se factura aparte, 21% para clientes en España — ver `mvp-re
 
 | Plan | Precio/mes | Coste variable directo/mes | Margen de contribución/mes |
 |---|---|---|---|
-| **Equipo** (1 equipo, hasta 20 personas) | 49€ | ~1,63€ (WhatsApp ~0,60€ + Stripe ~0,98€ + IA ~0,05€) | **~47,37€** |
+| **Equipo** (1 equipo, hasta 10 personas) | 49€ | ~1,63€ (WhatsApp ~0,60€ + Stripe ~0,98€ + IA ~0,05€ — cifra sin recalcular tras bajar el límite de 20 a 10, ver nota) | **~47,37€** |
 | **Organización** (hasta 5 equipos) | 149€ | ~5,74€ (WhatsApp ~3€ + Stripe ~2,49€ + IA ~0,25€) | **~143,26€** |
 
 El "margen de contribución" es lo que queda de cada cliente después de los costes que van directamente ligados a atenderlo (mensajes de WhatsApp, comisión de cobro, IA) — antes de restar los costes fijos del negocio, que son los mismos los tengas 1 cliente o 50.
+
+*Nota:* el Plan Equipo bajó su límite de 20 a 10 personas (ver `mvp-resumen-semanal-equipos.md`, sección 11) después de calcular la tabla de arriba. El coste variable de WhatsApp escala con el número de personas, así que en realidad baja (el margen del Plan Equipo es mejor de lo que dice la tabla, no peor) — pendiente de recalcular con el desglose real de coste por mensaje.
 
 ---
 

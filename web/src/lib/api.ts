@@ -52,7 +52,7 @@ export const api = {
   updateMember: (
     teamId: string,
     memberId: string,
-    data: Partial<{ name: string; channel: ChannelName; contact: string | null; active: boolean }>,
+    data: Partial<{ name: string; channel: ChannelName; contact: string | null; active: boolean; team_id: string }>,
   ) => request<Member>(`/teams/${teamId}/members/${memberId}`, { method: 'PATCH', body: JSON.stringify(data) }),
 
   removeMember: (teamId: string, memberId: string) =>
@@ -90,6 +90,7 @@ export const api = {
         | 'name'
         | 'country'
         | 'contact_name'
+        | 'language'
         | 'reminder_dow'
         | 'reminder_time'
         | 'cutoff_time'
@@ -109,6 +110,9 @@ export const api = {
   submitSurveyForm: (token: string, answers: string[]) =>
     request('/survey/form', { method: 'POST', body: JSON.stringify({ token, answers }) }),
 
+  // Listado de todas las personas de la cuenta, de todos los equipos.
+  listAllMembers: () => request<OrgMember[]>('/organizations/members'),
+
   listSurveyPeriods: () => request<string[]>('/survey/periods'),
   getSurveyResults: (period: string) =>
     request<SurveyResults>(`/survey/results?period=${encodeURIComponent(period)}`),
@@ -119,6 +123,13 @@ export const api = {
   billingStatus: () => request<BillingStatus>('/billing/status'),
   createCheckoutSession: (plan: 'equipo' | 'organizacion') =>
     request<{ url: string }>('/billing/checkout', { method: 'POST', body: JSON.stringify({ plan }) }),
+  // Cambio de plan con una suscripción ya activa: modifica la suscripción
+  // en el sitio en vez de crear una sesión de Checkout nueva. Si la cuenta
+  // todavía no tenía suscripción (checkout inicial cancelado), el backend
+  // devuelve {url} igual que /billing/checkout — mismo shape de respuesta
+  // que ChangePlanResult contempla.
+  changePlan: (plan: 'equipo' | 'organizacion') =>
+    request<ChangePlanResult>('/billing/change-plan', { method: 'POST', body: JSON.stringify({ plan }) }),
   createPortalSession: () => request<{ url: string }>('/billing/portal', { method: 'POST' }),
   applyPromoCode: (code: string) => request<{ ok: true }>('/billing/promo-code', { method: 'POST', body: JSON.stringify({ code }) }),
 };
@@ -139,6 +150,17 @@ export interface Member {
   // null mientras un miembro de canal telegram no ha vinculado el bot todavía.
   contact: string | null;
   active: boolean;
+}
+
+// Fila del listado de personas de toda la cuenta (GET /organizations/members)
+// — mismo Member más el nombre de su equipo ya resuelto.
+export interface OrgMember {
+  id: string;
+  team_id: string;
+  team_name: string;
+  name: string;
+  channel: ChannelName;
+  contact: string | null;
 }
 
 export interface Report {
@@ -176,6 +198,9 @@ export interface Organization {
   contact_name: string | null;
   email: string;
   plan: 'equipo' | 'organizacion' | 'custom';
+  // Límites del plan (paso 14) — NULL en Plan Custom, sin límite.
+  max_teams: number | null;
+  max_members_per_team: number | null;
   // Configuración del "loop de feedback" — global para toda la cuenta
   // (migración 0006), no por equipo. El destino de cada informe pasó a ser
   // report_recipients por equipo (migración 0009).
@@ -183,6 +208,10 @@ export interface Organization {
   reminder_time: string;
   cutoff_time: string;
   timezone: string;
+  // Idioma de la cuenta (migración 0012) — preguntas del check-in, encuesta
+  // mensual e informes con IA. No es el idioma de la interfaz del panel
+  // (ese sigue siendo el selector de next-intl, por navegador).
+  language: 'es' | 'en';
   // Resumen ejecutivo (paso 15) — opción, solo disponible en Plan
   // Organización/Custom (org_exec_summary_plan_check en schema.sql).
   has_executive_summary: boolean;
@@ -218,6 +247,8 @@ export interface EnabledChannels {
   telegram: boolean;
   whatsapp: boolean;
 }
+
+export type ChangePlanResult = { url: string } | { ok: true; isUpgrade: boolean };
 
 export interface BillingStatus {
   plan: 'equipo' | 'organizacion' | 'custom';
