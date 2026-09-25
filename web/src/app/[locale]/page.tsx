@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { LocaleSwitcher } from '@/components/LocaleSwitcher';
-import { BrandMark } from '@/components/BrandMark';
+import { BrandMark, BrandIcon } from '@/components/BrandMark';
 import { HeroVisual } from '@/components/HeroVisual';
 import { Reveal } from '@/components/Reveal';
 
@@ -22,7 +22,7 @@ export default function LandingPage() {
   const tLegal = useTranslations('Legal');
 
   return (
-    <main>
+    <main className="landing-page">
       <div className="landing-nav-bar">
         <nav className="landing-nav">
           <BrandMark />
@@ -35,20 +35,24 @@ export default function LandingPage() {
       </div>
 
       <section className="hero">
-        <span className="eyebrow">{t('badge')}</span>
-        <h1 className="brand-word">
-          Weekly<b>Feedback</b>
-        </h1>
-        <p className="tagline">{t('tagline')}</p>
-        <p>{t('description')}</p>
-        <div className="hero-actions">
-          <Link className="btn btn-primary btn-lg" href="/register">{t('cta')}</Link>
-          <a className="btn btn-secondary btn-lg" href="#how-it-works">{t('ctaSecondary')}</a>
-        </div>
-        <p className="trust-note">{t('trustNote')}</p>
+        <div className="hero-grid">
+          <div className="hero-content">
+            <span className="eyebrow">{t('badge')}</span>
+            <h1 className="brand-word">
+              Weekly<b>Feedback</b>
+            </h1>
+            <p className="tagline">{t('tagline')}</p>
+            <p>{t('description')}</p>
+            <div className="hero-actions">
+              <Link className="btn btn-primary btn-lg" href="/register">{t('cta')}</Link>
+              <a className="btn btn-secondary btn-lg" href="#how-it-works">{t('ctaSecondary')}</a>
+            </div>
+            <p className="trust-note">{t('trustNote')}</p>
+          </div>
 
-        <div className="hero-visual">
-          <HeroVisual src="/landing/report-sample-hero.png" alt={t('sampleAlt')} />
+          <div className="hero-visual">
+            <HeroVisual src="/landing/report-sample-hero.png" alt={t('sampleAlt')} />
+          </div>
         </div>
       </section>
 
@@ -241,7 +245,10 @@ export default function LandingPage() {
         </Reveal>
       </section>
 
-      <section className="landing-section" id="faq">
+      <section className="landing-section landing-section-watermark" id="faq">
+        <div className="section-watermark" aria-hidden="true">
+          <BrandIcon size={320} />
+        </div>
         <Reveal direction="right">
           <h2>{t('faqTitle')}</h2>
         </Reveal>
