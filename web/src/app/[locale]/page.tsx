@@ -54,12 +54,12 @@ export default function LandingPage() {
 
       <section className="proof-band">
         <div className="proof-inner">
-          <Reveal>
+          <Reveal direction="left">
             <h2>{t('proofTitle')}</h2>
             <p>{t('proofDesc')}</p>
           </Reveal>
           <div className="proof-grid">
-            <Reveal className="proof-item" delay={0}>
+            <Reveal className="proof-item" delay={0} direction="left">
               <span className="proof-icon"><ShieldCheck size={20} /></span>
               <strong>{t('proof1Title')}</strong>
               <p>{t('proof1Desc')}</p>
@@ -74,7 +74,7 @@ export default function LandingPage() {
               <strong>{t('proof3Title')}</strong>
               <p>{t('proof3Desc')}</p>
             </Reveal>
-            <Reveal className="proof-item" delay={240}>
+            <Reveal className="proof-item" delay={240} direction="right">
               <span className="proof-icon"><RefreshCw size={20} /></span>
               <strong>{t('proof4Title')}</strong>
               <p>{t('proof4Desc')}</p>
@@ -90,7 +90,7 @@ export default function LandingPage() {
         </Reveal>
         <ol className="steps">
           <li>
-            <Reveal delay={0}>
+            <Reveal delay={0} direction="left">
               <div className="step-top">
                 <span className="step-number">1</span>
                 <span className="step-icon"><CalendarClock size={20} /></span>
@@ -110,7 +110,7 @@ export default function LandingPage() {
             </Reveal>
           </li>
           <li>
-            <Reveal delay={200}>
+            <Reveal delay={200} direction="right">
               <div className="step-top">
                 <span className="step-number">3</span>
                 <span className="step-icon"><FileCheck2 size={20} /></span>
@@ -123,7 +123,7 @@ export default function LandingPage() {
       </section>
 
       <section className="landing-section landing-section-sample">
-        <Reveal>
+        <Reveal direction="right">
           <h2>{t('sampleTitle')}</h2>
           <p className="section-desc">{t('sampleDesc')}</p>
         </Reveal>
@@ -140,7 +140,7 @@ export default function LandingPage() {
       </section>
 
       <section className="landing-section" id="pricing">
-        <Reveal>
+        <Reveal direction="left">
           <h2>{t('pricingTitle')}</h2>
           <p className="section-desc">{t('pricingDesc')}</p>
         </Reveal>
@@ -186,7 +186,10 @@ export default function LandingPage() {
             </thead>
             <tbody>
               <tr>
-                <td>{t('compareTeams')}</td>
+                <td>
+                  {t('compareTeams')}
+                  <span className="compare-feature-hint">{t('compareTeamsHint')}</span>
+                </td>
                 <td>{t('compareTeamsTeam')}</td>
                 <td>{t('compareTeamsOrg')}</td>
                 <td>{t('compareTeamsCustom')}</td>
@@ -198,7 +201,10 @@ export default function LandingPage() {
                 <td>{t('compareMembersCustom')}</td>
               </tr>
               <tr>
-                <td>{t('compareChannels')}</td>
+                <td>
+                  {t('compareChannels')}
+                  <span className="compare-feature-hint">{t('compareChannelsHint')}</span>
+                </td>
                 <td>{t('compareChannelsValue')}</td>
                 <td>{t('compareChannelsValue')}</td>
                 <td>{t('compareChannelsValue')}</td>
@@ -210,7 +216,10 @@ export default function LandingPage() {
                 <td><CheckCircle2 size={16} className="plan-compare-yes" /></td>
               </tr>
               <tr>
-                <td>{t('compareExecSummary')}</td>
+                <td>
+                  {t('compareExecSummary')}
+                  <span className="compare-feature-hint">{t('compareExecSummaryHint')}</span>
+                </td>
                 <td><X size={16} className="plan-compare-no" /></td>
                 <td><CheckCircle2 size={16} className="plan-compare-yes" /></td>
                 <td><CheckCircle2 size={16} className="plan-compare-yes" /></td>
@@ -233,7 +242,7 @@ export default function LandingPage() {
       </section>
 
       <section className="landing-section" id="faq">
-        <Reveal>
+        <Reveal direction="right">
           <h2>{t('faqTitle')}</h2>
         </Reveal>
         <Reveal delay={100} className="faq-list">
@@ -280,6 +289,7 @@ export default function LandingPage() {
             <Link href="/legal/terms">{tLegal('termsLink')}</Link>
             <Link href="/legal/privacy">{tLegal('privacyLink')}</Link>
           </nav>
+          <p className="muted-link">{t('footerTrust')}</p>
           <p className="muted-link">© {new Date().getFullYear()} WeeklyFeedback. {t('footerRights')}</p>
         </div>
       </footer>

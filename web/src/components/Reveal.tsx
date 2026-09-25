@@ -10,10 +10,12 @@ export function Reveal({
   children,
   className = '',
   delay = 0,
+  direction = 'up',
 }: {
   children: ReactNode;
   className?: string;
   delay?: number;
+  direction?: 'up' | 'left' | 'right';
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [revealed, setRevealed] = useState(false);
@@ -34,10 +36,12 @@ export function Reveal({
     return () => observer.disconnect();
   }, []);
 
+  const directionClass = direction === 'left' ? ' reveal-left' : direction === 'right' ? ' reveal-right' : '';
+
   return (
     <div
       ref={ref}
-      className={`reveal${revealed ? ' is-revealed' : ''}${className ? ` ${className}` : ''}`}
+      className={`reveal${directionClass}${revealed ? ' is-revealed' : ''}${className ? ` ${className}` : ''}`}
       style={delay ? { transitionDelay: `${delay}ms` } : undefined}
     >
       {children}
