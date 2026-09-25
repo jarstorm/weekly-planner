@@ -250,6 +250,8 @@
     "planEquipo": "Plan Equipo",
     "planOrganizacion": "Plan Organización",
     "planCustom": "Plan Custom",
+    "customPlanDesc": "Sin límite de equipos ni de personas, a medida. Gestionado a mano por nuestro equipo, sin autoservicio todavía.",
+    "customPlanCta": "Contactar",
     "noPrice": "Precio a medida",
     "perMonth": "{price}€/mes",
     "manageSubscription": "Gestionar suscripción",

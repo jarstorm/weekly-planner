@@ -27,6 +27,8 @@ El diseño es deliberado — una única encuesta por cuenta, un solo `survey_day
 - **Canales de respuesta adicionales** (Slack, Microsoft Teams, etc.): el código ya está preparado para añadir conectores sin tocar el resto (`ChannelsService`, sección 3.1 de `especificaciones-tecnicas.md`), pero cada canal nuevo es una integración real, no una opción de configuración.
 - **Self-servicio para Custom** (que el cliente configure sus propios límites desde el panel, o pague por Stripe con precio variable): no existe hoy. Todo Custom es alta y cambios gestionados a mano por el equipo.
 
+  **Decisión de producto (2026-09-25): queda fuera del MVP a propósito.** No se va a construir por ahora — el volumen de clientes Custom no lo justifica todavía y la gestión manual es barata mientras sean pocos. Se deja visible en la landing y en `/app/billing` (tarjeta de Plan Custom con CTA de "Contactar") justamente para señalar que la opción existe y es viable de ofrecer, sin comprometer una fecha de autoservicio.
+
 ## Antes de prometer algo a un cliente
 
 1. Si el pedido es solo números (equipos/personas/precio) o activar resumen ejecutivo/encuesta/idioma → se puede prometer y entregar el mismo día, es solo configuración.

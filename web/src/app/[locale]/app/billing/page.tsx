@@ -229,6 +229,18 @@ export default function BillingPage() {
             </button>
           )}
         </li>
+        <li className={status.plan === 'custom' ? 'current-plan' : ''}>
+          <strong>{t('planCustom')}</strong>
+          <span className="price">{t('noPrice')}</span>
+          <p style={{ margin: '0.5rem 0 1rem' }}>{t('customPlanDesc')}</p>
+          {status.plan === 'custom' ? (
+            <span className="muted-link">{t('currentPlanBadge')}</span>
+          ) : (
+            <a className="btn btn-secondary" href="mailto:contact@zaviren.com">
+              {t('customPlanCta')}
+            </a>
+          )}
+        </li>
       </ul>
     </AppShell>
   );

@@ -6,13 +6,14 @@ import { AggregateModule } from '../aggregate/aggregate.module';
 import { PdfModule } from '../pdf/pdf.module';
 import { CheckinFormModule } from '../checkin-form/checkin-form.module';
 import { SurveyModule } from '../survey/survey.module';
+import { AudioModule } from '../audio/audio.module';
 import { ReminderJob } from './reminder.job';
 import { ReportJob } from './report.job';
 import { SurveyJob } from './survey.job';
 import { RetentionJob } from './retention.job';
 
 @Module({
-  imports: [TeamsModule, CheckinsModule, ChannelsModule, AggregateModule, PdfModule, CheckinFormModule, SurveyModule],
+  imports: [TeamsModule, CheckinsModule, ChannelsModule, AggregateModule, PdfModule, CheckinFormModule, SurveyModule, AudioModule],
   providers: [ReminderJob, ReportJob, SurveyJob, RetentionJob],
 })
 export class JobsModule {}

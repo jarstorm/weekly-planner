@@ -250,6 +250,8 @@
     "planEquipo": "Team plan",
     "planOrganizacion": "Organization plan",
     "planCustom": "Custom plan",
+    "customPlanDesc": "No limit on teams or people, priced to fit. Set up by hand by our team — no self-service yet.",
+    "customPlanCta": "Get in touch",
     "noPrice": "Custom pricing",
     "perMonth": "€{price}/mo",
     "manageSubscription": "Manage subscription",

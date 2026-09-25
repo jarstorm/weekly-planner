@@ -51,6 +51,16 @@ export class AudioService {
     return path;
   }
 
+  // Borra los audios ya subidos cuando su checkin se purga por retención
+  // (RetentionJob) — sin esto, Storage acumula ficheros huérfanos que ya no
+  // tiene fila en `checkins` que los referencie. `remove` de Supabase acepta
+  // varios paths de una vez, no hace falta llamarlo por fichero.
+  async remove(paths: string[]): Promise<void> {
+    if (paths.length === 0) return;
+    const { error } = await this.supabase.db.storage.from(STORAGE_BUCKET).remove(paths);
+    if (error) throw error;
+  }
+
   // Un link temporal para reproducir un audio concreto desde el panel (vista
   // de detalle de un informe) — 1h de validez, de sobra para una sesión de
   // revisión, sin dejar el bucket accesible de forma permanente.

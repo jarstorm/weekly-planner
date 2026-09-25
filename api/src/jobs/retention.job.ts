@@ -1,21 +1,20 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { SupabaseService } from '../supabase/supabase.service';
+import { AudioService } from '../audio/audio.service';
 
 // Retención del histórico por plan (organizations.history_retention_months,
 // migración 0013): Equipo 1 mes, Organización 6 meses, Custom sin límite
 // (NULL, la organización ni se consulta). Corre una vez al día, no cada
 // 15 min como el resto de jobs — no es sensible al minuto.
-//
-// Nota: esto borra las filas de checkins/reports/survey_*, pero NO los
-// audios ya subidos a Supabase Storage (bucket checkin-audio) que esos
-// checkins pudieran referenciar en audio_path — quedan huérfanos. Limpiar
-// Storage es trabajo aparte, no hecho todavía.
 @Injectable()
 export class RetentionJob {
   private readonly logger = new Logger(RetentionJob.name);
 
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly audio: AudioService,
+  ) {}
 
   @Cron('0 4 * * *')
   async run() {
@@ -51,6 +50,21 @@ export class RetentionJob {
     const teamIds = (teams ?? []).map((t: any) => t.id);
 
     if (teamIds.length > 0) {
+      // Los audios se borran de Storage antes de borrar la fila que los
+      // referencia — al revés, `audio_paths` ya no estaría disponible para
+      // saber qué ficheros limpiar.
+      const { data: checkinsToPurge, error: audioPathsError } = await this.supabase.db
+        .from('checkins')
+        .select('audio_paths')
+        .in('team_id', teamIds)
+        .lt('week_start', cutoff);
+      if (audioPathsError) throw audioPathsError;
+
+      const audioPaths = (checkinsToPurge ?? []).flatMap((c: any) => c.audio_paths ?? []);
+      if (audioPaths.length > 0) {
+        await this.audio.remove(audioPaths);
+      }
+
       const { error: checkinsError } = await this.supabase.db
         .from('checkins')
         .delete()
