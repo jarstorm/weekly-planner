@@ -114,7 +114,7 @@ El resumen ejecutivo es una **opción**, no algo que venga forzado por el plan: 
 **Cómo funciona cuando está activado:**
 1. Se crea una organización (la empresa) y, dentro, un equipo por departamento — cada uno con sus propios miembros, su propio recordatorio y su propio informe semanal, exactamente como en el flujo de un solo equipo.
 2. Todos los equipos de una misma organización comparten el mismo día y la misma hora de corte (aunque cada uno tenga sus propias personas) — así el sistema sabe cuándo ya están todos los informes de equipo listos para hacer el resumen conjunto.
-3. En cuanto el último equipo llega a su hora de corte, se genera el **resumen ejecutivo**: no repite el detalle de cada equipo (para eso está su informe individual), sino que saca un titular por equipo, señala si hay un bloqueo que cruza varios equipos, y las 2-3 cosas más urgentes de la semana a nivel empresa.
+3. En cuanto el último equipo llega a su hora de corte, se genera el **resumen ejecutivo**: no repite el detalle de cada equipo (para eso está su informe individual), sino que saca un párrafo breve por equipo, señala si hay un bloqueo que cruza varios equipos, y las 2-3 cosas más urgentes de la semana a nivel empresa. Pensado para ocupar 2-3 páginas, no un titular de una línea.
 4. El resumen ejecutivo llega a quien dirige la empresa; los informes de equipo siguen llegando a cada responsable de equipo como siempre — nadie deja de recibir el suyo.
 
 Si la cuenta no tiene activado el resumen ejecutivo (o está en Plan Equipo), el paso 3 simplemente no ocurre — cada equipo sigue recibiendo su informe individual con normalidad.
@@ -227,8 +227,10 @@ Redacta un informe semanal en español, con este formato exacto:
 4. Si alguien no ha respondido, indícalo al final en una línea, sin dramatizar.
 
 Tono: profesional pero cercano, como lo escribiría un jefe de equipo que
-respeta el tiempo de quien lo lee. Máximo 200 palabras. Nada de relleno
-genérico tipo "gran trabajo en equipo esta semana".
+respeta el tiempo de quien lo lee. Apunta a 2-3 páginas, unas 900 palabras —
+entra en detalle real por proyecto/persona en vez de rellenar con paja, y
+desarrolla cada bloqueo o problema recurrente con su contexto e impacto.
+Nada de relleno genérico tipo "gran trabajo en equipo esta semana".
 
 Bloqueos de semanas anteriores para detectar recurrencia:
 {lista de bloqueos de las últimas 3 semanas}

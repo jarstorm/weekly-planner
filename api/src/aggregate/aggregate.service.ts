@@ -68,7 +68,10 @@ Write a weekly report in English, with this exact format:
 4. If someone hasn't replied, mention it at the end in one line, no drama.
 
 Tone: professional but approachable, like a team lead who respects the
-reader's time. Max 200 words. No generic filler like "great teamwork this week".
+reader's time. Aim for 2-3 pages, around 900 words — go into real detail per
+project/person rather than padding with filler, and expand each blocker or
+recurring issue with its context and impact. No generic filler like "great
+teamwork this week".
 
 No response this week: ${input.membersWithoutResponse.join(', ') || 'nobody — everyone replied'}.
 
@@ -98,8 +101,10 @@ Redacta un informe semanal en español, con este formato exacto:
 4. Si alguien no ha respondido, indícalo al final en una línea, sin dramatizar.
 
 Tono: profesional pero cercano, como lo escribiría un jefe de equipo que
-respeta el tiempo de quien lo lee. Máximo 200 palabras. Nada de relleno
-genérico tipo "gran trabajo en equipo esta semana".
+respeta el tiempo de quien lo lee. Apunta a 2-3 páginas, unas 900 palabras —
+entra en detalle real por proyecto/persona en vez de rellenar con paja, y
+desarrolla cada bloqueo o problema recurrente con su contexto e impacto.
+Nada de relleno genérico tipo "gran trabajo en equipo esta semana".
 
 Sin respuesta esta semana: ${input.membersWithoutResponse.join(', ') || 'nadie, todos respondieron'}.
 
@@ -124,11 +129,11 @@ This week's reports, by team:
 ${informes}
 
 Write an executive summary in English, with this exact format:
-1. A one-line headline per team — the most relevant thing about their week.
+1. A short paragraph (3-5 sentences) per team — what mattered about their week, not just a headline.
 2. "Cross-team risk" — only if you detect a blocker or dependency affecting more than one team. If there's none, omit this section entirely.
-3. "Most urgent this week" — 2-3 company-level items.
+3. "Most urgent this week" — 2-3 company-level items, each with a sentence of context.
 
-Tone: professional, direct, for someone running the company who doesn't have time to read each team's report separately. Max 150 words. Don't repeat detail already in each team's report — synthesize at the company level, don't rephrase every line.`;
+Tone: professional, direct, for someone running the company who doesn't have time to read each team's report separately. Aim for 2-3 pages, around 700 words. Don't repeat detail already in each team's report — synthesize at the company level, don't rephrase every line.`;
     }
 
     return `Eres el asistente que redacta el resumen ejecutivo semanal de la empresa "${input.organizationName}", a partir de los informes ya generados de cada uno de sus equipos esta semana.
@@ -137,11 +142,11 @@ Informes de esta semana, por equipo:
 ${informes}
 
 Redacta un resumen ejecutivo en español, con este formato exacto:
-1. Un titular de una línea por equipo — qué es lo más relevante de su semana.
+1. Un párrafo breve (3-5 frases) por equipo — qué es lo más relevante de su semana, no solo un titular.
 2. "Riesgo que cruza equipos" — solo si detectas un bloqueo o dependencia que afecta a más de un equipo. Si no hay ninguno, omite esta sección entera.
-3. "Lo más urgente esta semana" — 2-3 cosas a nivel empresa.
+3. "Lo más urgente esta semana" — 2-3 cosas a nivel empresa, cada una con una frase de contexto.
 
-Tono: profesional, directo, para quien dirige la empresa y no tiene tiempo de leer cada informe de equipo por separado. Máximo 150 palabras. No repitas el detalle que ya está en el informe de cada equipo — sintetiza a nivel empresa, no reformules cada línea.`;
+Tono: profesional, directo, para quien dirige la empresa y no tiene tiempo de leer cada informe de equipo por separado. Apunta a 2-3 páginas, unas 700 palabras. No repitas el detalle que ya está en el informe de cada equipo — sintetiza a nivel empresa, no reformules cada línea.`;
   }
 
   // Groq en vez de la API de Claude — temporal de MVP mientras la cuenta de
@@ -164,7 +169,7 @@ Tono: profesional, directo, para quien dirige la empresa y no tiene tiempo de le
       },
       body: JSON.stringify({
         model,
-        max_tokens: 800,
+        max_tokens: 2500,
         messages: [{ role: 'user', content: prompt }],
       }),
     });
