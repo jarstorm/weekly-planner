@@ -242,6 +242,7 @@ export default function BillingPage() {
           )}
         </li>
       </ul>
+      <p className="muted-link price-note">{t('priceNote')}</p>
     </AppShell>
   );
 }

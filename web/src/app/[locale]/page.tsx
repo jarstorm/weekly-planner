@@ -35,11 +35,6 @@ export default function LandingPage() {
       </div>
 
       <section className="hero">
-        <div className="hero-bg-blobs" aria-hidden="true">
-          <span className="hero-bg-blob hero-bg-blob-1" />
-          <span className="hero-bg-blob hero-bg-blob-2" />
-          <span className="hero-bg-blob hero-bg-blob-3" />
-        </div>
         <span className="eyebrow">{t('badge')}</span>
         <h1 className="brand-word">
           Weekly<b>Feedback</b>

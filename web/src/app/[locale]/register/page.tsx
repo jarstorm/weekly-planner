@@ -93,6 +93,7 @@ export default function RegisterPage() {
                   <span className="plan-picker-option-desc">{tBilling('orgPlanDesc')}</span>
                 </label>
               </div>
+              <p className="muted-link price-note">{tBilling('priceNote')}</p>
             </div>
             {error && (
               <p role="alert">
