@@ -45,7 +45,7 @@ export default function LandingPage() {
             <p>{t('description')}</p>
             <div className="hero-actions">
               <Link className="btn btn-primary btn-lg" href="/register">{t('cta')}</Link>
-              <a className="btn btn-secondary btn-lg" href="#how-it-works">{t('ctaSecondary')}</a>
+              <Link className="btn btn-secondary btn-lg" href="/how-it-works">{t('ctaSecondary')}</Link>
             </div>
             <p className="trust-note">{t('trustNote')}</p>
           </div>
@@ -124,6 +124,9 @@ export default function LandingPage() {
             </Reveal>
           </li>
         </ol>
+        <p style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+          <Link href="/how-it-works">{t('howItWorksMoreLink')}</Link>
+        </p>
       </section>
 
       <section className="landing-section landing-section-sample">

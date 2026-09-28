@@ -1000,6 +1000,63 @@ button[type='button'].btn-danger:hover {
   color: var(--color-text-muted);
 }
 
+/* Insignia centrada de /how-it-works — .step-top/.step-number/.step-icon
+   (arriba) están pensados para la rejilla compacta de 3 pasos de la
+   landing, alineada a la izquierda dentro de cada tarjeta; sueltos en una
+   sección centrada quedaban descolocados contra el <h2> centrado debajo.
+   Círculo grande + número como placa superpuesta, todo centrado. */
+.hiw-hero {
+  text-align: center;
+}
+
+.hiw-badge {
+  position: relative;
+  width: 4rem;
+  height: 4rem;
+  margin: 0 auto 1.25rem;
+  border-radius: 50%;
+  background: var(--color-primary-100);
+  color: var(--color-primary-700);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hiw-badge svg {
+  width: 28px;
+  height: 28px;
+}
+
+.hiw-badge-number {
+  position: absolute;
+  top: -0.35rem;
+  right: -0.35rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--color-brand);
+  color: var(--color-brand-contrast);
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Encuesta mensual (paso 5, opción secundaria) — aparte en su propia
+   tarjeta en vez de un párrafo más flotando debajo, para que no se lea
+   como continuación del resumen ejecutivo sino como una opción propia. */
+.hiw-aside {
+  max-width: 34rem;
+  margin: 2rem auto 0;
+  text-align: left;
+}
+
+.hiw-aside p {
+  margin: 0;
+}
+
 .landing-section-sample {
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
