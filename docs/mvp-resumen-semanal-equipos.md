@@ -153,7 +153,7 @@ Técnicamente esto es una segunda llamada a la IA, con los informes de equipo ya
 - Detección de sentimiento / alertas automáticas al responsable si hay un bloqueo grave.
 - Multi-idioma (catalán, portugués) para abrir mercado más allá de ES/EN — **ES/EN ya está completo**, frontend y contenido generado por IA incluidos: `organizations.language` (migración 0012) se propaga a `AggregateService.buildPrompt`/`buildExecutiveSummaryPrompt`, que tienen variante inglesa completa (no traducción literal, prompt distinto para que la IA escriba en inglés natural) — ver `api/src/jobs/report.job.ts` (`generateAndDeliver`, `maybeGenerateExecutiveSummary`) y `docs/especificaciones-tecnicas.md`, sección 3.2. Catalán/portugués sí siguen fuera del MVP.
 - Analítica de tendencias más avanzada (velocidad del equipo, comparativa entre semanas).
-- **Diseño del panel/landing: mejorar para que no parezca hecho por IA.** Pedido explícito (2026-09-25), sin detalle todavía de qué cambiar concretamente — pendiente de que se concrete en una tarea de diseño real antes de tocar código.
+- **Resuelto — Diseño de la landing.** Pedido explícito (2026-09-25), sin detalle concreto de qué cambiar. Revisada en vivo (2026-09-28, ES/EN, weeklyfeedback.com): tipografía serif propia, paleta verde/crema distintiva, mockup real del informe (no stock photos), tabla comparadora de planes, FAQ, secciones oscuras de contraste — no tiene pinta de plantilla genérica de IA. Único detalle menor: la animación fade-in al hacer scroll deja el contenido invisible ~1s antes de aparecer; cosmético, no bloquea nada.
 
 ---
 

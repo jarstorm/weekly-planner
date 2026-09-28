@@ -166,22 +166,18 @@ Redacta un resumen ejecutivo en español, con este formato exacto:
 Tono: profesional, directo, para quien dirige la empresa y no tiene tiempo de leer cada informe de equipo por separado. Apunta a 2-3 páginas, unas 700 palabras, pero nunca inventes detalle que no esté en los informes de equipo de abajo — si el informe de un equipo es escueto, su párrafo aquí también debe serlo. No repitas el detalle que ya está en el informe de cada equipo — sintetiza a nivel empresa, no reformules cada línea.`;
   }
 
-  // Groq en vez de la API de Claude — temporal de MVP mientras la cuenta de
-  // Anthropic no está disponible (ver docs/especificaciones-tecnicas.md,
-  // sección 0.2). Endpoint compatible con el formato de OpenAI; cuando haya
-  // API key de Anthropic, esto vuelve a la llamada a api.anthropic.com sin
-  // tocar el resto del servicio (buildPrompt/buildExecutiveSummaryPrompt no cambian).
-  private async callGroq(prompt: string): Promise<string> {
-    const apiKey = this.config.get<string>('GROQ_API_KEY');
-    const model = this.config.get<string>('GROQ_MODEL') ?? 'openai/gpt-oss-120b';
+  private async callClaude(prompt: string): Promise<string> {
+    const apiKey = this.config.get<string>('ANTHROPIC_API_KEY');
+    const model = this.config.get<string>('ANTHROPIC_MODEL') ?? 'claude-sonnet-5';
     if (!apiKey) {
-      throw new Error('GROQ_API_KEY no configurada');
+      throw new Error('ANTHROPIC_API_KEY no configurada');
     }
 
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -193,18 +189,18 @@ Tono: profesional, directo, para quien dirige la empresa y no tiene tiempo de le
 
     if (!res.ok) {
       const body = await res.text();
-      throw new Error(`Groq API respondió ${res.status}: ${body}`);
+      throw new Error(`Anthropic API respondió ${res.status}: ${body}`);
     }
 
     const json = await res.json();
-    return json.choices?.[0]?.message?.content ?? '';
+    return json.content?.[0]?.text ?? '';
   }
 
   async generateReport(input: AggregateInput): Promise<string> {
-    return this.callGroq(this.buildPrompt(input));
+    return this.callClaude(this.buildPrompt(input));
   }
 
   async generateExecutiveSummary(input: ExecutiveSummaryInput): Promise<string> {
-    return this.callGroq(this.buildExecutiveSummaryPrompt(input));
+    return this.callClaude(this.buildExecutiveSummaryPrompt(input));
   }
 }
