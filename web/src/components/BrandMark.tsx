@@ -23,14 +23,21 @@ export function BrandIcon({ size = 30 }: { size?: number }) {
   );
 }
 
+// Insignia "Beta" — activa por defecto. El día que el producto deje de
+// serlo, poner NEXT_PUBLIC_SHOW_BETA_BADGE=false en el build de producción
+// y desaparece sola, sin tocar código.
+const SHOW_BETA_BADGE = process.env.NEXT_PUBLIC_SHOW_BETA_BADGE !== 'false';
+
 export function BrandMark() {
   return (
     <span className="brand">
-      <BrandIcon />
+      <span className="brand-icon-wrap">
+        <BrandIcon />
+        {SHOW_BETA_BADGE && <span className="brand-beta">Beta</span>}
+      </span>
       <span className="brand-word">
         Weekly<b>Feedback</b>
       </span>
-      <span className="brand-beta">Beta</span>
     </span>
   );
 }
