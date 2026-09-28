@@ -193,7 +193,17 @@ Tono: profesional, directo, para quien dirige la empresa y no tiene tiempo de le
     }
 
     const json = await res.json();
-    return json.content?.[0]?.text ?? '';
+    // Busca el primer bloque de texto en vez de asumir que content[0] lo es
+    // — si Anthropic devuelve otro tipo de bloque primero (o content[0].text
+    // viene vacío), content[0]?.text ?? '' entregaba un informe en blanco
+    // sin avisar (visto en producción con el resumen ejecutivo: 200 OK, PDF
+    // vacío enviado igual). Mejor fallar aquí y que el cron lo reintente en
+    // el siguiente tick que entregar un informe vacío.
+    const text = (json.content ?? []).find((block: { type?: string; text?: string }) => block?.type === 'text')?.text;
+    if (!text) {
+      throw new Error(`Anthropic API devolvió una respuesta sin texto utilizable: ${JSON.stringify(json).slice(0, 500)}`);
+    }
+    return text;
   }
 
   async generateReport(input: AggregateInput): Promise<string> {

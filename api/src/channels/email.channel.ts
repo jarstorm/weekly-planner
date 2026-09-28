@@ -28,6 +28,39 @@ export class EmailChannel implements Channel {
     return override;
   }
 
+  // Resend limita a 10 req/s (visto en producción: una cuenta con muchos
+  // destinatarios en el mismo tick de cron — recordatorio + encuesta —
+  // dispara varios envíos casi simultáneos y algunos vuelven 429). Sin
+  // reintento esos envíos se perdían en silencio (el caller solo logueaba
+  // el error). 3 intentos con backoff, respetando Retry-After si Resend lo
+  // manda.
+  private async postToResend(apiKey: string, body: Record<string, unknown>): Promise<void> {
+    const maxAttempts = 3;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) return;
+
+      if (res.status === 429 && attempt < maxAttempts) {
+        const retryAfterSeconds = Number(res.headers.get('Retry-After'));
+        const delayMs = Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0 ? retryAfterSeconds * 1000 : attempt * 1000;
+        this.logger.warn(`Resend devolvió 429, reintentando en ${delayMs}ms (intento ${attempt}/${maxAttempts})`);
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        continue;
+      }
+
+      const responseBody = await res.text();
+      throw new Error(`Resend respondió ${res.status}: ${responseBody}`);
+    }
+  }
+
   async send(contact: string, message: string): Promise<void> {
     const to = this.resolveRecipient(contact);
     if (!to) return;
@@ -39,24 +72,7 @@ export class EmailChannel implements Channel {
     }
 
     const text = to === contact ? message : `[dev — destinatario real: ${contact}]\n\n${message}`;
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from,
-        to: [to],
-        subject: 'WeeklyFeedback',
-        text,
-      }),
-    });
-
-    if (!res.ok) {
-      const body = await res.text();
-      throw new Error(`Resend respondió ${res.status}: ${body}`);
-    }
+    await this.postToResend(apiKey, { from, to: [to], subject: 'WeeklyFeedback', text });
   }
 
   async sendDocument(contact: string, file: Buffer, filename: string, caption: string): Promise<void> {
@@ -70,25 +86,13 @@ export class EmailChannel implements Channel {
     }
 
     const text = to === contact ? caption : `[dev — destinatario real: ${contact}]\n\n${caption}`;
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from,
-        to: [to],
-        subject: 'WeeklyFeedback',
-        text,
-        attachments: [{ filename, content: file.toString('base64') }],
-      }),
+    await this.postToResend(apiKey, {
+      from,
+      to: [to],
+      subject: 'WeeklyFeedback',
+      text,
+      attachments: [{ filename, content: file.toString('base64') }],
     });
-
-    if (!res.ok) {
-      const body = await res.text();
-      throw new Error(`Resend respondió ${res.status}: ${body}`);
-    }
   }
 
   // Resend no da webhook de respuesta entrante en el MVP — la respuesta por

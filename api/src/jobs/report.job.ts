@@ -144,7 +144,20 @@ export class ReportJob {
       content_markdown: content,
       generated_at: new Date().toISOString(),
     });
-    if (insertError) throw insertError;
+    if (insertError) {
+      // 23505 = unique_violation en reports_team_week_unique — visto en
+      // producción: dos ejecuciones de run() solapadas generan el mismo
+      // informe a la vez, la primera en insertar gana. No es un fallo real
+      // (el informe ya existe, generado por la otra ejecución), así que no
+      // se trata como error ni se reintenta la entrega — seguir de largo
+      // evita mandar el PDF dos veces. La causa de las ejecuciones
+      // solapadas sigue sin investigar (ver docs/pruebas-produccion.md).
+      if ((insertError as { code?: string }).code === '23505') {
+        this.logger.warn(`Informe de ${team.id}/${weekStart} ya generado por otra ejecución concurrente, descartando este intento`);
+        return;
+      }
+      throw insertError;
+    }
 
     if (team.report_recipients?.length) {
       // El informe siempre se entrega como PDF adjunto — a cada destinatario
@@ -216,7 +229,17 @@ export class ReportJob {
       source_report_ids: reports.map((r: any) => r.id),
       generated_at: new Date().toISOString(),
     });
-    if (insertError) throw insertError;
+    if (insertError) {
+      // Mismo caso que en generateAndDeliver: reports_org_week_unique ya
+      // protege contra dos resúmenes ejecutivos duplicados si dos
+      // ejecuciones solapadas llegan aquí a la vez — tratarlo como "ya lo
+      // generó la otra ejecución" en vez de como fallo.
+      if ((insertError as { code?: string }).code === '23505') {
+        this.logger.warn(`Resumen ejecutivo de ${organizationId}/${weekStart} ya generado por otra ejecución concurrente, descartando este intento`);
+        return;
+      }
+      throw insertError;
+    }
 
     const recipients: string[] = org.executive_summary_recipients ?? [];
     if (recipients.length > 0) {

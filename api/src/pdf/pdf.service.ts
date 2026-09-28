@@ -26,9 +26,14 @@ interface InlineToken {
 interface BlockToken {
   type: string;
   text?: string;
-  tokens?: InlineToken[];
+  // A nivel de bloque suelto (párrafo/heading) son tokens inline; dentro de
+  // un item de lista (`list_item.tokens`) son otros BlockToken — puede
+  // haber un bloque de texto seguido de una sub-lista anidada. Unión en vez
+  // de dos interfaces para no duplicar todo lo demás.
+  tokens?: InlineToken[] | BlockToken[];
   depth?: number;
   items?: BlockToken[];
+  ordered?: boolean;
 }
 
 @Injectable()
@@ -148,13 +153,7 @@ export class PdfService {
           break;
         }
         case 'list':
-          doc.font('Helvetica').fontSize(11).fillColor(BRAND_TEXT);
-          for (const item of token.items ?? []) {
-            const inline = item.tokens?.[0]?.tokens ?? [{ type: 'text', text: item.text }];
-            doc.fillColor(BRAND_DARK).text('•  ', { continued: true, indent: 12 });
-            doc.fillColor(BRAND_TEXT);
-            this.renderInline(doc, inline);
-          }
+          this.renderList(doc, token, 12);
           doc.moveDown(0.5);
           break;
         default:
@@ -164,6 +163,36 @@ export class PdfService {
           }
       }
     }
+  }
+
+  // Cada item de una lista puede traer, después de su texto, bloques
+  // adicionales — el caso real que rompía esto: "- **Ana**" seguido de una
+  // sub-lista numerada con el contenido de verdad. Antes solo se leía
+  // item.tokens[0], perdiendo cualquier bloque siguiente (informes
+  // entregados con el nombre de la persona y nada más debajo, ver
+  // docs/pruebas-produccion.md). Ahora recorre todos los bloques del item
+  // y baja recursivamente en las sub-listas, con más indent.
+  private renderList(doc: PDFKit.PDFDocument, listToken: BlockToken, indent: number) {
+    doc.font('Helvetica').fontSize(11).fillColor(BRAND_TEXT);
+    (listToken.items ?? []).forEach((item, i) => {
+      const blocks = (item.tokens as BlockToken[] | undefined) ?? [{ type: 'text', text: item.text }];
+      const marker = listToken.ordered ? `${i + 1}.  ` : '•  ';
+
+      blocks.forEach((block, blockIndex) => {
+        if (block.type === 'list') {
+          this.renderList(doc, block, indent + 14);
+          return;
+        }
+        const inline = (block.tokens as InlineToken[] | undefined) ?? [{ type: 'text', text: block.text }];
+        if (blockIndex === 0) {
+          doc.fillColor(BRAND_DARK).text(marker, { continued: true, indent });
+          doc.fillColor(BRAND_TEXT);
+        } else {
+          doc.text(' '.repeat(marker.length), { continued: true, indent });
+        }
+        this.renderInline(doc, inline);
+      });
+    });
   }
 
   private renderInline(doc: PDFKit.PDFDocument, tokens: InlineToken[]) {

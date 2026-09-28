@@ -29,7 +29,7 @@ describe('AggregateService', () => {
   it('sends the prompt built from mvp-resumen-semanal-equipos.md, sección 10, to the Anthropic API', async () => {
     const fetchMock = jest.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ content: [{ text: 'informe generado' }] }),
+      json: async () => ({ content: [{ type: 'text', text: 'informe generado' }] }),
     });
     global.fetch = fetchMock as unknown as typeof fetch;
 
@@ -82,5 +82,27 @@ describe('AggregateService', () => {
         pastBlockers: [],
       }),
     ).rejects.toThrow('Anthropic API respondió 500');
+  });
+
+  it('throws instead of returning an empty report when the API responds 200 without a usable text block', async () => {
+    // Visto en producción: la llamada del resumen ejecutivo devolvió 200 OK
+    // pero sin bloque de texto aprovechable, y el código anterior entregaba
+    // un informe en blanco en vez de fallar (json.content?.[0]?.text ?? '').
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ content: [{ type: 'tool_use', input: {} }] }),
+    }) as unknown as typeof fetch;
+
+    const service = new AggregateService(fakeConfig({ ANTHROPIC_API_KEY: 'sk-ant-test' }));
+
+    await expect(
+      service.generateReport({
+        teamName: 'X',
+        companyContext: '',
+        checkins: [],
+        membersWithoutResponse: [],
+        pastBlockers: [],
+      }),
+    ).rejects.toThrow('Anthropic API devolvió una respuesta sin texto utilizable');
   });
 });
