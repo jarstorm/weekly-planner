@@ -462,14 +462,20 @@ button[type='button']:hover {
 }
 
 .btn-danger,
-.btn-danger:hover {
+.btn-danger:hover,
+button[type='button'].btn-danger,
+button[type='button'].btn-danger:hover {
   color: #fff;
 }
-.btn-danger {
+.btn-danger,
+button[type='button'].btn-danger {
   background: #c0392b;
+  border-color: #c0392b;
 }
-.btn-danger:hover {
+.btn-danger:hover,
+button[type='button'].btn-danger:hover {
   background: #a5311f;
+  border-color: #a5311f;
   text-decoration: none;
 }
 
@@ -1075,6 +1081,30 @@ button[type='button']:hover {
 .price-note {
   text-align: center;
   margin-top: 1.25rem;
+}
+
+.billing-page p,
+.billing-page .muted-link,
+.billing-page label {
+  font-size: 0.875rem;
+}
+
+.billing-page .promo-row {
+  display: flex;
+  flex-direction: row;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.billing-page .promo-row input {
+  font-size: 0.8rem;
+  padding: 0.35rem 0.5rem;
+  height: auto;
+}
+
+.billing-page .promo-row button {
+  font-size: 0.8rem;
+  padding: 0.35rem 0.7rem;
 }
 
 .pricing-grid {

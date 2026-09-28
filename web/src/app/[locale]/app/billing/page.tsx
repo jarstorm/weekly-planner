@@ -23,10 +23,15 @@ export default function BillingPage() {
   const [promoStatus, setPromoStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoSuccess, setPromoSuccess] = useState(false);
-  // Bajar de plan borra el resto de equipos de la cuenta (ver
-  // BillingService.changePlan) — se pide confirmación explícita antes de
-  // llamar al backend, no se borra nada al primer clic.
-  const [confirmingDowngradeTo, setConfirmingDowngradeTo] = useState<'equipo' | 'organizacion' | null>(null);
+  // Cualquier cambio de plan con una suscripción YA activa (subir o bajar)
+  // se confirma antes de tocar nada — cambia el precio y se cobra/abona la
+  // diferencia prorrateada al momento (proration_behavior: 'always_invoice'
+  // en BillingService.changePlan), y al subir de plan corta cualquier
+  // trial gratuito que quedara en Stripe (trial_end: 'now'). Bajar de plan
+  // además borra el resto de equipos de la cuenta. Nada de esto pasa en la
+  // primera suscripción (todavía en trial): ahí no hay nada que comparar,
+  // se va directo al Checkout hospedado de Stripe, que ya muestra el precio.
+  const [confirmingPlanChangeTo, setConfirmingPlanChangeTo] = useState<'equipo' | 'organizacion' | null>(null);
 
   useEffect(() => {
     api
@@ -46,10 +51,12 @@ export default function BillingPage() {
   const PLAN_RANK = { equipo: 1, organizacion: 2 } as const;
 
   function subscribe(plan: 'equipo' | 'organizacion') {
-    // Bajar de plan (Organización -> Equipo) se lleva por delante el resto
-    // de equipos de la cuenta — se avisa antes de tocar nada.
-    if (status && PLAN_RANK[plan] < PLAN_RANK[status.plan as 'equipo' | 'organizacion']) {
-      setConfirmingDowngradeTo(plan);
+    // Con suscripción ya activa, cualquier cambio (subir o bajar) se
+    // confirma antes de tocar nada — precio distinto, cobro prorrateado
+    // inmediato. Sin suscripción todavía (trial sin checkout hecho), se va
+    // directo a Stripe Checkout, que ya muestra el precio antes de cobrar.
+    if (status && status.status !== 'trial') {
+      setConfirmingPlanChangeTo(plan);
       return;
     }
     void changePlan(plan);
@@ -68,7 +75,7 @@ export default function BillingPage() {
       // estado en vez de redirigir a Stripe.
       const updated = await api.billingStatus();
       setStatus(updated);
-      setConfirmingDowngradeTo(null);
+      setConfirmingPlanChangeTo(null);
     } catch {
       setActionError(t('checkoutError'));
     } finally {
@@ -126,6 +133,7 @@ export default function BillingPage() {
 
   return (
     <AppShell>
+      <div className="billing-page">
       <div className="topbar">
         <h1 style={{ margin: 0 }}>{t('title')}</h1>
       </div>
@@ -153,7 +161,7 @@ export default function BillingPage() {
               {t('manageSubscription')}
             </button>
 
-            <form onSubmit={applyPromoCode} style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <form onSubmit={applyPromoCode} className="promo-row" style={{ marginTop: '1rem' }}>
               <input
                 type="text"
                 value={promoCode}
@@ -176,25 +184,45 @@ export default function BillingPage() {
 
       {status.status === 'trial' && <p className="muted-link">{t('trialNote', { days: 30 })}</p>}
 
-      {confirmingDowngradeTo && (
-        <div className="card" style={{ borderColor: 'var(--color-danger, crimson)' }}>
-          <p style={{ margin: 0 }}>
-            {t('downgradeWarning', {
-              plan: confirmingDowngradeTo === 'equipo' ? t('planEquipo') : t('planOrganizacion'),
-            })}
-          </p>
-          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-            <button type="button" className="btn btn-secondary" onClick={() => setConfirmingDowngradeTo(null)}>
-              {t('downgradeCancel')}
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled={pendingPlan === confirmingDowngradeTo}
-              onClick={() => changePlan(confirmingDowngradeTo)}
-            >
-              {pendingPlan === confirmingDowngradeTo ? t('processing') : t('downgradeConfirm')}
-            </button>
+      {confirmingPlanChangeTo && status && (
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            if (pendingPlan !== confirmingPlanChangeTo) setConfirmingPlanChangeTo(null);
+          }}
+        >
+          <div className="modal-card card" onClick={(e) => e.stopPropagation()}>
+            {PLAN_RANK[confirmingPlanChangeTo] < PLAN_RANK[status.plan as 'equipo' | 'organizacion'] ? (
+              <p style={{ margin: 0 }}>
+                {t('downgradeWarning', {
+                  plan: confirmingPlanChangeTo === 'equipo' ? t('planEquipo') : t('planOrganizacion'),
+                })}
+              </p>
+            ) : (
+              <p style={{ margin: 0 }}>
+                {t('upgradeWarning', {
+                  plan: confirmingPlanChangeTo === 'equipo' ? t('planEquipo') : t('planOrganizacion'),
+                })}
+              </p>
+            )}
+            <p className="muted-link" style={{ marginTop: '0.5rem' }}>
+              {t('planChangePriceNote', { price: confirmingPlanChangeTo === 'equipo' ? 49 : 149 })}
+            </p>
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
+              {pendingPlan !== confirmingPlanChangeTo && (
+                <button type="button" className="btn btn-danger" onClick={() => setConfirmingPlanChangeTo(null)}>
+                  {t('planChangeCancel')}
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={pendingPlan === confirmingPlanChangeTo}
+                onClick={() => changePlan(confirmingPlanChangeTo)}
+              >
+                {pendingPlan === confirmingPlanChangeTo ? t('processing') : t('planChangeConfirm')}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -243,6 +271,7 @@ export default function BillingPage() {
         </li>
       </ul>
       <p className="muted-link price-note">{t('priceNote')}</p>
+      </div>
     </AppShell>
   );
 }
