@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { ArrowLeft } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { api, ApiError, ChannelName, Member, Team } from '@/lib/api';
+import { trackEvent } from '@/lib/analytics';
 import { useEnabledChannels } from '@/lib/useEnabledChannels';
 import { AppShell } from '@/components/AppShell';
 import { FormSkeleton } from '@/components/Skeleton';
@@ -61,6 +62,7 @@ export default function EditMemberPage() {
         contact: member.contact,
         team_id: member.team_id !== teamId ? member.team_id : undefined,
       });
+      trackEvent('member_update');
       router.push(`/app/team/${member.team_id}/members`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t('saveMemberError'));

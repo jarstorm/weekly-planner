@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { CheckCircle2 } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { api, ApiError, ChannelName, Team } from '@/lib/api';
+import { trackEvent } from '@/lib/analytics';
 import { useEnabledChannels } from '@/lib/useEnabledChannels';
 import { AppShell } from '@/components/AppShell';
 
@@ -34,6 +35,7 @@ export default function OnboardingPage() {
     try {
       const created = await api.createTeam({ name, company_context: companyContext });
       setTeam(created);
+      trackEvent('team_create');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t('createTeamError'));
     } finally {
@@ -58,6 +60,7 @@ export default function OnboardingPage() {
       setMembers((prev) => [...prev, memberName]);
       setMemberName('');
       setMemberContact('');
+      trackEvent('member_add', { channel: memberChannel, context: 'onboarding' });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t('addMemberError'));
     } finally {

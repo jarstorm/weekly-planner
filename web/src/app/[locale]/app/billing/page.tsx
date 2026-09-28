@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useRouter, Link } from '@/i18n/navigation';
 import { api, ApiError, BillingStatus } from '@/lib/api';
+import { trackEvent } from '@/lib/analytics';
 import { AppShell } from '@/components/AppShell';
 import { BillingSkeleton } from '@/components/Skeleton';
 
@@ -51,6 +52,7 @@ export default function BillingPage() {
   const PLAN_RANK = { equipo: 1, organizacion: 2 } as const;
 
   function subscribe(plan: 'equipo' | 'organizacion') {
+    trackEvent('plan_select', { plan, context: 'billing' });
     // Con suscripción ya activa, cualquier cambio (subir o bajar) se
     // confirma antes de tocar nada — precio distinto, cobro prorrateado
     // inmediato. Sin suscripción todavía (trial sin checkout hecho), se va
@@ -76,6 +78,7 @@ export default function BillingPage() {
       const updated = await api.billingStatus();
       setStatus(updated);
       setConfirmingPlanChangeTo(null);
+      trackEvent('plan_change', { plan });
     } catch {
       setActionError(t('checkoutError'));
     } finally {
@@ -87,6 +90,7 @@ export default function BillingPage() {
     setActionError(null);
     try {
       const { url } = await api.createPortalSession();
+      trackEvent('billing_portal_open');
       window.location.href = url;
     } catch {
       setActionError(t('portalError'));
@@ -103,6 +107,7 @@ export default function BillingPage() {
       setPromoStatus('idle');
       setPromoSuccess(true);
       setPromoCode('');
+      trackEvent('promo_code_apply');
     } catch (err) {
       setPromoStatus('error');
       setPromoError(err instanceof ApiError ? err.message : t('promoCodeError'));
@@ -173,11 +178,11 @@ export default function BillingPage() {
               </button>
             </form>
             {promoError && (
-              <p role="alert" className="muted-link" style={{ color: 'crimson' }}>
+              <p role="alert" className="muted-link" style={{ color: 'crimson', marginTop: '0.5rem' }}>
                 {promoError}
               </p>
             )}
-            {promoSuccess && <p className="muted-link">{t('promoCodeSuccess')}</p>}
+            {promoSuccess && <p className="muted-link" style={{ marginTop: '0.5rem' }}>{t('promoCodeSuccess')}</p>}
           </>
         )}
       </div>

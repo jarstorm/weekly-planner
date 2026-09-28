@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { AlertCircle } from 'lucide-react';
 import { useRouter, Link } from '@/i18n/navigation';
 import { api, ApiError } from '@/lib/api';
+import { trackEvent } from '@/lib/analytics';
 import { BrandMark } from '@/components/BrandMark';
 
 export default function LoginPage() {
@@ -21,6 +22,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await api.login({ email, password });
+      trackEvent('login');
       router.push('/app');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t('error'));

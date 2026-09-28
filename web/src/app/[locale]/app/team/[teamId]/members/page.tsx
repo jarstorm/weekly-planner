@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { ArrowLeft, Pencil, Trash2, UserPlus } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { api, Member, Team } from '@/lib/api';
+import { trackEvent } from '@/lib/analytics';
 import { AppShell } from '@/components/AppShell';
 import { FormSkeleton } from '@/components/Skeleton';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -37,6 +38,7 @@ export default function TeamMembersPage() {
     try {
       await api.removeMember(teamId, removing.id);
       setMembers((prev) => (prev ? prev.filter((m) => m.id !== removing.id) : prev));
+      trackEvent('member_remove');
     } catch {
       setError(t('removeMemberError'));
     } finally {

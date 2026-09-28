@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { AlertCircle } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { api, ApiError } from '@/lib/api';
+import { trackEvent } from '@/lib/analytics';
 import { BrandMark } from '@/components/BrandMark';
 
 export default function RegisterPage() {
@@ -24,6 +25,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await api.register({ email, password, orgName });
+      trackEvent('register', { plan });
       setRedirecting(true);
       const { url } = await api.createCheckoutSession(plan);
       window.location.href = url;
@@ -70,7 +72,10 @@ export default function RegisterPage() {
                     name="plan"
                     value="equipo"
                     checked={plan === 'equipo'}
-                    onChange={() => setPlan('equipo')}
+                    onChange={() => {
+                      setPlan('equipo');
+                      trackEvent('plan_select', { plan: 'equipo', context: 'register' });
+                    }}
                   />
                   <span className="plan-picker-option-top">
                     <span>{tBilling('planEquipo')}</span>
@@ -84,7 +89,10 @@ export default function RegisterPage() {
                     name="plan"
                     value="organizacion"
                     checked={plan === 'organizacion'}
-                    onChange={() => setPlan('organizacion')}
+                    onChange={() => {
+                      setPlan('organizacion');
+                      trackEvent('plan_select', { plan: 'organizacion', context: 'register' });
+                    }}
                   />
                   <span className="plan-picker-option-top">
                     <span>{tBilling('planOrganizacion')}</span>

@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { api, ApiError, Organization } from '@/lib/api';
+import { trackEvent } from '@/lib/analytics';
 import { AppShell } from '@/components/AppShell';
 import { FormSkeleton } from '@/components/Skeleton';
 import { RecipientsEditor } from '@/components/RecipientsEditor';
@@ -56,6 +57,7 @@ export default function FeedbackConfigPage() {
       });
       setOrg({ ...org, ...updated });
       setSaved(true);
+      trackEvent('feedback_schedule_update');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t('saveError'));
     } finally {

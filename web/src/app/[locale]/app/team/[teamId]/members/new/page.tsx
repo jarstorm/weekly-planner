@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { ArrowLeft, UserPlus } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { api, ApiError, ChannelName } from '@/lib/api';
+import { trackEvent } from '@/lib/analytics';
 import { useEnabledChannels } from '@/lib/useEnabledChannels';
 import { AppShell } from '@/components/AppShell';
 
@@ -31,6 +32,7 @@ export default function NewMemberPage() {
       // Telegram no manda contact acá — se vincula solo cuando la persona
       // abre el bot desde la pantalla de edición (deep link con su member.id).
       await api.addMember(teamId, channel === 'telegram' ? { name, channel } : { name, channel, contact });
+      trackEvent('member_add', { channel, context: 'team' });
       router.push(`/app/team/${teamId}/members`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t('addMemberError'));

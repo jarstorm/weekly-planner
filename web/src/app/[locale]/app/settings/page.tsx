@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { api, ApiError, Organization } from '@/lib/api';
+import { trackEvent } from '@/lib/analytics';
 import { AppShell } from '@/components/AppShell';
 import { countryOptions } from '@/lib/countries';
 import { SettingsSkeleton } from '@/components/Skeleton';
@@ -36,6 +37,7 @@ export default function SettingsPage() {
       });
       setOrg({ ...org, ...updated });
       setSaved(true);
+      trackEvent('settings_update');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t('saveError'));
     } finally {

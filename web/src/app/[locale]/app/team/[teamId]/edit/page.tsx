@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter, Link } from '@/i18n/navigation';
 import { api, ApiError, Team } from '@/lib/api';
+import { trackEvent } from '@/lib/analytics';
 import { AppShell } from '@/components/AppShell';
 import { FormSkeleton } from '@/components/Skeleton';
 import { RecipientsEditor } from '@/components/RecipientsEditor';
@@ -33,6 +34,7 @@ export default function EditTeamPage() {
     setError(null);
     try {
       await api.updateTeam(teamId, team);
+      trackEvent('team_update');
       router.push(`/app/team/${teamId}`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t('saveTeamError'));
