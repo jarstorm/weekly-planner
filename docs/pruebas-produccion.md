@@ -79,11 +79,41 @@ miembros, checkins reales, tick de cron real). Salieron 3 problemas:
    este alcance) — si se toca `pdf.service.ts` otra vez, revisar a mano
    con un informe real que tenga sub-listas.
 
-**Pendiente de desplegar** — estos 3 fixes están en el repo pero el VPS
-sigue corriendo el build anterior (ver "Cómo desplegar una actualización" en
-`docs/despliegue-produccion.md`). El próximo ciclo de prueba con
-`scripts/e2e-prod-test.sh` los ejercitará de verdad solo después de un
-deploy.
+5. **`GET /survey/results` sin `period` tiraba 500 — CORREGIDO.** Postgres
+   recibía literalmente el string `"undefined"` como fecha
+   (`invalid input syntax for type date: "undefined"`) porque el controller
+   no validaba el query param. Arreglado en
+   `api/src/survey/survey.controller.ts`: ahora exige `period` con formato
+   `YYYY-MM-DD` y responde 400 explicando qué falta si no lo manda.
+
+**Los 5 ya están desplegados y verificados en vivo** (deploy de
+2026-09-28 23:3x-23:5x). Verificación de cada uno:
+- #1 y #2: resumen ejecutivo regenerado limpio tras borrar la fila en
+  blanco (`content_markdown` de 4379 caracteres, entregado).
+- #3: sin más 429 en el log tras el deploy.
+- #4: PDF de Ventas re-descargado (sin regenerar el markdown) — la sección
+  "Próxima semana" ya sale completa.
+- #5: `curl .../survey/results` sin `period` devuelve 400 en vez de 500.
+
+## Encuesta mensual — limitación de re-prueba en el mismo día
+
+`survey_day_of_month` tiene `@Max(28)` a propósito (así siempre cae dentro
+de cualquier mes, incluido febrero) — pero eso significa que si ya pasó el
+tick de hoy, **no hay forma de forzar otro intento hoy mismo**: el único
+día del mes que puede coincidir con "hoy" es el de hoy, y mañana ya no es
+un valor válido si hoy es 28. Para volver a probar el disparo automático de
+verdad, hay que esperar al día 1-28 del mes que viene (o cambiar
+temporalmente `survey_day_of_month` unos días antes del día objetivo).
+
+Para probar el resto del flujo sin depender del cron, los tokens de
+encuesta son HMAC-SHA256 sin estado (`api/src/survey/token.util.ts`,
+`SURVEY_TOKEN_SECRET`) — se pueden firmar a mano con el mismo secreto de
+`.env` para simular el link que recibiría un miembro, sin esperar al email
+real. Así se verificó en esta sesión: envío de 2 respuestas, rechazo de un
+reintento del mismo miembro (403 "Ya has respondido"), y agregación
+correcta y anónima en `GET /survey/results` (por pregunta, no por
+persona — no hay columna que conecte `survey_responses` con quién
+respondió).
 
 ## Cuenta de pruebas
 
