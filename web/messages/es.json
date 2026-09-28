@@ -27,7 +27,7 @@
     "badge": "Resumen semanal de equipo",
     "title": "WeeklyFeedback",
     "tagline": "El resumen semanal que tu equipo ya no tiene que escribir, y que tú ya no tienes que resumir.",
-    "description": "Tres preguntas cortas por WhatsApp, Telegram o email. Un informe listo en 30 segundos, sin que nadie escriba nada.",
+    "description": "Tres preguntas cortas por email. Un informe listo en 30 segundos, sin que nadie escriba nada.",
     "cta": "Prueba con tu equipo esta semana",
     "ctaSecondary": "Ver cómo funciona",
     "trustNote": "30 días gratis · Cancelas cuando quieras · Datos en la UE",
@@ -38,7 +38,7 @@
     "proof2Title": "Informes con IA en español",
     "proof2Desc": "Un resumen narrativo de verdad, no una plantilla rellena — listo en 30 segundos.",
     "proof3Title": "Sin apps nuevas",
-    "proof3Desc": "Tu equipo responde por Telegram o email, donde ya está. Nadie crea una cuenta.",
+    "proof3Desc": "Tu equipo responde por email, donde ya está. Nadie crea una cuenta.",
     "proof4Title": "Sin permanencia",
     "proof4Desc": "Cancelas cuando quieras desde tu panel. Sin letra chica ni llamada de baja.",
     "howItWorksTitle": "Cómo funciona",
@@ -78,8 +78,8 @@
     "compareMembersOrg": "Hasta 20",
     "compareMembersCustom": "Sin límite",
     "compareChannels": "Canales de respuesta",
-    "compareChannelsHint": "WhatsApp, Telegram o email, a elegir por persona",
-    "compareChannelsValue": "Email, WhatsApp, Telegram",
+    "compareChannelsHint": "WhatsApp llega próximamente",
+    "compareChannelsValue": "Email",
     "compareReports": "Informes semanales con IA",
     "compareExecSummary": "Resumen ejecutivo consolidado",
     "compareExecSummaryHint": "para cuando tienes más de un equipo",
@@ -87,7 +87,7 @@
     "comparePrice": "Precio",
     "faqTitle": "Preguntas frecuentes",
     "faq1Q": "¿Mi equipo tiene que instalar algo?",
-    "faq1A": "No. Responden por Telegram o email, los canales que ya usan. Nadie crea una cuenta ni entra a ningún panel.",
+    "faq1A": "No. Responden por email, el canal que ya usan. Nadie crea una cuenta ni entra a ningún panel.",
     "faq2Q": "¿Qué pasa con los datos de mi equipo?",
     "faq2A": "Se guardan en Supabase, con servidores en la Unión Europea. No los compartimos ni los vendemos a terceros.",
     "faq3Q": "¿Necesito tarjeta para probarlo?",
@@ -97,11 +97,11 @@
     "faq5Q": "¿Funciona en español?",
     "faq5A": "Sí, la interfaz y los informes se generan en castellano nativo — o en inglés, si lo prefieres.",
     "faq6Q": "¿Y si necesito más de 5 equipos o algo a medida?",
-    "faq6A": "Hay un Plan Custom sin límite de equipos ni de personas, con precio a medida. Escríbenos a contact@zaviren.com y lo hablamos.",
+    "faq6A": "Hay un Plan Custom sin límite de equipos ni de personas, con precio a medida. Escríbenos a contact@weeklyfeedback.com y lo hablamos.",
     "finalCtaTitle": "Empieza a recibir el resumen de tu equipo esta misma semana",
     "finalCtaDesc": "30 días gratis con tarjeta. Cancelas cuando quieras.",
     "footerTagline": "El resumen semanal de tu equipo, sin que nadie tenga que escribirlo.",
-    "footerTrust": "Datos alojados en la UE · Sin permanencia · contact@zaviren.com",
+    "footerTrust": "Datos alojados en la UE · Sin permanencia · contact@weeklyfeedback.com",
     "footerRights": "Todos los derechos reservados."
   },
   "Login": {
@@ -293,7 +293,7 @@
       },
       {
         "heading": "2. Identificación del prestador",
-        "body": "WeeklyFeedback es prestado por Javier Abad, en calidad de autónomo, con NIF 545563340r y domicilio en c/ Uria nº8 2ºa, 33202, Oviedo. Contacto: contact@zaviren.com."
+        "body": "WeeklyFeedback es prestado por Javier Abad, en calidad de autónomo, con NIF 545563340r y domicilio en c/ Uria nº8 2ºa, 33202, Oviedo. Contacto: contact@weeklyfeedback.com."
       },
       {
         "heading": "3. Cuenta y acceso",
@@ -332,7 +332,7 @@
     "privacySections": [
       {
         "heading": "1. Responsable del tratamiento",
-        "body": "Javier Abad, autónomo, NIF 545563340r, domicilio en c/ Uria nº8 2ºa, 33202, Oviedo. Contacto para temas de privacidad: contact@zaviren.com. No existe Delegado de Protección de Datos designado; las consultas se atienden directamente por el responsable del tratamiento."
+        "body": "Javier Abad, autónomo, NIF 545563340r, domicilio en c/ Uria nº8 2ºa, 33202, Oviedo. Contacto para temas de privacidad: contact@weeklyfeedback.com. No existe Delegado de Protección de Datos designado; las consultas se atienden directamente por el responsable del tratamiento."
       },
       {
         "heading": "2. Qué datos tratamos",
@@ -356,7 +356,7 @@
       },
       {
         "heading": "7. Derechos de las personas",
-        "body": "Cualquier persona puede ejercer sus derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad escribiendo a contact@zaviren.com. También puede presentar una reclamación ante la Agencia Española de Protección de Datos (aepd.es) si considera que sus derechos no han sido atendidos."
+        "body": "Cualquier persona puede ejercer sus derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad escribiendo a contact@weeklyfeedback.com. También puede presentar una reclamación ante la Agencia Española de Protección de Datos (aepd.es) si considera que sus derechos no han sido atendidos."
       },
       {
         "heading": "8. Menores de edad",

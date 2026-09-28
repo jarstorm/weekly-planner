@@ -232,9 +232,20 @@ entra en detalle real por proyecto/persona en vez de rellenar con paja, y
 desarrolla cada bloqueo o problema recurrente con su contexto e impacto.
 Nada de relleno genérico tipo "gran trabajo en equipo esta semana".
 
+Nunca inventes hechos, herramientas, tickets, sistemas, métricas o nombres
+que la persona no haya mencionado — nada de revisiones de cumplimiento,
+números de ticket, herramientas concretas (Jira, SharePoint, GitHub
+Actions...) o cifras inventadas que no aparezcan en las respuestas de
+abajo. Si una respuesta es corta o vaga, esa parte del informe también
+debe quedar corta: mejor honesto y breve que relleno con detalle
+inventado. El objetivo de palabras es secundario — ajustarse a lo que
+realmente se dijo importa mucho más que llegar a esa cifra.
+
 Bloqueos de semanas anteriores para detectar recurrencia:
 {lista de bloqueos de las últimas 3 semanas}
 ```
+
+**Caso de uso a vigilar (2026-09-27):** con checkins conversacionales (WhatsApp/Telegram) el `raw_text` llega sin separar hecho/próximo/bloqueo — solo el formulario web separa esos tres campos — y con un `company_context` pobre, el modelo puede rellenar los ~900 palabras objetivo inventando detalle plausible (revisiones de cumplimiento, tickets, herramientas como Jira/SharePoint) que la persona nunca mencionó. Verificado en vivo: un checkin real de una sola frase por WhatsApp generó un informe con un ticket de CRM inventado ("#4529"), una revisión GDPR y una guía de CI/CD con GitHub Actions, ninguno mencionado por el usuario. Corregido en el prompt (arriba) con una instrucción explícita de no inventar y de preferir un informe corto y honesto sobre alcanzar el objetivo de palabras. *Re-verificado en vivo con el mismo checkin real:* el informe pasó de ~900 palabras con ficción a 323 palabras fieles a lo dicho, sin ningún dato inventado — sigue siendo algo a vigilar cuando el checkin de origen es muy escueto, pero la instrucción funciona.
 
 ---
 

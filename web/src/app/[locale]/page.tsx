@@ -169,7 +169,7 @@ export default function LandingPage() {
               <strong>{t('planCustom')}</strong>
               <span className="price">{t('planCustomPrice')}</span>
               <p style={{ margin: '0.5rem 0 0' }}>{t('planCustomDesc')}</p>
-              <a className="btn btn-secondary" style={{ marginTop: '0.75rem' }} href="mailto:contact@zaviren.com">
+              <a className="btn btn-secondary" style={{ marginTop: '0.75rem' }} href="mailto:contact@weeklyfeedback.com">
                 {t('planCustomCta')}
               </a>
             </Reveal>

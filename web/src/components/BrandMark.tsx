@@ -30,6 +30,7 @@ export function BrandMark() {
       <span className="brand-word">
         Weekly<b>Feedback</b>
       </span>
+      <span className="brand-beta">Beta</span>
     </span>
   );
 }

@@ -236,7 +236,7 @@ export default function BillingPage() {
           {status.plan === 'custom' ? (
             <span className="muted-link">{t('currentPlanBadge')}</span>
           ) : (
-            <a className="btn btn-secondary" href="mailto:contact@zaviren.com">
+            <a className="btn btn-secondary" href="mailto:contact@weeklyfeedback.com">
               {t('customPlanCta')}
             </a>
           )}

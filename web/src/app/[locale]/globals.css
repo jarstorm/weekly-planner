@@ -154,6 +154,7 @@ svg {
 }
 
 .brand {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
@@ -170,6 +171,22 @@ svg {
 .brand-word b {
   color: var(--color-logo-accent);
   font-weight: 800;
+}
+
+.brand-beta {
+  position: absolute;
+  top: -0.55rem;
+  left: 1.4rem;
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #dc2626;
+  border: 1px solid #dc2626;
+  border-radius: 999px;
+  padding: 0.05rem 0.35rem;
+  line-height: 1.3;
+  background: var(--color-surface, #fff);
 }
 
 /* --- layout --- */

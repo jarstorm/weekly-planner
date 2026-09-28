@@ -27,7 +27,7 @@
     "badge": "Weekly team report",
     "title": "WeeklyFeedback",
     "tagline": "The weekly report your team no longer has to write, and you no longer have to summarize.",
-    "description": "Three short questions over WhatsApp, Telegram or email. A report ready in 30 seconds — nobody writes a thing.",
+    "description": "Three short questions over email. A report ready in 30 seconds — nobody writes a thing.",
     "cta": "Try it with your team this week",
     "ctaSecondary": "See how it works",
     "trustNote": "30 days free · Cancel anytime · Data in the EU",
@@ -38,7 +38,7 @@
     "proof2Title": "AI reports, written properly",
     "proof2Desc": "A real narrative summary, not a filled-in template — ready in 30 seconds.",
     "proof3Title": "No new apps",
-    "proof3Desc": "Your team replies over Telegram or email, wherever they already are. No accounts to create.",
+    "proof3Desc": "Your team replies over email, wherever they already are. No accounts to create.",
     "proof4Title": "No lock-in",
     "proof4Desc": "Cancel anytime from your dashboard. No fine print, no cancellation call.",
     "howItWorksTitle": "How it works",
@@ -78,8 +78,8 @@
     "compareMembersOrg": "Up to 20",
     "compareMembersCustom": "No limit",
     "compareChannels": "Reply channels",
-    "compareChannelsHint": "WhatsApp, Telegram or email, picked per person",
-    "compareChannelsValue": "Email, WhatsApp, Telegram",
+    "compareChannelsHint": "WhatsApp coming soon",
+    "compareChannelsValue": "Email",
     "compareReports": "Weekly AI-generated reports",
     "compareExecSummary": "Consolidated executive summary",
     "compareExecSummaryHint": "for when you have more than one team",
@@ -87,7 +87,7 @@
     "comparePrice": "Price",
     "faqTitle": "Frequently asked questions",
     "faq1Q": "Does my team need to install anything?",
-    "faq1A": "No. They reply over Telegram or email, channels they already use. Nobody creates an account or logs into any dashboard.",
+    "faq1A": "No. They reply over email, the channel they already use. Nobody creates an account or logs into any dashboard.",
     "faq2Q": "What happens to my team's data?",
     "faq2A": "It's stored in Supabase, on servers in the European Union. We never share or sell it to third parties.",
     "faq3Q": "Do I need a card to try it?",
@@ -97,11 +97,11 @@
     "faq5Q": "Does it work in Spanish?",
     "faq5A": "Yes, the interface and reports are generated in native Spanish — or English, if you prefer.",
     "faq6Q": "What if I need more than 5 teams, or something custom?",
-    "faq6A": "There's a Custom plan with no limit on teams or people, priced to fit. Email contact@zaviren.com and let's talk.",
+    "faq6A": "There's a Custom plan with no limit on teams or people, priced to fit. Email contact@weeklyfeedback.com and let's talk.",
     "finalCtaTitle": "Start getting your team's report this week",
     "finalCtaDesc": "30 days free with card. Cancel anytime.",
     "footerTagline": "Your team's weekly report, without anyone having to write it.",
-    "footerTrust": "Data hosted in the EU · No lock-in · contact@zaviren.com",
+    "footerTrust": "Data hosted in the EU · No lock-in · contact@weeklyfeedback.com",
     "footerRights": "All rights reserved."
   },
   "Login": {
@@ -293,7 +293,7 @@
       },
       {
         "heading": "2. Service provider",
-        "body": "WeeklyFeedback is provided by Javier Abad, as a sole trader (autónomo), tax ID 545563340r, registered address at c/ Uria nº8 2ºa, 33202, Oviedo, Spain. Contact: contact@zaviren.com."
+        "body": "WeeklyFeedback is provided by Javier Abad, as a sole trader (autónomo), tax ID 545563340r, registered address at c/ Uria nº8 2ºa, 33202, Oviedo, Spain. Contact: contact@weeklyfeedback.com."
       },
       {
         "heading": "3. Account and access",
@@ -332,7 +332,7 @@
     "privacySections": [
       {
         "heading": "1. Data controller",
-        "body": "Javier Abad, sole trader (autónomo), tax ID 545563340r, registered address at c/ Uria nº8 2ºa, 33202, Oviedo, Spain. Contact for privacy matters: contact@zaviren.com. There is no designated Data Protection Officer; requests are handled directly by the data controller."
+        "body": "Javier Abad, sole trader (autónomo), tax ID 545563340r, registered address at c/ Uria nº8 2ºa, 33202, Oviedo, Spain. Contact for privacy matters: contact@weeklyfeedback.com. There is no designated Data Protection Officer; requests are handled directly by the data controller."
       },
       {
         "heading": "2. What data we process",
@@ -356,7 +356,7 @@
       },
       {
         "heading": "7. Your rights",
-        "body": "Anyone can exercise their rights of access, rectification, erasure, objection, restriction and portability by writing to contact@zaviren.com. You may also file a complaint with the Spanish Data Protection Agency (aepd.es) if you believe your rights haven't been addressed."
+        "body": "Anyone can exercise their rights of access, rectification, erasure, objection, restriction and portability by writing to contact@weeklyfeedback.com. You may also file a complaint with the Spanish Data Protection Agency (aepd.es) if you believe your rights haven't been addressed."
       },
       {
         "heading": "8. Minors",

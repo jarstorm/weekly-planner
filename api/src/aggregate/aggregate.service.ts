@@ -73,6 +73,14 @@ project/person rather than padding with filler, and expand each blocker or
 recurring issue with its context and impact. No generic filler like "great
 teamwork this week".
 
+Never invent facts, tools, tickets, systems, metrics, or names that the
+person didn't mention — no made-up compliance reviews, ticket numbers,
+specific tools (Jira, SharePoint, GitHub Actions...) or numbers unless they
+actually appear in the replies below. If a reply is short or vague, keep
+that part of the report short too: it's better to be honest and brief than
+to pad with invented specifics. The word target is secondary — accuracy to
+what was actually said matters far more than hitting it.
+
 No response this week: ${input.membersWithoutResponse.join(', ') || 'nobody — everyone replied'}.
 
 Blockers from previous weeks, to detect recurrence:
@@ -106,6 +114,15 @@ entra en detalle real por proyecto/persona en vez de rellenar con paja, y
 desarrolla cada bloqueo o problema recurrente con su contexto e impacto.
 Nada de relleno genérico tipo "gran trabajo en equipo esta semana".
 
+Nunca inventes hechos, herramientas, tickets, sistemas, métricas o nombres
+que la persona no haya mencionado — nada de revisiones de cumplimiento,
+números de ticket, herramientas concretas (Jira, SharePoint, GitHub
+Actions...) o cifras inventadas que no aparezcan en las respuestas de
+abajo. Si una respuesta es corta o vaga, esa parte del informe también
+debe quedar corta: mejor honesto y breve que relleno con detalle
+inventado. El objetivo de palabras es secundario — ajustarse a lo que
+realmente se dijo importa mucho más que llegar a esa cifra.
+
 Sin respuesta esta semana: ${input.membersWithoutResponse.join(', ') || 'nadie, todos respondieron'}.
 
 Bloqueos de semanas anteriores para detectar recurrencia:
@@ -133,7 +150,7 @@ Write an executive summary in English, with this exact format:
 2. "Cross-team risk" — only if you detect a blocker or dependency affecting more than one team. If there's none, omit this section entirely.
 3. "Most urgent this week" — 2-3 company-level items, each with a sentence of context.
 
-Tone: professional, direct, for someone running the company who doesn't have time to read each team's report separately. Aim for 2-3 pages, around 700 words. Don't repeat detail already in each team's report — synthesize at the company level, don't rephrase every line.`;
+Tone: professional, direct, for someone running the company who doesn't have time to read each team's report separately. Aim for 2-3 pages, around 700 words, but never invent detail beyond what's in the team reports below — if a team's report is thin, its paragraph here should be thin too. Don't repeat detail already in each team's report — synthesize at the company level, don't rephrase every line.`;
     }
 
     return `Eres el asistente que redacta el resumen ejecutivo semanal de la empresa "${input.organizationName}", a partir de los informes ya generados de cada uno de sus equipos esta semana.
@@ -146,7 +163,7 @@ Redacta un resumen ejecutivo en español, con este formato exacto:
 2. "Riesgo que cruza equipos" — solo si detectas un bloqueo o dependencia que afecta a más de un equipo. Si no hay ninguno, omite esta sección entera.
 3. "Lo más urgente esta semana" — 2-3 cosas a nivel empresa, cada una con una frase de contexto.
 
-Tono: profesional, directo, para quien dirige la empresa y no tiene tiempo de leer cada informe de equipo por separado. Apunta a 2-3 páginas, unas 700 palabras. No repitas el detalle que ya está en el informe de cada equipo — sintetiza a nivel empresa, no reformules cada línea.`;
+Tono: profesional, directo, para quien dirige la empresa y no tiene tiempo de leer cada informe de equipo por separado. Apunta a 2-3 páginas, unas 700 palabras, pero nunca inventes detalle que no esté en los informes de equipo de abajo — si el informe de un equipo es escueto, su párrafo aquí también debe serlo. No repitas el detalle que ya está en el informe de cada equipo — sintetiza a nivel empresa, no reformules cada línea.`;
   }
 
   // Groq en vez de la API de Claude — temporal de MVP mientras la cuenta de
