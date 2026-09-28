@@ -181,7 +181,7 @@ svg {
 .brand-beta {
   position: absolute;
   top: -0.5rem;
-  left: -0.3rem;
+  left: 0.5rem;
   font-size: 0.5rem;
   font-weight: 700;
   letter-spacing: 0.03em;
