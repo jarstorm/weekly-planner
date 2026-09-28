@@ -1,6 +1,6 @@
 # Arquitectura del servidor de producción
 
-Estado: **desplegado y verificado en vivo (2026-09-27)**, sirviendo por IP sin dominio ni TLS todavía (ver sección "Lo que falta" al final).
+Estado: **desplegado y verificado en vivo**, sirviendo en `https://weeklyfeedback.com` con TLS real (Let's Encrypt / Certbot, actualizado 2026-09-28 — ver sección "Lo que falta" al final para lo que sigue pendiente).
 
 ## 1. Infraestructura
 
@@ -43,7 +43,7 @@ El backend sí necesita un `npm ci --omit=dev` en el servidor (el build de NestJ
 
 ## 3. Rutas de nginx
 
-Config real en `/etc/nginx/sites-available/weeklyfeedback` (symlink en `sites-enabled`):
+Config real en `/etc/nginx/sites-available/weeklyfeedback` (symlink en `sites-enabled`), gestionada en parte por Certbot: hay un `server` en `443 ssl` con el dominio (`server_name _ weeklyfeedback.com www.weeklyfeedback.com`) que tiene las rutas de abajo, y un segundo `server` en `80` que solo redirige `weeklyfeedback.com`/`www` a HTTPS y devuelve `404` para cualquier otro `Host` (incluida la IP pelada sin dominio — **probar contra la IP directa ya no funciona**, hay que usar `https://weeklyfeedback.com`).
 
 | Ruta | Destino | Motivo |
 |---|---|---|
@@ -70,6 +70,7 @@ rsync -az -e "ssh -i ~/.ssh/clouding_rsa" web/.next/standalone/ root@79.143.90.1
 rsync -az -e "ssh -i ~/.ssh/clouding_rsa" web/.next/static/ root@79.143.90.186:/opt/weeklyfeedback/web/.next/static/
 rsync -az -e "ssh -i ~/.ssh/clouding_rsa" web/public/ root@79.143.90.186:/opt/weeklyfeedback/web/public/
 rsync -az -e "ssh -i ~/.ssh/clouding_rsa" api/dist/ root@79.143.90.186:/opt/weeklyfeedback/api/dist/
+rsync -az -e "ssh -i ~/.ssh/clouding_rsa" supabase/migrations/ root@79.143.90.186:/opt/weeklyfeedback/supabase/migrations/
 
 # 4. Si cambiaron dependencias del backend, reinstalar en el servidor
 ssh -i ~/.ssh/clouding_rsa root@79.143.90.186 \
@@ -80,6 +81,8 @@ ssh -i ~/.ssh/clouding_rsa root@79.143.90.186 "systemctl restart wf-api wf-web"
 ```
 
 Ver logs en vivo: `ssh ... "journalctl -u wf-api -f"` (o `wf-web`).
+
+**Resuelto (2026-09-28) — el paso 3 original no subía `supabase/migrations/`.** `MigrationRunnerService` (`api/src/supabase/migration-runner.service.ts`) resuelve la carpeta de migraciones como tres niveles por encima de su propio `__dirname` compilado (`dist/supabase/` → `/opt/weeklyfeedback/`) + `supabase/migrations` — o sea, espera encontrarla en `/opt/weeklyfeedback/supabase/migrations/`, no dentro de `api/`. El rsync original solo subía `api/dist/`, así que esa carpeta nunca existió en el servidor: cada arranque de `wf-api` logueaba `ENOENT: no such file or directory, scandir '/opt/weeklyfeedback/supabase/migrations'` (el `try/catch` de `onModuleInit` lo atrapa y el backend sigue arrancando igual, así que pasó desapercibido). No causó pérdida de datos porque las 14 migraciones existentes ya se habían aplicado contra la misma Supabase real desde local (local y producción comparten `DATABASE_URL`) — pero una migración *nueva* nunca se habría aplicado sola en producción hasta corregir esto. Arreglado subiendo la carpeta una vez a mano y añadido el rsync que falta al paso 3 (arriba, línea nueva). A partir de ahora cada deploy debe incluir ese rsync si hay migraciones nuevas.
 
 ## 5. Analytics: GoatCounter (self-hosted)
 
@@ -95,9 +98,8 @@ Decisión (ver `especificaciones-tecnicas.md`, sección 6): nada de Google Analy
 
 ## 6. Lo que falta (conocido, no bloqueante para probar)
 
-- **Sin dominio ni TLS.** Se sirve por HTTP plano sobre la IP. Efecto real: la cookie de sesión (`wf_session`) se marca `Secure` cuando `NODE_ENV=production` (`api/src/auth/auth.controller.ts:46`) — por eso **`wf-api.service` deliberadamente NO tiene `NODE_ENV=production`** todavía, para que la cookie no lleve `Secure` y el login funcione sobre HTTP. En cuanto haya dominio + Let's Encrypt, hay que añadir `Environment=NODE_ENV=production` a `wf-api.service` para que la cookie vuelva a ser `Secure` como corresponde en HTTPS real.
-- **Certificado TLS** — pendiente de dominio (ver checklist de producción en `especificaciones-tecnicas.md`, sección 6). Con dominio: `certbot --nginx`.
-- **Webhook de WhatsApp roto (2026-09-28).** Apuntaba al túnel de `cloudflared` de las pruebas (sección 0.2 de `especificaciones-tecnicas.md`), que era efímero y se cayó al cerrarse la terminal donde corría. *Intentado y confirmado que no sirve:* re-apuntar el webhook a `http://79.143.90.186/api/webhooks/whatsapp` (HTTP plano) — Meta lo rechaza en la verificación ("No se ha podido validar la URL de devolución de llamada", `#N/A:WBxP--1243469951-1566723421`) porque **exige HTTPS con certificado válido**, no acepta HTTP ni certificados autofirmados. Sin dominio no hay Let's Encrypt, así que esto no tiene arreglo hasta comprar uno. Verificado con `GET /{waba-id}/phone_numbers?fields=webhook_configuration` que Meta se quedó con la config anterior (el intento fallido no sobrescribió nada) — sigue apuntando al túnel muerto, o sea el canal WhatsApp no recibe nada en este momento. El resto de la app (web, backend, analytics) no depende de esto y sigue funcionando normal.
+- **Resuelto — dominio y TLS.** `weeklyfeedback.com` con certificado real de Let's Encrypt/Certbot (ver sección 3). `wf-api.service` ya tiene `Environment=NODE_ENV=production` (confirmado en el servidor), así que la cookie de sesión (`wf_session`) vuelve a marcarse `Secure` como corresponde en HTTPS real.
+- **Webhook de WhatsApp — sin confirmar tras el dominio nuevo.** Estaba roto (2026-09-28) porque Meta exige HTTPS con certificado válido para verificar la URL de devolución de llamada, y en ese momento no había dominio. Ahora que `https://weeklyfeedback.com` existe con TLS real, el bloqueo técnico ya no aplica, pero **no está confirmado que el webhook se haya re-apuntado a `https://weeklyfeedback.com/api/webhooks/whatsapp`** en Meta Business Manager — sigue pendiente verificarlo (`GET /{waba-id}/phone_numbers?fields=webhook_configuration`) y, si no, reconfigurarlo.
 - **Webhook de Stripe** — el `STRIPE_WEBHOOK_SECRET` en `/opt/weeklyfeedback/api/.env` es el de `stripe listen` (desarrollo local), no uno real apuntando a este servidor. Sin resolver todavía.
 - **Disco ajustado** — 5GB total, ~61% usado ya solo con el sistema + las dos apps. Vigilar si crece (logs, más dependencias).
 - **RAM ajustada** — 1GB total, ~340MB en uso con los tres servicios (api + web + goatcounter) corriendo en reposo. Sin margen para picos grandes (muchos checkins/informes a la vez); si se nota lento, subir a más vCores/RAM en el mismo panel de Clouding (redimensionar, no hace falta recrear el servidor).
