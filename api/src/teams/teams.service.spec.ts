@@ -1,6 +1,11 @@
 import { ForbiddenException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
+import { MemberVerifyService } from '../member-verify/member-verify.service';
 import { TeamsService } from './teams.service';
+
+function fakeMemberVerify(): MemberVerifyService {
+  return { sendVerificationEmail: jest.fn().mockResolvedValue(undefined) } as unknown as MemberVerifyService;
+}
 
 // Cadena de queries de supabase-js (from().select().eq().single()/maybeSingle(),
 // o directamente awaited para el patrón de count) simulada con una cola de
@@ -35,7 +40,7 @@ describe('TeamsService — límites de plan', () => {
       { count: 2, error: null }, // teams count
       { data: { id: 'team-1', name: 'Marketing' }, error: null }, // insert
     ]);
-    const service = new TeamsService(supabase);
+    const service = new TeamsService(supabase, fakeMemberVerify());
 
     const team = await service.createTeam(orgId, { name: 'Marketing' } as any);
     expect(team).toEqual({ id: 'team-1', name: 'Marketing' });
@@ -46,7 +51,7 @@ describe('TeamsService — límites de plan', () => {
       { data: { max_teams: 1 }, error: null },
       { count: 1, error: null },
     ]);
-    const service = new TeamsService(supabase);
+    const service = new TeamsService(supabase, fakeMemberVerify());
 
     await expect(service.createTeam(orgId, { name: 'Marketing' } as any)).rejects.toThrow(ForbiddenException);
   });
@@ -56,7 +61,7 @@ describe('TeamsService — límites de plan', () => {
       { data: { max_teams: null }, error: null },
       { data: { id: 'team-1', name: 'Marketing' }, error: null }, // insert directo, sin count
     ]);
-    const service = new TeamsService(supabase);
+    const service = new TeamsService(supabase, fakeMemberVerify());
 
     const team = await service.createTeam(orgId, { name: 'Marketing' } as any);
     expect(team).toEqual({ id: 'team-1', name: 'Marketing' });
@@ -68,7 +73,7 @@ describe('TeamsService — límites de plan', () => {
       { data: { max_members_per_team: 2 }, error: null }, // organizations.select
       { count: 2, error: null }, // members count
     ]);
-    const service = new TeamsService(supabase);
+    const service = new TeamsService(supabase, fakeMemberVerify());
 
     await expect(
       service.addMember(orgId, 'team-1', { name: 'Ana', channel: 'email', contact: 'ana@x.com' } as any),
@@ -77,7 +82,7 @@ describe('TeamsService — límites de plan', () => {
 
   it('rechaza añadir miembro a un equipo de otra organización', async () => {
     const supabase = fakeSupabase([{ data: { id: 'team-1', organization_id: 'otra-org' }, error: null }]);
-    const service = new TeamsService(supabase);
+    const service = new TeamsService(supabase, fakeMemberVerify());
 
     await expect(
       service.addMember(orgId, 'team-1', { name: 'Ana', channel: 'email', contact: 'ana@x.com' } as any),
@@ -90,7 +95,7 @@ describe('TeamsService — límites de plan', () => {
       { data: { id: 'member-1', team_id: 'team-1' }, error: null }, // assertMemberOwnership
       { data: { id: 'member-1', name: 'Ana Nueva' }, error: null }, // update
     ]);
-    const service = new TeamsService(supabase);
+    const service = new TeamsService(supabase, fakeMemberVerify());
 
     const member = await service.updateMember(orgId, 'team-1', 'member-1', { name: 'Ana Nueva' } as any);
     expect(member).toEqual({ id: 'member-1', name: 'Ana Nueva' });
@@ -103,7 +108,7 @@ describe('TeamsService — límites de plan', () => {
       { data: { max_members_per_team: 2 }, error: null }, // organizations.select
       { count: 2, error: null }, // members count
     ]);
-    const service = new TeamsService(supabase);
+    const service = new TeamsService(supabase, fakeMemberVerify());
 
     await expect(
       service.updateMember(orgId, 'team-1', 'member-1', { active: true } as any),
@@ -119,7 +124,7 @@ describe('TeamsService — límites de plan', () => {
       { count: 1, error: null }, // members count del equipo destino
       { data: { id: 'member-1', team_id: 'team-2' }, error: null }, // update
     ]);
-    const service = new TeamsService(supabase);
+    const service = new TeamsService(supabase, fakeMemberVerify());
 
     const member = await service.updateMember(orgId, 'team-1', 'member-1', { team_id: 'team-2' } as any);
     expect(member).toEqual({ id: 'member-1', team_id: 'team-2' });
@@ -133,7 +138,7 @@ describe('TeamsService — límites de plan', () => {
       { data: { max_members_per_team: 1 }, error: null }, // organizations.select
       { count: 1, error: null }, // members count del equipo destino, ya lleno
     ]);
-    const service = new TeamsService(supabase);
+    const service = new TeamsService(supabase, fakeMemberVerify());
 
     await expect(
       service.updateMember(orgId, 'team-1', 'member-1', { team_id: 'team-2' } as any),
@@ -146,7 +151,7 @@ describe('TeamsService — límites de plan', () => {
       { data: { id: 'member-1', team_id: 'team-1' }, error: null }, // assertMemberOwnership
       { data: { id: 'team-2', organization_id: 'otra-org' }, error: null }, // assertOwnership (team-2, destino ajeno)
     ]);
-    const service = new TeamsService(supabase);
+    const service = new TeamsService(supabase, fakeMemberVerify());
 
     await expect(
       service.updateMember(orgId, 'team-1', 'member-1', { team_id: 'team-2' } as any),
@@ -159,7 +164,7 @@ describe('TeamsService — límites de plan', () => {
       { data: { id: 'member-1', team_id: 'team-1' }, error: null }, // assertMemberOwnership
       { data: { id: 'member-1', active: false }, error: null }, // update
     ]);
-    const service = new TeamsService(supabase);
+    const service = new TeamsService(supabase, fakeMemberVerify());
 
     const member = await service.removeMember(orgId, 'team-1', 'member-1');
     expect(member).toEqual({ id: 'member-1', active: false });
@@ -170,8 +175,68 @@ describe('TeamsService — límites de plan', () => {
       { data: { id: 'team-1', organization_id: orgId }, error: null }, // assertOwnership (team-1 sí es mío)
       { data: { id: 'member-1', team_id: 'otro-team' }, error: null }, // pero el miembro es de otro equipo
     ]);
-    const service = new TeamsService(supabase);
+    const service = new TeamsService(supabase, fakeMemberVerify());
 
     await expect(service.removeMember(orgId, 'team-1', 'member-1')).rejects.toThrow('Miembro no encontrado');
+  });
+});
+
+describe('TeamsService — verificación de email de miembros', () => {
+  const orgId = 'org-1';
+
+  it('al dar de alta un miembro por email, manda el email de verificación', async () => {
+    const supabase = fakeSupabase([
+      { data: { id: 'team-1', organization_id: orgId }, error: null }, // assertOwnership
+      { data: { max_members_per_team: null }, error: null }, // organizations.select — sin límite
+      { data: { id: 'member-1', name: 'Ana', contact: 'ana@x.com', channel: 'email' }, error: null }, // insert
+    ]);
+    const memberVerify = fakeMemberVerify();
+    const service = new TeamsService(supabase, memberVerify);
+
+    await service.addMember(orgId, 'team-1', { name: 'Ana', channel: 'email', contact: 'ana@x.com' } as any);
+
+    expect(memberVerify.sendVerificationEmail).toHaveBeenCalledWith('member-1', 'Ana', 'ana@x.com', 'team-1');
+  });
+
+  it('al dar de alta un miembro por telegram, NO manda email de verificación', async () => {
+    const supabase = fakeSupabase([
+      { data: { id: 'team-1', organization_id: orgId }, error: null },
+      { data: { max_members_per_team: null }, error: null },
+      { data: { id: 'member-1', name: 'Ana', contact: null, channel: 'telegram' }, error: null },
+    ]);
+    const memberVerify = fakeMemberVerify();
+    const service = new TeamsService(supabase, memberVerify);
+
+    await service.addMember(orgId, 'team-1', { name: 'Ana', channel: 'telegram' } as any);
+
+    expect(memberVerify.sendVerificationEmail).not.toHaveBeenCalled();
+  });
+
+  it('resendMemberVerification reenvía el email a un miembro con canal email', async () => {
+    const supabase = fakeSupabase([
+      { data: { id: 'team-1', organization_id: orgId }, error: null }, // assertOwnership
+      { data: { id: 'member-1', team_id: 'team-1' }, error: null }, // assertMemberOwnership
+      { data: { id: 'member-1', name: 'Ana', contact: 'ana@x.com', channel: 'email' }, error: null }, // select
+    ]);
+    const memberVerify = fakeMemberVerify();
+    const service = new TeamsService(supabase, memberVerify);
+
+    const result = await service.resendMemberVerification(orgId, 'team-1', 'member-1');
+
+    expect(memberVerify.sendVerificationEmail).toHaveBeenCalledWith('member-1', 'Ana', 'ana@x.com', 'team-1');
+    expect(result).toEqual({ ok: true });
+  });
+
+  it('resendMemberVerification rechaza a un miembro que no es de canal email', async () => {
+    const supabase = fakeSupabase([
+      { data: { id: 'team-1', organization_id: orgId }, error: null },
+      { data: { id: 'member-1', team_id: 'team-1' }, error: null },
+      { data: { id: 'member-1', name: 'Ana', contact: null, channel: 'telegram' }, error: null },
+    ]);
+    const memberVerify = fakeMemberVerify();
+    const service = new TeamsService(supabase, memberVerify);
+
+    await expect(service.resendMemberVerification(orgId, 'team-1', 'member-1')).rejects.toThrow(ForbiddenException);
+    expect(memberVerify.sendVerificationEmail).not.toHaveBeenCalled();
   });
 });

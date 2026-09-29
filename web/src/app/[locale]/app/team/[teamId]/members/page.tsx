@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { ArrowLeft, Pencil, Trash2, UserPlus } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, MailQuestion, Pencil, Trash2, UserPlus } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { api, Member, Team } from '@/lib/api';
 import { trackEvent } from '@/lib/analytics';
@@ -21,6 +21,8 @@ export default function TeamMembersPage() {
   const [members, setMembers] = useState<Member[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [removing, setRemoving] = useState<Member | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const [resentId, setResentId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!teamId) return;
@@ -43,6 +45,19 @@ export default function TeamMembersPage() {
       setError(t('removeMemberError'));
     } finally {
       setRemoving(null);
+    }
+  }
+
+  async function resendVerification(memberId: string) {
+    setError(null);
+    setResendingId(memberId);
+    try {
+      await api.resendMemberVerification(teamId, memberId);
+      setResentId(memberId);
+    } catch {
+      setError(t('resendVerificationError'));
+    } finally {
+      setResendingId(null);
     }
   }
 
@@ -86,7 +101,30 @@ export default function TeamMembersPage() {
                 <tr key={m.id}>
                   <td>{m.name}</td>
                   <td className="muted-link">{tChannel(m.channel)}</td>
-                  <td className="muted-link">{m.contact ?? t('telegramNotLinked')}</td>
+                  <td className="muted-link">
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                      {m.contact ?? t('telegramNotLinked')}
+                      {m.channel === 'email' && m.contact && (
+                        m.email_verified_at ? (
+                          <span title={t('emailVerified')}>
+                            <CheckCircle2 size={14} color="var(--color-brand)" />
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn-ghost"
+                            style={{ padding: '0.1rem 0.3rem' }}
+                            disabled={resendingId === m.id}
+                            title={t('resendVerification')}
+                            onClick={() => resendVerification(m.id)}
+                          >
+                            <MailQuestion size={14} />
+                            {resentId === m.id ? t('verificationResent') : t('resendVerification')}
+                          </button>
+                        )
+                      )}
+                    </span>
+                  </td>
                   <td className="data-table-actions">
                     <Link className="btn-ghost" href={`/app/team/${teamId}/members/${m.id}/edit`}>
                       <Pencil size={15} />

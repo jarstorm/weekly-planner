@@ -61,6 +61,15 @@ export class TeamsController {
     return this.teams.updateMember(user.organizationId, id, memberId, dto);
   }
 
+  @Post(':id/members/:memberId/resend-verification')
+  resendMemberVerification(
+    @CurrentUser() user: AuthedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('memberId', ParseUUIDPipe) memberId: string,
+  ) {
+    return this.teams.resendMemberVerification(user.organizationId, id, memberId);
+  }
+
   @Delete(':id/members/:memberId')
   removeMember(
     @CurrentUser() user: AuthedUser,

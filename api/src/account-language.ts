@@ -19,6 +19,18 @@ export function surveyMessage(language: AccountLanguage, memberName: string, org
   return `Hola ${memberName} 👋 Encuesta mensual anónima de ${organizationName}. Tus respuestas no quedan asociadas a tu nombre — nadie en tu empresa puede ver quién contestó qué.\n\nResponde aquí: ${link}`;
 }
 
+export function memberVerifyEmailMessage(
+  language: AccountLanguage,
+  memberName: string,
+  teamName: string,
+  link: string,
+): string {
+  if (language === 'en') {
+    return `Hi ${memberName} 👋 You've been added to the ${teamName} team on WeeklyFeedback.\n\nConfirm this is your email so weekly check-in links and reports don't bounce:\n${link}\n\nThis link works for 7 days.`;
+  }
+  return `Hola ${memberName} 👋 Te han añadido al equipo ${teamName} en WeeklyFeedback.\n\nConfirma que este es tu email para que los enlaces del check-in semanal y los informes no reboten:\n${link}\n\nEste enlace funciona durante 7 días.`;
+}
+
 export function welcomeVerifyEmailMessage(language: AccountLanguage, orgName: string, link: string): string {
   if (language === 'en') {
     return `Welcome to WeeklyFeedback, ${orgName} 👋\n\nConfirm your email to activate your account:\n${link}\n\nThis link works for 7 days.`;

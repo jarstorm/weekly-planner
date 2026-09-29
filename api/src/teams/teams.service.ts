@@ -4,10 +4,14 @@ import { CreateTeamDto } from './dto/create-team.dto';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateTeamDto } from './dto/update-team.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
+import { MemberVerifyService } from '../member-verify/member-verify.service';
 
 @Injectable()
 export class TeamsService {
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly memberVerify: MemberVerifyService,
+  ) {}
 
   // El backend siempre consulta con la service_role key (bypasea RLS), así
   // que la autorización "solo tus propios equipos" se hace acá, no en la
@@ -128,6 +132,13 @@ export class TeamsService {
       .select()
       .single();
     if (error) throw error;
+    // Solo por email tiene sentido "verificar" — a WhatsApp/Telegram no se
+    // les puede mandar un link antes de que la persona haya interactuado
+    // con el canal (Telegram, de hecho, ni tiene contact todavía en este
+    // punto — se rellena solo cuando abre el bot).
+    if (data.channel === 'email') {
+      await this.memberVerify.sendVerificationEmail(data.id, data.name, data.contact, teamId);
+    }
     return data;
   }
 
@@ -172,6 +183,25 @@ export class TeamsService {
       .single();
     if (error) throw error;
     return data;
+  }
+
+  // Reenvío manual desde el panel — mismo email que al dar de alta, para
+  // cuando el original no llegó (spam, dirección mal escrita y corregida
+  // después, etc.). No pide que el miembro esté sin verificar todavía:
+  // reenviar a alguien ya verificado es inofensivo (verify() es idempotente).
+  async resendMemberVerification(organizationId: string, teamId: string, memberId: string) {
+    await this.assertMemberOwnership(teamId, memberId, organizationId);
+    const { data: member, error } = await this.supabase.db
+      .from('members')
+      .select('id, name, contact, channel')
+      .eq('id', memberId)
+      .single();
+    if (error) throw error;
+    if (member.channel !== 'email') {
+      throw new ForbiddenException('Solo los miembros con canal email tienen verificación');
+    }
+    await this.memberVerify.sendVerificationEmail(member.id, member.name, member.contact, teamId);
+    return { ok: true };
   }
 
   // Soft delete (active=false) — no un DELETE de la fila. El historial de

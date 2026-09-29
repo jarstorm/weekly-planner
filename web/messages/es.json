@@ -134,6 +134,11 @@
     "invalidLink": "Este enlace no es válido o ha caducado.",
     "loginLink": "Ir a entrar"
   },
+  "VerifyMemberEmail": {
+    "loading": "Confirmando tu email...",
+    "success": "Email confirmado — gracias.",
+    "invalidLink": "Este enlace no es válido o ha caducado."
+  },
   "Onboarding": {
     "createTeamTitle": "Alta de equipo",
     "teamName": "Nombre del equipo",
@@ -229,6 +234,10 @@
     "save": "Guardar",
     "saveMemberError": "No se pudo guardar el miembro",
     "removeMemberError": "No se pudo quitar el miembro",
+    "emailVerified": "Email verificado",
+    "resendVerification": "Reenviar verificación",
+    "verificationResent": "Enviado",
+    "resendVerificationError": "No se pudo reenviar el email de verificación",
     "columnActions": "Acciones",
     "removeConfirmTitle": "¿Quitar a {name}?",
     "removeConfirmMessage": "Dejará de recibir el recordatorio y no aparecerá en los próximos informes. Esto no se puede deshacer.",

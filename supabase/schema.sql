@@ -111,7 +111,8 @@ create table if not exists members (
     check (channel in ('email', 'whatsapp', 'telegram')),
   contact text not null,                         -- email, teléfono E.164 (+34...) de WhatsApp o chat_id de Telegram
   active boolean not null default true,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  email_verified_at timestamptz                  -- solo para channel='email' — migración 0015
 );
 
 create index if not exists idx_members_team on members(team_id);

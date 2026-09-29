@@ -60,6 +60,12 @@ export const api = {
   removeMember: (teamId: string, memberId: string) =>
     request<Member>(`/teams/${teamId}/members/${memberId}`, { method: 'DELETE' }),
 
+  resendMemberVerification: (teamId: string, memberId: string) =>
+    request<{ ok: true }>(`/teams/${teamId}/members/${memberId}/resend-verification`, { method: 'POST' }),
+
+  verifyMemberEmail: (token: string) =>
+    request<{ ok: true }>('/members/verify-email', { method: 'POST', body: JSON.stringify({ token }) }),
+
   listReports: (teamId: string) => request<Report[]>(`/reports?teamId=${teamId}`),
 
   // Resumen ejecutivo (paso 15) — histórico a nivel organización, no de
@@ -152,6 +158,9 @@ export interface Member {
   // null mientras un miembro de canal telegram no ha vinculado el bot todavía.
   contact: string | null;
   active: boolean;
+  // Solo tiene sentido para channel='email' — null si nunca hizo clic en
+  // el link de verificación (o el miembro es de otro canal).
+  email_verified_at: string | null;
 }
 
 // Fila del listado de personas de toda la cuenta (GET /organizations/members)
@@ -163,6 +172,7 @@ export interface OrgMember {
   name: string;
   channel: ChannelName;
   contact: string | null;
+  email_verified_at: string | null;
 }
 
 export interface Report {

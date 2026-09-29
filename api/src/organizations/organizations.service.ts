@@ -49,7 +49,7 @@ export class OrganizationsService {
 
     const { data: members, error } = await this.supabase.db
       .from('members')
-      .select('id, name, channel, contact, team_id')
+      .select('id, name, channel, contact, team_id, email_verified_at')
       .in('team_id', teamIds)
       .eq('active', true)
       .order('name');

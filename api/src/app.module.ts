@@ -15,6 +15,7 @@ import { CheckinFormModule } from './checkin-form/checkin-form.module';
 import { BillingModule } from './billing/billing.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { SurveyModule } from './survey/survey.module';
+import { MemberVerifyModule } from './member-verify/member-verify.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { SurveyModule } from './survey/survey.module';
     BillingModule,
     OrganizationsModule,
     SurveyModule,
+    MemberVerifyModule,
   ],
   controllers: [HealthController],
 })

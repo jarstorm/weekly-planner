@@ -134,6 +134,11 @@
     "invalidLink": "This link is invalid or has expired.",
     "loginLink": "Go to log in"
   },
+  "VerifyMemberEmail": {
+    "loading": "Confirming your email...",
+    "success": "Email confirmed — thanks.",
+    "invalidLink": "This link is invalid or has expired."
+  },
   "Onboarding": {
     "createTeamTitle": "Set up team",
     "teamName": "Team name",
@@ -229,6 +234,10 @@
     "save": "Save",
     "saveMemberError": "Could not save the member",
     "removeMemberError": "Could not remove the member",
+    "emailVerified": "Email verified",
+    "resendVerification": "Resend verification",
+    "verificationResent": "Sent",
+    "resendVerificationError": "Could not resend the verification email",
     "columnActions": "Actions",
     "removeConfirmTitle": "Remove {name}?",
     "removeConfirmMessage": "They'll stop getting the reminder and won't show up in future reports. This can't be undone.",
