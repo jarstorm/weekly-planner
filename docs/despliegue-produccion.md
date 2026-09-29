@@ -122,7 +122,9 @@ El TXT ya estaba puesto (de un intento anterior). Faltaba el MX, y **no había f
 2. Ese subdominio nuevo tiene su propia pestaña DNS, independiente de la del dominio raíz. Ahí, Registro MX → "Servidor mail propio" → servidor `feedback-smtp.us-east-1.amazonses.com`, prioridad "alto" (Strato no deja meter el número 10 directamente, solo bajo/alto — "alto" es lo más parecido a máxima prioridad; con un único MX no debería importar en la práctica).
 3. Verificado con `dig +short MX send.weeklyfeedback.com @docks16.rzone.de` (NS autoritativo de Strato) que el registro ya resuelve en público.
 
-**Pendiente:** Resend todavía no ha vuelto a comprobar — `GET https://api.resend.com/domains/742a95a6-d904-4ae4-a4aa-8ed1b286958e` (con `RESEND_API_KEY`) muestra los registros `send`/MX y `send`/TXT en `"pending"` (ya no `"failed"`, señal de que los ve, solo le falta el re-check). Cuando pasen a `"verified"` y el `status` del dominio a `"verified"`:
-1. Cambiar `RESEND_FROM` en `/opt/weeklyfeedback/api/.env` de `onboarding@resend.dev` a una dirección de `@weeklyfeedback.com` (p. ej. `notificaciones@weeklyfeedback.com` — no hace falta que exista como buzón real, Resend solo valida el dominio).
+**Resuelto (2026-09-29, ~13:46) — verificado y cerrado sin intervención manual.** Un script en background (`wait_resend_verify.sh`, ver sesión de esa fecha) hizo poll a `GET https://api.resend.com/domains/742a95a6-d904-4ae4-a4aa-8ed1b286958e` cada 3 minutos; la propagación tardó ~6 min (no las 24h que avisaba Strato). En cuanto `status` pasó a `"verified"`:
+1. `RESEND_FROM` en `/opt/weeklyfeedback/api/.env` cambiado de `onboarding@resend.dev` a `notificaciones@weeklyfeedback.com` (no hace falta que exista como buzón real, Resend solo valida el dominio).
 2. `systemctl restart wf-api`.
-3. Confirmar mandando un email de prueba a una dirección que NO sea la del titular de la cuenta de Resend — si llega, ya no está en sandbox.
+3. Email de prueba a `delivered@resend.dev` (dirección de test propia de Resend, no llega a nadie real) confirmó entrega: `{"id": "01a0ecfc-c25c-730f-bd2e-35b65f922a3e"}`.
+
+Resend ya no está en modo sandbox — cualquier destinatario real recibe email normalmente, no solo el titular de la cuenta.
