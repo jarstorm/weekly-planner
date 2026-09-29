@@ -115,6 +115,45 @@ describe('BillingService — changePlan', () => {
     expect(teamsBuilder.in).toHaveBeenCalledWith('id', ['team-2', 'team-3']);
   });
 
+  it('bajar de plan desactiva resumen ejecutivo y encuesta mensual (Equipo no los admite)', async () => {
+    const supabase = fakeSupabase([
+      { data: { plan: 'organizacion', stripe_customer_id: 'cus_1', stripe_subscription_id: 'sub_1' }, error: null },
+      { data: null, error: null }, // organizations.update
+      { data: [{ id: 'team-1' }], error: null },
+    ]);
+    mockSubscriptionsRetrieve.mockResolvedValue({ items: { data: [{ id: 'si_1' }] } });
+    mockSubscriptionsUpdate.mockResolvedValue({});
+    const service = new BillingService(fakeConfig(), supabase);
+
+    await service.changePlan(orgId, 'equipo', 'a@b.com');
+
+    const updateBuilder = (supabase.db.from as jest.Mock).mock.results[1].value;
+    expect(updateBuilder.update).toHaveBeenCalledWith(
+      expect.objectContaining({ has_executive_summary: false, has_monthly_survey: false }),
+    );
+  });
+
+  it('si el update de organizations falla, no borra equipos (antes se perdían igual)', async () => {
+    // Reproduce el bug real visto en producción: bajar a Equipo con el
+    // resumen ejecutivo activo viola un check constraint de schema.sql
+    // (org_exec_summary_plan_check) — Postgres rechaza el UPDATE. Antes el
+    // error no se comprobaba y el borrado de equipos corría igual, con el
+    // límite del plan nuevo aunque el plan nunca había cambiado de verdad.
+    const dbError = { message: 'new row for relation "organizations" violates check constraint' };
+    const supabase = fakeSupabase([
+      { data: { plan: 'organizacion', stripe_customer_id: 'cus_1', stripe_subscription_id: 'sub_1' }, error: null },
+      { data: null, error: dbError }, // organizations.update falla
+    ]);
+    mockSubscriptionsRetrieve.mockResolvedValue({ items: { data: [{ id: 'si_1' }] } });
+    mockSubscriptionsUpdate.mockResolvedValue({});
+    const service = new BillingService(fakeConfig(), supabase);
+
+    await expect(service.changePlan(orgId, 'equipo', 'a@b.com')).rejects.toEqual(dbError);
+
+    // Nunca llegó a leer/borrar teams — solo 2 from() (select + update).
+    expect((supabase.db.from as jest.Mock).mock.calls.length).toBe(2);
+  });
+
   it('bajar de plan sin equipos de sobra no borra nada', async () => {
     const supabase = fakeSupabase([
       { data: { plan: 'organizacion', stripe_customer_id: 'cus_1', stripe_subscription_id: 'sub_1' }, error: null },
@@ -129,5 +168,50 @@ describe('BillingService — changePlan', () => {
 
     // Nunca se llegó a llamar from('teams').delete() — solo 3 from() en total.
     expect((supabase.db.from as jest.Mock).mock.calls.length).toBe(3);
+  });
+});
+
+describe('BillingService — handleEvent (checkout.session.completed)', () => {
+  const orgId = 'org-1';
+
+  function fakeSession(overrides: Record<string, any> = {}) {
+    return {
+      metadata: { organizationId: orgId, plan: 'equipo' },
+      client_reference_id: orgId,
+      customer: 'cus_1',
+      subscription: 'sub_1',
+      ...overrides,
+    };
+  }
+
+  it('bug real de producción: baja a Equipo con el resumen ejecutivo activo — el update ahora lo desactiva en la misma llamada', async () => {
+    const supabase = fakeSupabase([{ data: null, error: null }]); // organizations.update
+    const service = new BillingService(fakeConfig(), supabase);
+
+    await service.handleEvent({
+      type: 'checkout.session.completed',
+      data: { object: fakeSession() },
+    } as any);
+
+    const updateBuilder = (supabase.db.from as jest.Mock).mock.results[0].value;
+    expect(updateBuilder.update).toHaveBeenCalledWith(
+      expect.objectContaining({ plan: 'equipo', has_executive_summary: false, has_monthly_survey: false }),
+    );
+  });
+
+  it('si el update viola una constraint (plan Equipo + resumen ejecutivo sin desactivar), lanza en vez de tragarse el error', async () => {
+    // Antes de este fix, un error aquí se ignoraba: Stripe quedaba cobrando
+    // el plan nuevo mientras la app se quedaba en el plan viejo, en
+    // silencio — visto en vivo en la prueba E2E de producción.
+    const dbError = { message: 'violates check constraint "org_exec_summary_plan_check"' };
+    const supabase = fakeSupabase([{ data: null, error: dbError }]);
+    const service = new BillingService(fakeConfig(), supabase);
+
+    await expect(
+      service.handleEvent({
+        type: 'checkout.session.completed',
+        data: { object: fakeSession() },
+      } as any),
+    ).rejects.toEqual(dbError);
   });
 });

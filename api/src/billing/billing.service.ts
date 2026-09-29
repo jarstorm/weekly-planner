@@ -154,7 +154,7 @@ export class BillingService {
       metadata: { organizationId, plan: newPlan },
     });
 
-    await this.supabase.db
+    const { error: updateError } = await this.supabase.db
       .from('organizations')
       .update({
         plan: newPlan,
@@ -162,8 +162,18 @@ export class BillingService {
         max_members_per_team: planConfig.maxMembersPerTeam,
         price_month: planConfig.priceMonth,
         history_retention_months: planConfig.historyRetentionMonths,
+        // Igual que en handleEvent (checkout.session.completed): Plan
+        // Equipo no admite resumen ejecutivo ni encuesta mensual
+        // (constraints en schema.sql), y esto tenía que ejecutarse ANTES
+        // del borrado de equipos de abajo — si el update fallaba en
+        // silencio (error no comprobado) por violar esas constraints, el
+        // borrado corría igual, usando el límite del plan nuevo aunque el
+        // plan de la organización nunca había cambiado de verdad: se
+        // perdían equipos sin que el cambio de plan hubiera surtido efecto.
+        ...(newPlan === 'equipo' ? { has_executive_summary: false, has_monthly_survey: false } : {}),
       })
       .eq('id', organizationId);
+    if (updateError) throw updateError;
 
     if (!isUpgrade) {
       const { data: teams, error: teamsError } = await this.supabase.db
@@ -247,7 +257,7 @@ export class BillingService {
         const plan = (session.metadata?.plan as BillingPlan) ?? 'equipo';
         if (!organizationId) return;
         const planConfig = PLAN_CONFIG[plan] ?? PLAN_CONFIG.equipo;
-        await this.supabase.db
+        const { error: updateError } = await this.supabase.db
           .from('organizations')
           .update({
             status: 'active',
@@ -258,8 +268,18 @@ export class BillingService {
             history_retention_months: planConfig.historyRetentionMonths,
             stripe_customer_id: session.customer as string,
             stripe_subscription_id: session.subscription as string,
+            // Plan Equipo no admite resumen ejecutivo ni encuesta mensual
+            // (org_exec_summary_plan_check / org_survey_plan_check en
+            // schema.sql) — sin esto, una cuenta que baja a Equipo con
+            // cualquiera de los dos activado viola la constraint, Postgres
+            // rechaza el UPDATE entero, y como antes no se comprobaba el
+            // error, Stripe queda cobrando el plan nuevo mientras la app se
+            // queda para siempre en el plan viejo, en silencio. Visto en
+            // vivo en la prueba E2E de producción (docs/pruebas-produccion.md).
+            ...(plan === 'equipo' ? { has_executive_summary: false, has_monthly_survey: false } : {}),
           })
           .eq('id', organizationId);
+        if (updateError) throw updateError;
         return;
       }
       case 'customer.subscription.updated': {
