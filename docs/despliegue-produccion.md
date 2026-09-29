@@ -104,3 +104,25 @@ Decisión (ver `especificaciones-tecnicas.md`, sección 6): nada de Google Analy
 - **Disco ajustado** — 5GB total, ~61% usado ya solo con el sistema + las dos apps. Vigilar si crece (logs, más dependencias).
 - **RAM ajustada** — 1GB total, ~340MB en uso con los tres servicios (api + web + goatcounter) corriendo en reposo. Sin margen para picos grandes (muchos checkins/informes a la vez); si se nota lento, subir a más vCores/RAM en el mismo panel de Clouding (redimensionar, no hace falta recrear el servidor).
 - **Sin backups activados** (se desactivaron al crear el servidor para abaratar costo).
+
+## 7. Email transaccional: sacar Resend del modo sandbox
+
+Estado (2026-09-29): en progreso, DNS ya arreglado, pendiente de propagación — ver checklist en `especificaciones-tecnicas.md` sección 6 para el resumen corto. Esto documenta el cómo.
+
+**El problema:** `RESEND_FROM=onboarding@resend.dev` (sandbox) — Resend solo entrega a la dirección exacta del titular de la cuenta, cualquier otro destinatario devuelve 403. Ningún cliente real recibiría nada por email en este estado.
+
+**Lo que pedía Resend** (resend.com/domains → `weeklyfeedback.com` → "Missing records"): además del DKIM (ya verificado desde antes), un MX y un TXT (SPF) en el subdominio `send.weeklyfeedback.com`:
+- `MX send.weeklyfeedback.com → feedback-smtp.us-east-1.amazonses.com` (prioridad 10)
+- `TXT send.weeklyfeedback.com → "v=spf1 include:amazonses.com ~all"`
+
+El TXT ya estaba puesto (de un intento anterior). Faltaba el MX, y **no había forma de añadirlo** desde la gestión de DNS del dominio raíz en Strato: su sección "Registro MX" es un selector único para todo `weeklyfeedback.com` ("servidor de STRATO" o "servidor propio", una sola dirección) — no admite un MX distinto por subdominio. Confirmado por soporte de Strato (email 2026-09-29): para un MX propio en un subdominio hace falta darlo de alta como **subdominio independiente** en el panel (Dominios → Administrar dominios → weeklyfeedback.com → pestaña "Servidor web" → "Crear subdominio"), no como registro CNAME colgado del dominio raíz — un CNAME en ese mismo nombre habría bloqueado además añadir cualquier otro registro ahí (MX incluido), por la regla DNS de que un nombre con CNAME no puede tener otros tipos de registro.
+
+**Hecho (vía navegador, con la sesión ya logueada del usuario):**
+1. Panel Strato → Administrar dominios → weeklyfeedback.com → Servidor web → "Crear subdominio" → `send`.
+2. Ese subdominio nuevo tiene su propia pestaña DNS, independiente de la del dominio raíz. Ahí, Registro MX → "Servidor mail propio" → servidor `feedback-smtp.us-east-1.amazonses.com`, prioridad "alto" (Strato no deja meter el número 10 directamente, solo bajo/alto — "alto" es lo más parecido a máxima prioridad; con un único MX no debería importar en la práctica).
+3. Verificado con `dig +short MX send.weeklyfeedback.com @docks16.rzone.de` (NS autoritativo de Strato) que el registro ya resuelve en público.
+
+**Pendiente:** Resend todavía no ha vuelto a comprobar — `GET https://api.resend.com/domains/742a95a6-d904-4ae4-a4aa-8ed1b286958e` (con `RESEND_API_KEY`) muestra los registros `send`/MX y `send`/TXT en `"pending"` (ya no `"failed"`, señal de que los ve, solo le falta el re-check). Cuando pasen a `"verified"` y el `status` del dominio a `"verified"`:
+1. Cambiar `RESEND_FROM` en `/opt/weeklyfeedback/api/.env` de `onboarding@resend.dev` a una dirección de `@weeklyfeedback.com` (p. ej. `notificaciones@weeklyfeedback.com` — no hace falta que exista como buzón real, Resend solo valida el dominio).
+2. `systemctl restart wf-api`.
+3. Confirmar mandando un email de prueba a una dirección que NO sea la del titular de la cuenta de Resend — si llega, ya no está en sandbox.
