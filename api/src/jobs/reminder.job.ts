@@ -21,6 +21,12 @@ export class ReminderJob {
     private readonly checkinForm: CheckinFormService,
   ) {}
 
+  // Sigue en 15 min a propósito, a diferencia de ReportJob — este job NO
+  // es idempotente por miembro (no comprueba si ya se le mandó el
+  // recordatorio esta semana, solo que tenga contact). Bajarlo a 5 min con
+  // la ventana en 15 mandaría el recordatorio 3 veces a todo el mundo, no
+  // solo reintentar a los que fallaron — haría falta una tabla de
+  // "recordatorio enviado" por miembro/semana antes de poder acortarlo.
   @Cron('*/15 * * * *')
   async run() {
     const now = new Date();

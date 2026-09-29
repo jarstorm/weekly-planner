@@ -33,7 +33,16 @@ export class ReportJob {
     private readonly supabase: SupabaseService,
   ) {}
 
-  @Cron('*/15 * * * *')
+  // Cada 5 min, no 15 — la ventana de isWithinWindow (15 min por defecto,
+  // sin tocar) sigue igual de ancha, así que dentro de la misma ventana
+  // caben 2-3 ticks en vez de uno. Seguro solo porque este job SÍ es
+  // idempotente por equipo/semana (reportExists/orgReportExists): si un
+  // tick falla generando (visto en real: 503 "credential validation
+  // failed" de Anthropic, transitorio), el siguiente tick 5 min después
+  // reintenta solo, sin lógica de reintento nueva — nunca reenvía un
+  // informe que ya se entregó. ReminderJob/SurveyJob NO tienen esa
+  // idempotencia por miembro, se quedan en 15 min a propósito.
+  @Cron('*/5 * * * *')
   async run() {
     const now = new Date();
     const allTeams = await this.teams.listAll();
@@ -145,35 +154,46 @@ export class ReportJob {
       generated_at: new Date().toISOString(),
     });
     if (insertError) {
-      // 23505 = unique_violation en reports_team_week_unique — visto en
-      // producción: dos ejecuciones de run() solapadas generan el mismo
-      // informe a la vez, la primera en insertar gana. No es un fallo real
-      // (el informe ya existe, generado por la otra ejecución), así que no
-      // se trata como error ni se reintenta la entrega — seguir de largo
-      // evita mandar el PDF dos veces. La causa de las ejecuciones
-      // solapadas sigue sin investigar (ver docs/pruebas-produccion.md).
+      // 23505 = unique_violation en reports_team_week_unique — protección
+      // de cinturón y tirantes, nunca confirmado en real con instrumentación
+      // (un run() por tick, verificado con un id de invocación — ver
+      // docs/pruebas-produccion.md). Puede pasar igual con el cron cada
+      // 5 min ahora (dos ticks dentro de la misma ventana si el primero
+      // tarda) o con un reintento manual solapado con uno real. No se
+      // trata como error ni se reintenta la entrega — seguir de largo
+      // evita mandar el PDF dos veces si de verdad llega a pasar.
       if ((insertError as { code?: string }).code === '23505') {
-        this.logger.warn(`Informe de ${team.id}/${weekStart} ya generado por otra ejecución concurrente, descartando este intento`);
+        this.logger.warn(`Informe de ${team.id}/${weekStart} ya generado por otro intento, descartando este`);
         return;
       }
       throw insertError;
     }
 
     if (team.report_recipients?.length) {
-      // El informe siempre se entrega como PDF adjunto — a cada destinatario
-      // de la lista, siempre por email (migración 0009, decisión explícita:
-      // sin selector de canal por destinatario, simplifica).
-      const { title, filename, caption } = reportDeliveryText(team.language, team.name, weekStart);
-      const pdfBuffer = await this.pdf.fromMarkdown(content, title);
+      // Try/catch propio (separado del catch genérico de run()) para que
+      // el log distinga un fallo generando el contenido de un fallo
+      // entregándolo ya generado — mismo criterio en
+      // maybeGenerateExecutiveSummary más abajo.
+      try {
+        // El informe siempre se entrega como PDF adjunto — a cada
+        // destinatario de la lista, siempre por email (migración 0009,
+        // decisión explícita: sin selector de canal por destinatario,
+        // simplifica).
+        const { title, filename, caption } = reportDeliveryText(team.language, team.name, weekStart);
+        const pdfBuffer = await this.pdf.fromMarkdown(content, title);
 
-      for (const recipient of team.report_recipients) {
-        await this.channels.get('email').sendDocument(recipient, pdfBuffer, filename, caption);
+        for (const recipient of team.report_recipients) {
+          await this.channels.get('email').sendDocument(recipient, pdfBuffer, filename, caption);
+        }
+        await this.supabase.db
+          .from('reports')
+          .update({ delivered_at: new Date().toISOString() })
+          .eq('team_id', team.id)
+          .eq('week_start', weekStart);
+      } catch (deliverErr) {
+        this.logger.error(`Fallo ENTREGANDO (no generando) el informe de ${team.id}/${weekStart}`, deliverErr as Error);
+        throw deliverErr;
       }
-      await this.supabase.db
-        .from('reports')
-        .update({ delivered_at: new Date().toISOString() })
-        .eq('team_id', team.id)
-        .eq('week_start', weekStart);
     }
   }
 
@@ -243,17 +263,22 @@ export class ReportJob {
 
     const recipients: string[] = org.executive_summary_recipients ?? [];
     if (recipients.length > 0) {
-      const { title, filename, caption } = executiveSummaryDeliveryText(org.language, org.name, weekStart);
-      const pdfBuffer = await this.pdf.fromMarkdown(content, title);
+      try {
+        const { title, filename, caption } = executiveSummaryDeliveryText(org.language, org.name, weekStart);
+        const pdfBuffer = await this.pdf.fromMarkdown(content, title);
 
-      for (const recipient of recipients) {
-        await this.channels.get('email').sendDocument(recipient, pdfBuffer, filename, caption);
+        for (const recipient of recipients) {
+          await this.channels.get('email').sendDocument(recipient, pdfBuffer, filename, caption);
+        }
+        await this.supabase.db
+          .from('reports')
+          .update({ delivered_at: new Date().toISOString() })
+          .eq('organization_id', organizationId)
+          .eq('week_start', weekStart);
+      } catch (deliverErr) {
+        this.logger.error(`Fallo ENTREGANDO (no generando) el resumen ejecutivo de ${organizationId}/${weekStart}`, deliverErr as Error);
+        throw deliverErr;
       }
-      await this.supabase.db
-        .from('reports')
-        .update({ delivered_at: new Date().toISOString() })
-        .eq('organization_id', organizationId)
-        .eq('week_start', weekStart);
     }
   }
 }

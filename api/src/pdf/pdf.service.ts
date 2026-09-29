@@ -208,7 +208,18 @@ export class PdfService {
         doc.text(this.plainText(t), { continued });
         doc.font('Helvetica');
       } else {
-        doc.text(t.text ?? this.plainText(t), { continued });
+        // Un salto de línea simple dentro de un párrafo/item ("**Nombre**\ndescripción",
+        // el modelo lo genera así en vez de como bloques separados) es un
+        // "soft break" en markdown — se renderiza como espacio, no como
+        // salto de línea. pdfkit con `continued: true` no rompe línea ahí
+        // solo, deja un hueco en blanco hasta el margen y sigue en la
+        // misma línea visual (visto en producción: título en negrita,
+        // hueco enorme, y el texto pegado a continuación). Normalizar
+        // aquí en vez de tocar sanitizeText (ese limpia el markdown
+        // entero antes del lexer; esto es solo cómo se pinta un token ya
+        // partido).
+        const text = (t.text ?? this.plainText(t)).replace(/\n+/g, ' ');
+        doc.text(text, { continued });
       }
     });
   }
