@@ -120,12 +120,19 @@
     "orgName": "Company/team name",
     "email": "Email",
     "password": "Password",
-    "selectPlan": "Choose your plan",
     "submit": "Create account",
     "submitLoading": "Creating...",
     "haveAccount": "Already have an account?",
     "loginLink": "Log in",
-    "error": "Could not register"
+    "error": "Could not register",
+    "checkEmailTitle": "Check your email",
+    "checkEmailBody": "We sent a confirmation link to {email}. Click it to activate your account before logging in."
+  },
+  "VerifyEmail": {
+    "loading": "Confirming your email...",
+    "success": "Email confirmed. You can log in now.",
+    "invalidLink": "This link is invalid or has expired.",
+    "loginLink": "Go to log in"
   },
   "Onboarding": {
     "createTeamTitle": "Set up team",

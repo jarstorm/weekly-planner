@@ -120,12 +120,19 @@
     "orgName": "Nombre de la empresa/equipo",
     "email": "Email",
     "password": "Contraseña",
-    "selectPlan": "Elige tu plan",
     "submit": "Crear cuenta",
     "submitLoading": "Creando...",
     "haveAccount": "¿Ya tienes cuenta?",
     "loginLink": "Entra",
-    "error": "No se pudo registrar"
+    "error": "No se pudo registrar",
+    "checkEmailTitle": "Revisa tu email",
+    "checkEmailBody": "Te hemos mandado un enlace de confirmación a {email}. Haz clic en él para activar tu cuenta y poder entrar."
+  },
+  "VerifyEmail": {
+    "loading": "Confirmando tu email...",
+    "success": "Email confirmado. Ya puedes entrar.",
+    "invalidLink": "Este enlace no es válido o ha caducado.",
+    "loginLink": "Ir a entrar"
   },
   "Onboarding": {
     "createTeamTitle": "Alta de equipo",

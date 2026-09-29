@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, MailCheck } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { api, ApiError } from '@/lib/api';
 import { trackEvent } from '@/lib/analytics';
@@ -10,14 +10,12 @@ import { BrandMark } from '@/components/BrandMark';
 
 export default function RegisterPage() {
   const t = useTranslations('Register');
-  const tBilling = useTranslations('Billing');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [orgName, setOrgName] = useState('');
-  const [plan, setPlan] = useState<'equipo' | 'organizacion'>('equipo');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [redirecting, setRedirecting] = useState(false);
+  const [registered, setRegistered] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -25,15 +23,31 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await api.register({ email, password, orgName });
-      trackEvent('register', { plan });
-      setRedirecting(true);
-      const { url } = await api.createCheckoutSession(plan);
-      window.location.href = url;
+      trackEvent('register');
+      setRegistered(true);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t('error'));
-      setRedirecting(false);
+    } finally {
       setLoading(false);
     }
+  }
+
+  if (registered) {
+    return (
+      <main className="auth-page">
+        <div className="auth-wrap">
+          <BrandMark />
+          <div className="card" style={{ textAlign: 'center' }}>
+            <MailCheck size={32} color="var(--color-brand)" />
+            <h1>{t('checkEmailTitle')}</h1>
+            <p>{t('checkEmailBody', { email })}</p>
+            <p>
+              <Link href="/login">{t('loginLink')}</Link>
+            </p>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   return (
@@ -61,48 +75,6 @@ export default function RegisterPage() {
                 required
               />
             </label>
-            <div>
-              <span style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-neutral-700)' }}>
-                {t('selectPlan')}
-              </span>
-              <div className="plan-picker">
-                <label className="plan-picker-option">
-                  <input
-                    type="radio"
-                    name="plan"
-                    value="equipo"
-                    checked={plan === 'equipo'}
-                    onChange={() => {
-                      setPlan('equipo');
-                      trackEvent('plan_select', { plan: 'equipo', context: 'register' });
-                    }}
-                  />
-                  <span className="plan-picker-option-top">
-                    <span>{tBilling('planEquipo')}</span>
-                    <span className="plan-picker-option-price">{tBilling('perMonth', { price: 49 })}</span>
-                  </span>
-                  <span className="plan-picker-option-desc">{tBilling('teamPlanDesc')}</span>
-                </label>
-                <label className="plan-picker-option">
-                  <input
-                    type="radio"
-                    name="plan"
-                    value="organizacion"
-                    checked={plan === 'organizacion'}
-                    onChange={() => {
-                      setPlan('organizacion');
-                      trackEvent('plan_select', { plan: 'organizacion', context: 'register' });
-                    }}
-                  />
-                  <span className="plan-picker-option-top">
-                    <span>{tBilling('planOrganizacion')}</span>
-                    <span className="plan-picker-option-price">{tBilling('perMonth', { price: 149 })}</span>
-                  </span>
-                  <span className="plan-picker-option-desc">{tBilling('orgPlanDesc')}</span>
-                </label>
-              </div>
-              <p className="muted-link price-note">{tBilling('priceNote')}</p>
-            </div>
             {error && (
               <p role="alert">
                 <AlertCircle size={16} />
@@ -110,7 +82,7 @@ export default function RegisterPage() {
               </p>
             )}
             <button type="submit" disabled={loading}>
-              {redirecting ? tBilling('redirecting') : loading ? t('submitLoading') : t('submit')}
+              {loading ? t('submitLoading') : t('submit')}
             </button>
           </form>
           <p>

@@ -3,6 +3,7 @@ import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 import { AuthGuard, SESSION_COOKIE } from './auth.guard';
 import { CurrentUser } from './current-user.decorator';
 import { AuthedUser } from './auth.service';
@@ -14,10 +15,20 @@ import { AuthedUser } from './auth.service';
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
+  // Ya no loguea al usuario — antes de este cambio devolvía sesión y
+  // ponía la cookie directo; ahora la cuenta queda creada pero sin
+  // confirmar hasta que el usuario haga clic en el link del email de
+  // bienvenida (AuthService.verifyEmail), así que aquí no hay nada que
+  // loguear todavía.
   @Post('register')
-  async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
-    const session = await this.auth.register(dto);
-    this.setSessionCookie(res, session.accessToken, session.expiresAt);
+  async register(@Body() dto: RegisterDto) {
+    await this.auth.register(dto);
+    return { ok: true };
+  }
+
+  @Post('verify-email')
+  async verifyEmail(@Body() dto: VerifyEmailDto) {
+    await this.auth.verifyEmail(dto.token);
     return { ok: true };
   }
 

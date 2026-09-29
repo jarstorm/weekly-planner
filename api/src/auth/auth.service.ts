@@ -1,7 +1,11 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { SupabaseService } from '../supabase/supabase.service';
+import { ChannelsService } from '../channels/channels.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { welcomeVerifyEmailMessage, localePrefix } from '../account-language';
+import { signEmailVerificationToken, verifyEmailVerificationToken } from './verify-email-token.util';
 
 export interface Session {
   accessToken: string;
@@ -16,15 +20,29 @@ export interface AuthedUser {
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly config: ConfigService,
+    private readonly channels: ChannelsService,
+  ) {}
 
-  async register(dto: RegisterDto): Promise<Session> {
-    // admin.createUser confirma el email directo — no hay flujo de
-    // verificación por correo en el MVP.
+  private verifyTokenSecret(): string {
+    const secret = this.config.get<string>('EMAIL_VERIFICATION_TOKEN_SECRET');
+    if (!secret) throw new Error('EMAIL_VERIFICATION_TOKEN_SECRET no configurada');
+    return secret;
+  }
+
+  // No confirma el email al crear el usuario (antes sí, email_confirm:
+  // true, "no hay flujo de verificación en el MVP") — ahora hace falta
+  // confirmarlo por el link del email de bienvenida antes de poder entrar:
+  // Supabase Auth ya rechaza signInWithPassword para un email sin
+  // confirmar por su cuenta, así que login() no necesita duplicar ese
+  // chequeo, solo traducir el mensaje de error (ver login() más abajo).
+  async register(dto: RegisterDto): Promise<void> {
     const { data: created, error: createError } = await this.supabase.db.auth.admin.createUser({
       email: dto.email,
       password: dto.password,
-      email_confirm: true,
+      email_confirm: false,
     });
     if (createError) throw createError;
 
@@ -45,7 +63,23 @@ export class AuthService {
       throw orgError;
     }
 
-    return this.login({ email: dto.email, password: dto.password });
+    const token = signEmailVerificationToken(created.user!.id, this.verifyTokenSecret());
+    const baseUrl = this.config.get<string>('APP_BASE_URL') ?? '';
+    // Idioma 'es' fijo aquí: organizations.language todavía no lo elige
+    // nadie en el registro (se ajusta después desde /app/feedback), así
+    // que no hay nada más específico que consultar en este momento.
+    const link = `${baseUrl}${localePrefix('es')}/verify-email/${token}`;
+    await this.channels.get('email').send(dto.email, welcomeVerifyEmailMessage('es', dto.orgName, link));
+  }
+
+  async verifyEmail(token: string): Promise<void> {
+    const payload = verifyEmailVerificationToken(token, this.verifyTokenSecret());
+    if (!payload) throw new NotFoundException('Enlace de verificación inválido o caducado');
+
+    // Idempotente a propósito — no hay problema en que alguien haga clic
+    // en el link dos veces, ni tabla de "usado" que mantener por eso.
+    const { error } = await this.supabase.db.auth.admin.updateUserById(payload.userId, { email_confirm: true });
+    if (error) throw error;
   }
 
   async login(dto: LoginDto): Promise<Session> {
@@ -53,8 +87,23 @@ export class AuthService {
       email: dto.email,
       password: dto.password,
     });
-    if (error || !data.session) {
+    if (error) {
+      // Supabase ya bloquea el login de un email sin confirmar por su
+      // cuenta (GoTrue devuelve exactamente este mensaje) — solo hace
+      // falta traducirlo a algo más claro que "credenciales incorrectas".
+      if (error.message === 'Email not confirmed') {
+        throw new UnauthorizedException('Confirma tu email antes de entrar — revisa el correo de bienvenida.');
+      }
       throw new UnauthorizedException('Email o contraseña incorrectos');
+    }
+    if (!data.session) {
+      throw new UnauthorizedException('Email o contraseña incorrectos');
+    }
+    // Cinturón y tirantes — Supabase ya debería haber cortado esto arriba
+    // (proyecto configurado para exigir email confirmado), pero si esa
+    // opción de plataforma cambiara alguna vez, aquí no dependemos de ella.
+    if (!data.user?.email_confirmed_at) {
+      throw new UnauthorizedException('Confirma tu email antes de entrar — revisa el correo de bienvenida.');
     }
     return {
       accessToken: data.session.access_token,

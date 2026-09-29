@@ -19,6 +19,13 @@ export function surveyMessage(language: AccountLanguage, memberName: string, org
   return `Hola ${memberName} 👋 Encuesta mensual anónima de ${organizationName}. Tus respuestas no quedan asociadas a tu nombre — nadie en tu empresa puede ver quién contestó qué.\n\nResponde aquí: ${link}`;
 }
 
+export function welcomeVerifyEmailMessage(language: AccountLanguage, orgName: string, link: string): string {
+  if (language === 'en') {
+    return `Welcome to WeeklyFeedback, ${orgName} 👋\n\nConfirm your email to activate your account:\n${link}\n\nThis link works for 7 days.`;
+  }
+  return `Bienvenido a WeeklyFeedback, ${orgName} 👋\n\nConfirma tu email para activar tu cuenta:\n${link}\n\nEste enlace funciona durante 7 días.`;
+}
+
 export interface ReportDelivery {
   title: string;
   filename: string;

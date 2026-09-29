@@ -31,6 +31,8 @@ export const api = {
   login: (data: { email: string; password: string }) =>
     request('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
 
+  verifyEmail: (token: string) => request<{ ok: true }>('/auth/verify-email', { method: 'POST', body: JSON.stringify({ token }) }),
+
   logout: () => request('/auth/logout', { method: 'POST' }),
 
   me: () => request<{ userId: string; email: string; organizationId: string }>('/auth/me'),
