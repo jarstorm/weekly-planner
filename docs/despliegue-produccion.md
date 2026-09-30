@@ -105,6 +105,7 @@ Decisión (ver `especificaciones-tecnicas.md`, sección 6): nada de Google Analy
 - **RAM ajustada** — 1GB total, ~340MB en uso con los tres servicios (api + web + goatcounter) corriendo en reposo. Sin margen para picos grandes (muchos checkins/informes a la vez); si se nota lento, subir a más vCores/RAM en el mismo panel de Clouding (redimensionar, no hace falta recrear el servidor).
 - **Sin backups activados** (se desactivaron al crear el servidor para abaratar costo).
 - **Local y producción comparten el mismo proyecto de Supabase** (mismo `DATABASE_URL`/`SUPABASE_URL` en `api/.env` local que en el `.env` del VPS — confirmado varias veces en `docs/pruebas-produccion.md`). Hace falta un Supabase separado para desarrollo/pruebas — ahora mismo cualquier prueba local o cualquier script tocando la BD desde el Mac de Javier escribe directo sobre datos reales de producción. Pendiente: crear el proyecto nuevo, migrar `supabase/migrations/*.sql` ahí, y apuntar `api/.env` (local) a ese proyecto en vez de al de producción.
+- **WhatsApp en rama aparte, sin mergear ni desplegar** (`whatsapp-integration`, no `main`): número real conectado y verificado, protección de entorno (`WHATSAPP_DEV_OVERRIDE_TO`, mismo patrón que email) y fix del webhook de estados ya hechos, pero las plantillas de mensaje (`weekly_reminder_v4`, es/en) siguen `PENDING` de aprobación en Meta — no fusionar a `main` ni activar `ENABLE_WHATSAPP_CHANNEL` en producción hasta que se aprueben y se pruebe el envío real.
 
 ## 7. Email transaccional: sacar Resend del modo sandbox
 
