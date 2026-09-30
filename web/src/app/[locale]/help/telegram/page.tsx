@@ -1,7 +1,6 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Link } from '@/i18n/navigation';
 import { BrandMark } from '@/components/BrandMark';
 
 // Página pública (sin AppShell, sin login) — la abre tanto quien gestiona
@@ -16,9 +15,7 @@ export default function TelegramHelpPage() {
 
   return (
     <main className="page legal-page">
-      <Link href="/">
-        <BrandMark />
-      </Link>
+      <BrandMark />
       <h1>{t('title')}</h1>
       <p>{t('intro')}</p>
 

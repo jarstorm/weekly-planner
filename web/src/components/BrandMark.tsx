@@ -1,4 +1,8 @@
+'use client';
+
 import { useId } from 'react';
+import { Link } from '@/i18n/navigation';
+import { useHomeHref } from '@/lib/useHomeHref';
 
 // Ícono "burbuja + check": las respuestas del equipo se convierten en un
 // informe revisado. Elegido entre 3 propuestas (opción A).
@@ -28,9 +32,14 @@ export function BrandIcon({ size = 30 }: { size?: number }) {
 // y desaparece sola, sin tocar código.
 const SHOW_BETA_BADGE = process.env.NEXT_PUBLIC_SHOW_BETA_BADGE !== 'false';
 
+// Logo clicable en toda la app: sin sesión lleva a la portada, con sesión
+// al dashboard (useHomeHref) — antes cada página decidía por su cuenta si
+// envolverlo en un <Link href="/"> o dejarlo sin enlace, con resultado
+// inconsistente (en la mayoría de páginas no hacía nada al pulsarlo).
 export function BrandMark() {
+  const homeHref = useHomeHref();
   return (
-    <span className="brand">
+    <Link href={homeHref} className="brand">
       <span className="brand-icon-wrap">
         <BrandIcon />
         {SHOW_BETA_BADGE && <span className="brand-beta">Beta</span>}
@@ -38,6 +47,6 @@ export function BrandMark() {
       <span className="brand-word">
         Weekly<b>Feedback</b>
       </span>
-    </span>
+    </Link>
   );
 }

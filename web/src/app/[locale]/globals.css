@@ -160,6 +160,7 @@ svg {
   font-weight: 700;
   font-size: 1.05rem;
   color: var(--color-neutral-900);
+  text-decoration: none;
 }
 
 .brand-mark {

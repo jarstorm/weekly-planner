@@ -1,5 +1,4 @@
 import { useTranslations } from 'next-intl';
-import { Link } from '@/i18n/navigation';
 import { BrandMark } from '@/components/BrandMark';
 
 interface LegalSection {
@@ -13,7 +12,7 @@ export default function PrivacyPage() {
 
   return (
     <main className="page legal-page">
-      <Link href="/"><BrandMark /></Link>
+      <BrandMark />
       <h1>{t('privacyTitle')}</h1>
       <p className="muted-link">{t('lastUpdated')}</p>
       {sections.map((section) => (
