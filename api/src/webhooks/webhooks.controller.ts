@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Logger, Post, Query } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ChannelsService } from '../channels/channels.service';
 import { CheckinsService } from '../checkins/checkins.service';
@@ -85,6 +85,8 @@ async function matchMemberAndSaveCheckin(
 // WhatsappChannel.parseIncoming si el formato difiere.
 @Controller('webhooks/whatsapp')
 export class WhatsappWebhookController {
+  private readonly logger = new Logger(WhatsappWebhookController.name);
+
   constructor(
     private readonly config: ConfigService,
     private readonly channels: ChannelsService,
@@ -107,7 +109,28 @@ export class WhatsappWebhookController {
   }
 
   @Post()
-  async receive(@Body() payload: unknown) {
+  async receive(@Body() payload: any) {
+    // Meta manda dos tipos de evento bajo el mismo webhook: mensajes
+    // entrantes (`value.messages`, lo único que WhatsappChannel.parseIncoming
+    // sabe leer) y actualizaciones de estado de mensajes salientes
+    // (`value.statuses` — sent/delivered/read/failed). Antes cualquier
+    // `statuses` caía en el catch-all de parseIncoming, que lo trataba como
+    // "sin mensaje reconocible" y devolvía 400 — Meta reintentaba sin parar
+    // (visto en real: decenas de reintentos en minutos) y nunca se veía el
+    // motivo real de un fallo de entrega. Se loguea y se devuelve 200 sin
+    // tocar checkins — no es algo que debamos guardar, solo observar.
+    const statuses = payload?.entry?.[0]?.changes?.[0]?.value?.statuses;
+    if (statuses?.length) {
+      for (const status of statuses) {
+        if (status.status === 'failed') {
+          this.logger.warn(`WhatsApp ${status.id} a ${status.recipient_id} FALLÓ: ${JSON.stringify(status.errors)}`);
+        } else {
+          this.logger.log(`WhatsApp ${status.id} a ${status.recipient_id}: ${status.status}`);
+        }
+      }
+      return { ok: true };
+    }
+
     const parsed = await parsePayloadOrBadRequest(this.channels, 'whatsapp', payload);
     return matchMemberAndSaveCheckin(this.supabase, this.checkins, this.audio, 'whatsapp', parsed.contact, parsed.rawText, parsed.audio);
   }
