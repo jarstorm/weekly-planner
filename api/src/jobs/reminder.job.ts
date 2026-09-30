@@ -2,9 +2,16 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { TeamsService } from '../teams/teams.service';
 import { ChannelsService } from '../channels/channels.service';
+import { WhatsappChannel } from '../channels/whatsapp.channel';
 import { CheckinFormService } from '../checkin-form/checkin-form.service';
 import { currentWeekStart, dowInTimezone, isWithinWindow } from './date.utils';
 import { reminderMessage } from '../account-language';
+
+// Nombre exacto de la plantilla aprobada en Meta (WhatsApp Manager >
+// Plantillas de mensaje), una versión "es" y otra "en" — mismo nombre,
+// `language.code` distingue cuál usar. Subir la versión (v5, v6...) si se
+// edita el texto: Meta trata cada edición como plantilla nueva a re-aprobar.
+const REMINDER_TEMPLATE_NAME = 'weekly_reminder_v4';
 
 // Recorre todos los equipos cada 15 min y manda el recordatorio semanal a
 // los miembros activos de los que están en su día/hora configurados —
@@ -18,6 +25,7 @@ export class ReminderJob {
   constructor(
     private readonly teams: TeamsService,
     private readonly channels: ChannelsService,
+    private readonly whatsapp: WhatsappChannel,
     private readonly checkinForm: CheckinFormService,
   ) {}
 
@@ -43,15 +51,24 @@ export class ReminderJob {
         // — nada que mandar hasta que la persona abra el bot.
         if (!member.contact) continue;
 
-        // El link con token propio (sección 3.5) es lo único que le
-        // permite a alguien con canal email contestar — email no es
-        // conversacional como WhatsApp/Telegram, no hay a qué "responder".
-        // Se manda igual en los tres canales, no solo email: no molesta
-        // en un chat y da una alternativa si prefieren no escribir texto libre.
-        const link = this.checkinForm.buildLink(member.id, weekStart, team.language);
-        const message = reminderMessage(team.language, member.name, team.name, link);
         try {
-          await this.channels.get(member.channel).send(member.contact, message);
+          if (member.channel === 'whatsapp') {
+            // Business-initiated, sin conversación abierta previa — hace
+            // falta la plantilla aprobada por Meta, no texto libre (ver
+            // WhatsappChannel.sendTemplate). Su cuerpo ya trae el nombre,
+            // el equipo y la hora de corte; no lleva el link del formulario
+            // web como los otros canales, así que no se usa `reminderMessage`.
+            const cutoff = team.cutoff_time.slice(0, 5);
+            await this.whatsapp.sendTemplate(member.contact, REMINDER_TEMPLATE_NAME, team.language, [
+              member.name,
+              team.name,
+              cutoff,
+            ]);
+          } else {
+            const link = this.checkinForm.buildLink(member.id, weekStart, team.language);
+            const message = reminderMessage(team.language, member.name, team.name, link);
+            await this.channels.get(member.channel).send(member.contact, message);
+          }
         } catch (err) {
           this.logger.error(`Fallo mandando recordatorio a ${member.contact} (${member.channel})`, err as Error);
         }

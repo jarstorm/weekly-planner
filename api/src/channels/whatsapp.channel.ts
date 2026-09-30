@@ -59,6 +59,49 @@ export class WhatsappChannel implements Channel {
     }
   }
 
+  // El recordatorio semanal es business-initiated (abre conversación, el
+  // contacto no ha escrito antes) — la Cloud API rechaza texto libre fuera
+  // de la ventana de 24h para eso, hace falta una plantilla aprobada por
+  // Meta (ver docs/especificaciones-tecnicas.md, sección 0.2). `params` va
+  // posicional, en el mismo orden que las variables {{1}}, {{2}}... del
+  // cuerpo aprobado — sin nombre, la Cloud API solo admite position match.
+  async sendTemplate(contact: string, templateName: string, languageCode: string, params: string[]): Promise<void> {
+    const to = this.resolveRecipient(contact);
+    if (!to) return;
+    if (to !== contact) {
+      this.logger.warn(`Plantilla "${templateName}" a destinatario real ${contact} redirigida a WHATSAPP_DEV_OVERRIDE_TO (entorno no productivo)`);
+    }
+
+    const phoneNumberId = this.config.get<string>('WHATSAPP_PHONE_NUMBER_ID');
+    const accessToken = this.config.get<string>('WHATSAPP_ACCESS_TOKEN');
+    if (!phoneNumberId || !accessToken) {
+      throw new Error('WHATSAPP_PHONE_NUMBER_ID / WHATSAPP_ACCESS_TOKEN no configuradas');
+    }
+
+    const res = await fetch(`https://graph.facebook.com/v20.0/${phoneNumberId}/messages`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        to,
+        type: 'template',
+        template: {
+          name: templateName,
+          language: { code: languageCode },
+          components: [{ type: 'body', parameters: params.map((text) => ({ type: 'text', text })) }],
+        },
+      }),
+    });
+
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`WhatsApp Cloud API (plantilla) respondió ${res.status}: ${body}`);
+    }
+  }
+
   async sendDocument(contact: string, file: Buffer, filename: string, caption: string): Promise<void> {
     const to = this.resolveRecipient(contact);
     if (!to) return;
