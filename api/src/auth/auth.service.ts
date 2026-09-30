@@ -4,8 +4,9 @@ import { SupabaseService } from '../supabase/supabase.service';
 import { ChannelsService } from '../channels/channels.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { welcomeVerifyEmailMessage, localePrefix } from '../account-language';
+import { welcomeVerifyEmailMessage, passwordResetMessage, localePrefix, AccountLanguage } from '../account-language';
 import { signEmailVerificationToken, verifyEmailVerificationToken } from './verify-email-token.util';
+import { signPasswordResetToken, verifyPasswordResetToken } from './password-reset-token.util';
 
 export interface Session {
   accessToken: string;
@@ -29,6 +30,12 @@ export class AuthService {
   private verifyTokenSecret(): string {
     const secret = this.config.get<string>('EMAIL_VERIFICATION_TOKEN_SECRET');
     if (!secret) throw new Error('EMAIL_VERIFICATION_TOKEN_SECRET no configurada');
+    return secret;
+  }
+
+  private passwordResetTokenSecret(): string {
+    const secret = this.config.get<string>('PASSWORD_RESET_TOKEN_SECRET');
+    if (!secret) throw new Error('PASSWORD_RESET_TOKEN_SECRET no configurada');
     return secret;
   }
 
@@ -79,6 +86,38 @@ export class AuthService {
     // Idempotente a propósito — no hay problema en que alguien haga clic
     // en el link dos veces, ni tabla de "usado" que mantener por eso.
     const { error } = await this.supabase.db.auth.admin.updateUserById(payload.userId, { email_confirm: true });
+    if (error) throw error;
+  }
+
+  // Respuesta idéntica exista o no la cuenta (evita que alguien use este
+  // endpoint para averiguar qué emails están registrados) — el caller
+  // (controller) siempre devuelve { ok: true } sin mirar el resultado de
+  // esto. generateLink con type "recovery" hace la búsqueda por email y
+  // falla si no existe, sin mandar ningún correo por su cuenta — el envío
+  // real va por nuestro canal de email (Resend), con nuestro propio token
+  // firmado, igual que el resto de links de la app.
+  async requestPasswordReset(email: string): Promise<void> {
+    const { data, error } = await this.supabase.db.auth.admin.generateLink({ type: 'recovery', email });
+    if (error || !data.user) return;
+
+    const { data: org } = await this.supabase.db
+      .from('organizations')
+      .select('language')
+      .eq('owner_id', data.user.id)
+      .maybeSingle();
+    const language: AccountLanguage = (org?.language as AccountLanguage) ?? 'es';
+
+    const token = signPasswordResetToken(data.user.id, this.passwordResetTokenSecret());
+    const baseUrl = this.config.get<string>('APP_BASE_URL') ?? '';
+    const link = `${baseUrl}${localePrefix(language)}/reset-password/${token}`;
+    await this.channels.get('email').send(email, passwordResetMessage(language, link));
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    const payload = verifyPasswordResetToken(token, this.passwordResetTokenSecret());
+    if (!payload) throw new NotFoundException('Enlace de restablecimiento inválido o caducado');
+
+    const { error } = await this.supabase.db.auth.admin.updateUserById(payload.userId, { password: newPassword });
     if (error) throw error;
   }
 

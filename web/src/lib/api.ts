@@ -33,6 +33,12 @@ export const api = {
 
   verifyEmail: (token: string) => request<{ ok: true }>('/auth/verify-email', { method: 'POST', body: JSON.stringify({ token }) }),
 
+  requestPasswordReset: (email: string) =>
+    request<{ ok: true }>('/auth/request-password-reset', { method: 'POST', body: JSON.stringify({ email }) }),
+
+  resetPassword: (token: string, password: string) =>
+    request<{ ok: true }>('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, password }) }),
+
   logout: () => request('/auth/logout', { method: 'POST' }),
 
   me: () => request<{ userId: string; email: string; organizationId: string }>('/auth/me'),

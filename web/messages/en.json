@@ -113,7 +113,28 @@
     "submitLoading": "Logging in...",
     "noAccount": "Don't have an account?",
     "registerLink": "Sign up",
+    "forgotPassword": "Forgot your password?",
     "error": "Could not log in"
+  },
+  "ForgotPassword": {
+    "title": "Reset password",
+    "intro": "Enter your email and we'll send you a link to set a new password.",
+    "email": "Email",
+    "submit": "Send link",
+    "submitLoading": "Sending...",
+    "sent": "If that email has an account, we've sent a link to reset the password.",
+    "loginLink": "Back to log in"
+  },
+  "ResetPassword": {
+    "title": "Set a new password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "mismatch": "Passwords don't match",
+    "submit": "Change password",
+    "submitLoading": "Changing...",
+    "success": "Password changed. You can log in now.",
+    "invalidLink": "This link is invalid or has expired.",
+    "loginLink": "Go to log in"
   },
   "Register": {
     "title": "Create account",
@@ -299,6 +320,11 @@
     "promoCodeApplying": "Applying...",
     "promoCodeSuccess": "Code applied. The discount will show up on your next invoice.",
     "promoCodeError": "Could not apply the code"
+  },
+  "NotFound": {
+    "title": "Page not found",
+    "message": "The page you're looking for doesn't exist or has moved.",
+    "backToHome": "Back to home"
   },
   "Legal": {
     "termsLink": "Terms",

@@ -113,7 +113,28 @@
     "submitLoading": "Entrando...",
     "noAccount": "¿No tienes cuenta?",
     "registerLink": "Regístrate",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
     "error": "No se pudo entrar"
+  },
+  "ForgotPassword": {
+    "title": "Restablecer contraseña",
+    "intro": "Escribe tu email y te mandamos un enlace para poner una nueva contraseña.",
+    "email": "Email",
+    "submit": "Enviar enlace",
+    "submitLoading": "Enviando...",
+    "sent": "Si ese email tiene una cuenta, te hemos mandado un enlace para restablecer la contraseña.",
+    "loginLink": "Volver a entrar"
+  },
+  "ResetPassword": {
+    "title": "Pon una nueva contraseña",
+    "newPassword": "Nueva contraseña",
+    "confirmPassword": "Repite la contraseña",
+    "mismatch": "Las contraseñas no coinciden",
+    "submit": "Cambiar contraseña",
+    "submitLoading": "Cambiando...",
+    "success": "Contraseña cambiada. Ya puedes entrar.",
+    "invalidLink": "Este enlace no es válido o ha caducado.",
+    "loginLink": "Ir a entrar"
   },
   "Register": {
     "title": "Crear cuenta",
@@ -299,6 +320,11 @@
     "promoCodeApplying": "Aplicando...",
     "promoCodeSuccess": "Código aplicado. El descuento se verá reflejado en tu próxima factura.",
     "promoCodeError": "No se pudo aplicar el código"
+  },
+  "NotFound": {
+    "title": "Página no encontrada",
+    "message": "La página que buscas no existe o se ha movido.",
+    "backToHome": "Volver a la portada"
   },
   "Legal": {
     "termsLink": "Términos",

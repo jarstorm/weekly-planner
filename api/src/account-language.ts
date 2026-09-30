@@ -38,6 +38,13 @@ export function welcomeVerifyEmailMessage(language: AccountLanguage, orgName: st
   return `Bienvenido a WeeklyFeedback, ${orgName} 👋\n\nConfirma tu email para activar tu cuenta:\n${link}\n\nEste enlace funciona durante 7 días.`;
 }
 
+export function passwordResetMessage(language: AccountLanguage, link: string): string {
+  if (language === 'en') {
+    return `Reset your WeeklyFeedback password 👋\n\nOpen this link to set a new one:\n${link}\n\nThis link works for 1 hour. If you didn't request this, ignore this email.`;
+  }
+  return `Restablece tu contraseña de WeeklyFeedback 👋\n\nAbre este enlace para poner una nueva:\n${link}\n\nEste enlace funciona durante 1 hora. Si no has pedido esto, ignora este correo.`;
+}
+
 export interface ReportDelivery {
   title: string;
   filename: string;

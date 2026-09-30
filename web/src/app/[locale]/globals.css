@@ -716,8 +716,8 @@ button[type='button'].btn-danger:hover {
   border-radius: var(--radius);
 }
 
-.trust-note {
-  margin: 1.5rem 0 0;
+.hero p.trust-note {
+  margin: 0.75rem 0 0;
   font-size: 0.85rem;
   color: var(--color-text-muted);
   font-weight: 600;
@@ -2130,4 +2130,17 @@ button[type='button'].btn-danger:hover {
   border-radius: 0.5rem;
   padding: 0.6rem 0.8rem;
   font-size: 0.9rem;
+}
+
+.not-found-page {
+  text-align: center;
+  padding-top: 4rem;
+}
+
+.not-found-page .brand {
+  justify-content: center;
+}
+
+.not-found-page .btn {
+  margin-top: 1rem;
 }

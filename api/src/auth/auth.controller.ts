@@ -4,6 +4,8 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
+import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { AuthGuard, SESSION_COOKIE } from './auth.guard';
 import { CurrentUser } from './current-user.decorator';
 import { AuthedUser } from './auth.service';
@@ -29,6 +31,21 @@ export class AuthController {
   @Post('verify-email')
   async verifyEmail(@Body() dto: VerifyEmailDto) {
     await this.auth.verifyEmail(dto.token);
+    return { ok: true };
+  }
+
+  // Siempre { ok: true }, exista o no la cuenta — ver
+  // AuthService.requestPasswordReset, que ya hace el trabajo de no filtrar
+  // esa información.
+  @Post('request-password-reset')
+  async requestPasswordReset(@Body() dto: RequestPasswordResetDto) {
+    await this.auth.requestPasswordReset(dto.email);
+    return { ok: true };
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    await this.auth.resetPassword(dto.token, dto.password);
     return { ok: true };
   }
 

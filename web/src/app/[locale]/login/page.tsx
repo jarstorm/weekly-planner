@@ -57,6 +57,9 @@ export default function LoginPage() {
             </button>
           </form>
           <p>
+            <Link href="/forgot-password">{t('forgotPassword')}</Link>
+          </p>
+          <p>
             {t('noAccount')} <Link href="/register">{t('registerLink')}</Link>
           </p>
         </div>
