@@ -61,6 +61,18 @@ export class EmailChannel implements Channel {
     }
   }
 
+  // Resend solo mandaba `text` — los clientes de correo no son
+  // consistentes detectando URLs sueltas en texto plano (Gmail en web las
+  // enlaza, pero no todos los clientes), así que el link de verificación
+  // salía como texto suelto en vez de enlace clicable. `html` en paralelo
+  // a `text` (mismo contenido, con el link como `<a href>`) hace que el
+  // cliente use la versión HTML, que si lo soporta siempre.
+  private toHtml(text: string): string {
+    const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const linked = escaped.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1">$1</a>');
+    return linked.replace(/\n/g, '<br>');
+  }
+
   async send(contact: string, message: string): Promise<void> {
     const to = this.resolveRecipient(contact);
     if (!to) return;
@@ -72,7 +84,7 @@ export class EmailChannel implements Channel {
     }
 
     const text = to === contact ? message : `[dev — destinatario real: ${contact}]\n\n${message}`;
-    await this.postToResend(apiKey, { from, to: [to], subject: 'WeeklyFeedback', text });
+    await this.postToResend(apiKey, { from, to: [to], subject: 'WeeklyFeedback', text, html: this.toHtml(text) });
   }
 
   async sendDocument(contact: string, file: Buffer, filename: string, caption: string): Promise<void> {
