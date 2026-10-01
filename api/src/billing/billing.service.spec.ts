@@ -94,6 +94,21 @@ describe('BillingService — changePlan', () => {
     expect((supabase.db.from as jest.Mock).mock.calls.map((c) => c[0])).toEqual(['organizations', 'organizations']);
   });
 
+  it('cambiar de plan con suscripción ya activa también deja plan_selected en true (idempotente)', async () => {
+    const supabase = fakeSupabase([
+      { data: { plan: 'equipo', stripe_customer_id: 'cus_1', stripe_subscription_id: 'sub_1' }, error: null },
+      { data: null, error: null },
+    ]);
+    mockSubscriptionsRetrieve.mockResolvedValue({ items: { data: [{ id: 'si_1' }] } });
+    mockSubscriptionsUpdate.mockResolvedValue({});
+    const service = new BillingService(fakeConfig(), supabase);
+
+    await service.changePlan(orgId, 'organizacion', 'a@b.com');
+
+    const updateBuilder = (supabase.db.from as jest.Mock).mock.results[1].value;
+    expect(updateBuilder.update).toHaveBeenCalledWith(expect.objectContaining({ plan_selected: true }));
+  });
+
   it('bajar de plan borra los equipos más nuevos y deja solo el más antiguo', async () => {
     const supabase = fakeSupabase([
       { data: { plan: 'organizacion', stripe_customer_id: 'cus_1', stripe_subscription_id: 'sub_1' }, error: null }, // organizations.select
@@ -197,6 +212,19 @@ describe('BillingService — handleEvent (checkout.session.completed)', () => {
     expect(updateBuilder.update).toHaveBeenCalledWith(
       expect.objectContaining({ plan: 'equipo', has_executive_summary: false, has_monthly_survey: false }),
     );
+  });
+
+  it('marca plan_selected en true — así AppShell deja de forzar /app/billing', async () => {
+    const supabase = fakeSupabase([{ data: null, error: null }]);
+    const service = new BillingService(fakeConfig(), supabase);
+
+    await service.handleEvent({
+      type: 'checkout.session.completed',
+      data: { object: fakeSession() },
+    } as any);
+
+    const updateBuilder = (supabase.db.from as jest.Mock).mock.results[0].value;
+    expect(updateBuilder.update).toHaveBeenCalledWith(expect.objectContaining({ plan_selected: true }));
   });
 
   it('si el update viola una constraint (plan Equipo + resumen ejecutivo sin desactivar), lanza en vez de tragarse el error', async () => {

@@ -182,6 +182,9 @@ export default function LandingPage() {
               <strong>{t('planTeam')}</strong>
               <span className="price">{t('planTeamPrice')}</span>
               <p style={{ margin: '0.5rem 0 0' }}>{t('planTeamDesc')}</p>
+              <Link className="btn btn-secondary" style={{ marginTop: '0.75rem' }} href="/register">
+                {t('planCta')}
+              </Link>
             </Reveal>
           </li>
           <li className="pricing-featured">
@@ -189,6 +192,9 @@ export default function LandingPage() {
               <strong>{t('planOrg')}</strong>
               <span className="price">{t('planOrgPrice')}</span>
               <p style={{ margin: '0.5rem 0 0' }}>{t('planOrgDesc')}</p>
+              <Link className="btn btn-primary" style={{ marginTop: '0.75rem' }} href="/register">
+                {t('planCta')}
+              </Link>
               <span className="plan-badge plan-badge-bottom">{t('planPopular')}</span>
             </Reveal>
           </li>

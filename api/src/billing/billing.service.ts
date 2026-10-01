@@ -49,7 +49,7 @@ export class BillingService {
   async getStatus(organizationId: string) {
     const { data, error } = await this.supabase.db
       .from('organizations')
-      .select('plan, status, price_month, max_teams, max_members_per_team, has_executive_summary')
+      .select('plan, status, price_month, max_teams, max_members_per_team, has_executive_summary, plan_selected')
       .eq('id', organizationId)
       .single();
     if (error) throw error;
@@ -162,6 +162,7 @@ export class BillingService {
         max_members_per_team: planConfig.maxMembersPerTeam,
         price_month: planConfig.priceMonth,
         history_retention_months: planConfig.historyRetentionMonths,
+        plan_selected: true,
         // Igual que en handleEvent (checkout.session.completed): Plan
         // Equipo no admite resumen ejecutivo ni encuesta mensual
         // (constraints en schema.sql), y esto tenía que ejecutarse ANTES
@@ -268,6 +269,7 @@ export class BillingService {
             history_retention_months: planConfig.historyRetentionMonths,
             stripe_customer_id: session.customer as string,
             stripe_subscription_id: session.subscription as string,
+            plan_selected: true,
             // Plan Equipo no admite resumen ejecutivo ni encuesta mensual
             // (org_exec_summary_plan_check / org_survey_plan_check en
             // schema.sql) — sin esto, una cuenta que baja a Equipo con

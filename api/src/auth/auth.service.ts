@@ -53,6 +53,11 @@ export class AuthService {
     });
     if (createError) throw createError;
 
+    // Límite de cortesía mínimo (igual que Plan Equipo) hasta que elija
+    // plan y pase por Stripe — plan_selected en false por defecto fuerza
+    // pasar por /app/billing en el primer login (ver AppShell). El plan
+    // real y sus límites los pone BillingService.handleEvent cuando
+    // completa el Checkout, nunca aquí.
     const { error: orgError } = await this.supabase.db.from('organizations').insert({
       owner_id: created.user!.id,
       name: dto.orgName,

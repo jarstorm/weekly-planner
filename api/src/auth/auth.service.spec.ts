@@ -42,8 +42,9 @@ function fakeSupabase(overrides: {
 
   const orgInsertResult = overrides.orgInsert ?? { error: null };
   const orgSelectResult = overrides.orgSelect ?? { data: { language: 'es' }, error: null };
+  const orgInsert = jest.fn().mockResolvedValue(orgInsertResult);
   const from = jest.fn(() => ({
-    insert: jest.fn().mockResolvedValue(orgInsertResult),
+    insert: orgInsert,
     select: jest.fn(() => ({
       eq: jest.fn(() => ({
         maybeSingle: jest.fn().mockResolvedValue(orgSelectResult),
@@ -59,7 +60,8 @@ function fakeSupabase(overrides: {
     authClient: {
       auth: { signInWithPassword },
     },
-  } as unknown as SupabaseService;
+    _orgInsert: orgInsert,
+  } as unknown as SupabaseService & { _orgInsert: jest.Mock };
 }
 
 function fakeChannels(): { channels: ChannelsService; send: jest.Mock } {
@@ -80,6 +82,30 @@ describe('AuthService — register', () => {
       expect.objectContaining({ email: 'a@b.com', email_confirm: false }),
     );
     expect(send).toHaveBeenCalledWith('a@b.com', expect.stringContaining('https://weeklyfeedback.com/verify-email/'));
+  });
+
+  it('crea la organización con el límite de cortesía (Plan Equipo) y sin plan todavía elegido', async () => {
+    // El plan real y sus límites los pone BillingService cuando completa
+    // el primer Checkout (ver billing.service.spec.ts) — el registro ya no
+    // acepta ni decide plan, solo deja la cuenta usable con el límite
+    // mínimo mientras tanto. plan_selected no se manda explícito: el
+    // default en false de la migración 0016 ya basta.
+    const supabase = fakeSupabase({}) as any;
+    const { channels } = fakeChannels();
+    const service = new AuthService(supabase, fakeConfig(), channels);
+
+    await service.register({ email: 'a@b.com', password: 'password123', orgName: 'Acme' });
+
+    expect(supabase._orgInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        plan: 'equipo',
+        status: 'trial',
+        max_teams: 1,
+        max_members_per_team: 10,
+        history_retention_months: 1,
+      }),
+    );
+    expect(supabase._orgInsert.mock.calls[0][0]).not.toHaveProperty('plan_selected');
   });
 
   it('si falla crear la organización, borra el usuario de Auth huérfano', async () => {

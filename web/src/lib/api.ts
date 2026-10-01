@@ -25,7 +25,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
-  register: (data: { email: string; password: string; orgName: string }) =>
+  register: (data: { email: string; password: string; orgName: string; plan?: 'equipo' | 'organizacion' }) =>
     request('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
 
   login: (data: { email: string; password: string }) =>
@@ -276,4 +276,7 @@ export interface BillingStatus {
   max_teams: number | null;
   max_members_per_team: number | null;
   has_executive_summary: boolean;
+  // false hasta que completa el Checkout de Stripe por primera vez — ver
+  // AppShell, que fuerza /app/billing mientras esto sea false.
+  plan_selected: boolean;
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { LayoutDashboard, LogOut, CreditCard, Building2, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, Link } from '@/i18n/navigation';
@@ -11,6 +12,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const t = useTranslations('Nav');
   const pathname = usePathname();
   const router = useRouter();
+
+  // Wizard de alta: registro → verificar email → login → elegir plan
+  // (Stripe Checkout) → recién ahí onboarding/dashboard. plan_selected
+  // queda en false hasta que BillingService confirma el primer Checkout
+  // (ver billing.service.ts) — mientras tanto, cualquier página de /app/*
+  // redirige a /app/billing, que ya es la pantalla de elegir plan. Sin
+  // bloquear el render: si falla (p.ej. sesión caducada), cada página ya
+  // maneja su propio 401 por su cuenta.
+  useEffect(() => {
+    if (pathname === '/app/billing') return;
+    api
+      .billingStatus()
+      .then((status) => {
+        if (!status.plan_selected) router.replace('/app/billing');
+      })
+      .catch(() => {});
+  }, [pathname, router]);
 
   async function handleLogout() {
     await api.logout();
