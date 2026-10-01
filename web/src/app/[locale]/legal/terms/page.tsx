@@ -1,9 +1,22 @@
+import type { Metadata } from 'next';
 import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import { BrandMark } from '@/components/BrandMark';
+import { pageAlternates } from '@/lib/seo';
 
 interface LegalSection {
   heading: string;
   body: string;
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'Legal' });
+  return {
+    title: t('termsTitle'),
+    description: locale === 'en' ? 'Terms of service for WeeklyFeedback.' : 'Términos de servicio de WeeklyFeedback.',
+    alternates: pageAlternates('/legal/terms', locale),
+  };
 }
 
 export default function TermsPage() {

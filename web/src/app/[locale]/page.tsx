@@ -1,4 +1,7 @@
+import type { Metadata } from 'next';
 import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
+import { SITE_URL, pageAlternates, ogLocale } from '@/lib/seo';
 import {
   CalendarClock,
   FileCheck2,
@@ -15,6 +18,28 @@ import { LocaleSwitcher } from '@/components/LocaleSwitcher';
 import { BrandMark, BrandIcon } from '@/components/BrandMark';
 import { HeroVisual } from '@/components/HeroVisual';
 import { Reveal } from '@/components/Reveal';
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'Landing' });
+  const title = `${t('title')} — ${t('tagline')}`;
+  const description = t('description');
+  const imageUrl = `${SITE_URL}/landing/report-sample-hero.png`;
+
+  return {
+    title: { absolute: title },
+    description,
+    alternates: pageAlternates('/', locale),
+    openGraph: {
+      title,
+      description,
+      url: pageAlternates('/', locale).canonical,
+      images: [{ url: imageUrl, width: 1200, height: 675, alt: t('sampleAlt') }],
+      ...ogLocale(locale),
+    },
+    twitter: { card: 'summary_large_image', title, description, images: [imageUrl] },
+  };
+}
 
 export default function LandingPage() {
   const t = useTranslations('Landing');

@@ -4,6 +4,7 @@ import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { notFound } from 'next/navigation';
 import Script from 'next/script';
 import { routing } from '@/i18n/routing';
+import { SITE_URL, ogLocale } from '@/lib/seo';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
@@ -13,10 +14,25 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 // diseño detrás, no una plantilla. El resto del sitio sigue en Inter.
 const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-serif', weight: ['600', '700'] });
 
-export const metadata: Metadata = {
-  title: 'WeeklyFeedback',
-  description: 'El resumen semanal que se escribe solo',
-};
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const description =
+    locale === 'en' ? 'The weekly report your team writes itself' : 'El resumen semanal que se escribe solo';
+
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: { default: 'WeeklyFeedback', template: '%s · WeeklyFeedback' },
+    description,
+    icons: { icon: '/icon.svg' },
+    openGraph: {
+      siteName: 'WeeklyFeedback',
+      type: 'website',
+      description,
+      ...ogLocale(locale),
+    },
+    twitter: { card: 'summary_large_image' },
+  };
+}
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));

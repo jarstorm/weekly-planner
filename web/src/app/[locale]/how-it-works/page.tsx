@@ -1,4 +1,6 @@
+import type { Metadata } from 'next';
 import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import {
   MessageCircle,
   Sparkles,
@@ -12,6 +14,21 @@ import { Link } from '@/i18n/navigation';
 import { LocaleSwitcher } from '@/components/LocaleSwitcher';
 import { BrandMark } from '@/components/BrandMark';
 import { Reveal } from '@/components/Reveal';
+import { pageAlternates, ogLocale } from '@/lib/seo';
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'HowItWorks' });
+  const title = `${t('badge')} — ${t('title')}`;
+  const description = t('intro');
+
+  return {
+    title,
+    description,
+    alternates: pageAlternates('/how-it-works', locale),
+    openGraph: { title, description, url: pageAlternates('/how-it-works', locale).canonical, ...ogLocale(locale) },
+  };
+}
 
 // Página pública de venta (sin AppShell, sin login) — pensada para que un
 // posible cliente entienda el flujo completo antes de registrarse, más
