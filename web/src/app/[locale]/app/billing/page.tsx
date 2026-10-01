@@ -152,7 +152,7 @@ export default function BillingPage() {
         </div>
       )}
       {checkoutResult === 'cancel' && <div className="card">{t('checkoutCancel')}</div>}
-      {actionError && <p role="alert">{actionError}</p>}
+      {actionError && <p role="alert" style={{ marginBottom: '1rem' }}>{actionError}</p>}
 
       {!status.plan_selected && (
         <div className="card">
