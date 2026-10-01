@@ -36,11 +36,19 @@ async function matchMemberAndSaveCheckin(
   rawText: string,
   audio?: IncomingAudio,
 ) {
+  // active=true explícito — quitar un miembro es soft delete (active=false,
+  // ver TeamsService.removeMember), la fila vieja se queda en la tabla. Sin
+  // este filtro, dar de baja a alguien y volver a darlo de alta con el
+  // mismo contacto (típico: se fue y vuelve, o se corrige un número mal
+  // puesto borrando y recreando) deja dos filas con el mismo
+  // (contact, channel) — maybeSingle() encuentra las dos y revienta con
+  // "multiple (or no) rows returned", perdiendo el checkin entrante.
   const { data: member, error } = await supabase.db
     .from('members')
     .select('id, team_id, teams(organizations(timezone))')
     .eq('contact', contact)
     .eq('channel', channel)
+    .eq('active', true)
     .maybeSingle();
   if (error) throw error;
   if (!member) {
