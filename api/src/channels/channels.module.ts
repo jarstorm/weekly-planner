@@ -9,6 +9,6 @@ import { ChannelsInfoController } from './channels-info.controller';
 @Module({
   controllers: [TelegramInfoController, ChannelsInfoController],
   providers: [EmailChannel, WhatsappChannel, TelegramChannel, ChannelsService],
-  exports: [ChannelsService],
+  exports: [ChannelsService, WhatsappChannel],
 })
 export class ChannelsModule {}

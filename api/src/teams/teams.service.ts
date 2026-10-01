@@ -1,16 +1,25 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateTeamDto } from './dto/update-team.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
 import { MemberVerifyService } from '../member-verify/member-verify.service';
+import { WhatsappChannel } from '../channels/whatsapp.channel';
+
+// Nombre exacto de la plantilla de bienvenida aprobada en Meta (Marketing,
+// una versión "es" y otra "en") — mismo criterio que
+// ReminderJob.REMINDER_TEMPLATE_NAME.
+const WELCOME_TEMPLATE_NAME = 'team_welcome_v1';
 
 @Injectable()
 export class TeamsService {
+  private readonly logger = new Logger(TeamsService.name);
+
   constructor(
     private readonly supabase: SupabaseService,
     private readonly memberVerify: MemberVerifyService,
+    private readonly whatsapp: WhatsappChannel,
   ) {}
 
   // El backend siempre consulta con la service_role key (bypasea RLS), así
@@ -132,14 +141,37 @@ export class TeamsService {
       .select()
       .single();
     if (error) throw error;
-    // Solo por email tiene sentido "verificar" — a WhatsApp/Telegram no se
-    // les puede mandar un link antes de que la persona haya interactuado
-    // con el canal (Telegram, de hecho, ni tiene contact todavía en este
-    // punto — se rellena solo cuando abre el bot).
+    // Solo por email tiene sentido "verificar". Telegram ni tiene contact
+    // todavía en este punto (se rellena solo cuando abre el bot), así que
+    // no hay a quién mandarle nada. WhatsApp sí trae el número desde el
+    // alta, y con la plantilla de bienvenida aprobada por Meta ya se le
+    // puede escribir sin que haya hablado antes (business-initiated).
     if (data.channel === 'email') {
       await this.memberVerify.sendVerificationEmail(data.id, data.name, data.contact, teamId);
+    } else if (data.channel === 'whatsapp') {
+      // No bloquea el alta del miembro si falla (p.ej. la plantilla de
+      // bienvenida sigue en revisión en Meta) — a diferencia del email de
+      // verificación, esto es solo un aviso de cortesía, no un paso
+      // necesario del flujo.
+      try {
+        await this.sendWhatsappWelcome(data.name, data.contact, teamId);
+      } catch (err) {
+        this.logger.error(`Fallo mandando bienvenida de WhatsApp a ${data.contact}`, err as Error);
+      }
     }
     return data;
+  }
+
+  private async sendWhatsappWelcome(memberName: string, contact: string, teamId: string): Promise<void> {
+    const { data: team, error } = await this.supabase.db
+      .from('teams')
+      .select('name, organizations(language)')
+      .eq('id', teamId)
+      .single();
+    if (error) throw error;
+
+    const language = (team as any).organizations?.language ?? 'es';
+    await this.whatsapp.sendTemplate(contact, WELCOME_TEMPLATE_NAME, language, [memberName, team.name]);
   }
 
   // El miembro tiene que ser de ESE equipo Y ese equipo de la organización

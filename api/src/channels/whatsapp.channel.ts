@@ -8,7 +8,70 @@ export class WhatsappChannel implements Channel {
 
   constructor(private readonly config: ConfigService) {}
 
+  // Mismo patrón que EmailChannel.resolveRecipient — local comparte la
+  // misma base de datos de Supabase que producción (ver
+  // docs/despliegue-produccion.md), así que sin esto tener el backend
+  // corriendo en local con `npm run start:dev` mandaría WhatsApps reales a
+  // contactos reales cada vez que el cron encuentre un equipo dentro de su
+  // ventana. APP_ENV=production solo está puesto en el .env del VPS. Fuera
+  // de ese entorno: sin WHATSAPP_DEV_OVERRIDE_TO no se manda nada (solo
+  // log), con ella se manda igual pero SIEMPRE a ese número, nunca al
+  // contacto real.
+  private resolveRecipient(contact: string): string | null {
+    if (this.config.get<string>('APP_ENV') === 'production') return contact;
+
+    const override = this.config.get<string>('WHATSAPP_DEV_OVERRIDE_TO');
+    if (!override) {
+      this.logger.warn(`WhatsApp a ${contact} NO enviado (entorno no productivo, sin WHATSAPP_DEV_OVERRIDE_TO configurado)`);
+      return null;
+    }
+    return override;
+  }
+
   async send(contact: string, message: string): Promise<void> {
+    const to = this.resolveRecipient(contact);
+    if (!to) return;
+
+    const phoneNumberId = this.config.get<string>('WHATSAPP_PHONE_NUMBER_ID');
+    const accessToken = this.config.get<string>('WHATSAPP_ACCESS_TOKEN');
+    if (!phoneNumberId || !accessToken) {
+      throw new Error('WHATSAPP_PHONE_NUMBER_ID / WHATSAPP_ACCESS_TOKEN no configuradas');
+    }
+
+    const text = to === contact ? message : `[dev — destinatario real: ${contact}]\n\n${message}`;
+    const res = await fetch(`https://graph.facebook.com/v20.0/${phoneNumberId}/messages`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        to,
+        type: 'text',
+        text: { body: text },
+      }),
+    });
+
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`WhatsApp Cloud API respondió ${res.status}: ${body}`);
+    }
+  }
+
+  // El recordatorio semanal es business-initiated (abre conversación, el
+  // contacto no ha escrito antes) — la Cloud API rechaza texto libre fuera
+  // de la ventana de 24h para eso, hace falta una plantilla aprobada por
+  // Meta (ver docs/especificaciones-tecnicas.md, sección 0.2). `params` va
+  // posicional, en el mismo orden que las variables {{1}}, {{2}}... del
+  // cuerpo aprobado — sin nombre, la Cloud API solo admite position match.
+  async sendTemplate(contact: string, templateName: string, languageCode: string, params: string[]): Promise<void> {
+    const to = this.resolveRecipient(contact);
+    if (!to) return;
+    if (to !== contact) {
+      this.logger.warn(`Plantilla "${templateName}" a destinatario real ${contact} redirigida a WHATSAPP_DEV_OVERRIDE_TO (entorno no productivo)`);
+    }
+
     const phoneNumberId = this.config.get<string>('WHATSAPP_PHONE_NUMBER_ID');
     const accessToken = this.config.get<string>('WHATSAPP_ACCESS_TOKEN');
     if (!phoneNumberId || !accessToken) {
@@ -23,19 +86,26 @@ export class WhatsappChannel implements Channel {
       },
       body: JSON.stringify({
         messaging_product: 'whatsapp',
-        to: contact,
-        type: 'text',
-        text: { body: message },
+        to,
+        type: 'template',
+        template: {
+          name: templateName,
+          language: { code: languageCode },
+          components: [{ type: 'body', parameters: params.map((text) => ({ type: 'text', text })) }],
+        },
       }),
     });
 
     if (!res.ok) {
       const body = await res.text();
-      throw new Error(`WhatsApp Cloud API respondió ${res.status}: ${body}`);
+      throw new Error(`WhatsApp Cloud API (plantilla) respondió ${res.status}: ${body}`);
     }
   }
 
   async sendDocument(contact: string, file: Buffer, filename: string, caption: string): Promise<void> {
+    const to = this.resolveRecipient(contact);
+    if (!to) return;
+
     const phoneNumberId = this.config.get<string>('WHATSAPP_PHONE_NUMBER_ID');
     const accessToken = this.config.get<string>('WHATSAPP_ACCESS_TOKEN');
     if (!phoneNumberId || !accessToken) {
@@ -68,9 +138,9 @@ export class WhatsappChannel implements Channel {
       },
       body: JSON.stringify({
         messaging_product: 'whatsapp',
-        to: contact,
+        to,
         type: 'document',
-        document: { id: mediaId, filename, caption },
+        document: { id: mediaId, filename, caption: to === contact ? caption : `[dev — destinatario real: ${contact}]\n\n${caption}` },
       }),
     });
 
