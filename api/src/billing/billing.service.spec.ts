@@ -58,6 +58,23 @@ describe('BillingService — changePlan', () => {
     await expect(service.changePlan(orgId, 'equipo', 'a@b.com')).rejects.toThrow(BadRequestException);
   });
 
+  it('elegir Equipo por primera vez no se rechaza como "ya estás en ese plan" (org.plan ya traía ese valor de cortesía)', async () => {
+    // AuthService.register siempre deja plan:'equipo' como límite de
+    // cortesía antes de elegir plan de verdad — pedir justo 'equipo' aquí
+    // coincide con ese valor, pero sin stripe_subscription_id no es un
+    // cambio de plan, es la primera elección.
+    const supabase = fakeSupabase([
+      { data: { plan: 'equipo', stripe_customer_id: null, stripe_subscription_id: null }, error: null },
+    ]);
+    const service = new BillingService(fakeConfig(), supabase);
+    const spy = jest.spyOn(service, 'createCheckoutSession').mockResolvedValue({ url: 'https://checkout.stripe.com/x' });
+
+    const result = await service.changePlan(orgId, 'equipo', 'a@b.com');
+
+    expect(spy).toHaveBeenCalledWith(orgId, 'a@b.com', 'equipo');
+    expect(result).toEqual({ url: 'https://checkout.stripe.com/x' });
+  });
+
   it('sin suscripción todavía, delega en createCheckoutSession (mismo camino que el alta)', async () => {
     const supabase = fakeSupabase([
       { data: { plan: 'equipo', stripe_customer_id: null, stripe_subscription_id: null }, error: null },

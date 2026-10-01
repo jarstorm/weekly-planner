@@ -132,13 +132,18 @@ export class BillingService {
       .maybeSingle();
     if (error) throw error;
     if (!org) throw new NotFoundException('Organización no encontrada');
-    if (org.plan === newPlan) throw new BadRequestException('Ya estás en ese plan');
 
     // Sin suscripción todavía (registro sin terminar el checkout, o
     // checkout cancelado) — mismo camino que el alta normal, con trial.
+    // Va ANTES del chequeo de "ya estás en ese plan": org.plan en este
+    // punto es solo el límite de cortesía puesto al registrarse (siempre
+    // 'equipo', ver AuthService.register), no una elección real — pedir
+    // justo Equipo aquí no es "cambiar a lo mismo", es la primera elección.
     if (!org.stripe_subscription_id) {
       return this.createCheckoutSession(organizationId, email, newPlan);
     }
+
+    if (org.plan === newPlan) throw new BadRequestException('Ya estás en ese plan');
 
     const isUpgrade = PLAN_RANK[newPlan] > PLAN_RANK[org.plan as BillingPlan];
     const planConfig = PLAN_CONFIG[newPlan];
