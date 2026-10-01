@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { CreateMemberDto } from './dto/create-member.dto';
@@ -140,6 +140,13 @@ export class TeamsService {
       .insert({ ...dto, team_id: teamId })
       .select()
       .single();
+    // 23505 contra members_active_contact_per_channel (migración 0017): ya
+    // hay otro miembro activo (de este equipo o de cualquier otro) con el
+    // mismo contacto por whatsapp/telegram — el matching del webhook
+    // entrante es por (contact, channel), no puede haber dos a la vez.
+    if (error?.code === '23505') {
+      throw new ConflictException('Ya hay otro miembro activo con ese mismo contacto');
+    }
     if (error) throw error;
     // Solo por email tiene sentido "verificar". Telegram ni tiene contact
     // todavía en este punto (se rellena solo cuando abre el bot), así que
@@ -213,6 +220,12 @@ export class TeamsService {
       .eq('id', memberId)
       .select()
       .single();
+    // Mismo caso que addMember (migración 0017): reactivar o cambiar el
+    // contacto/canal de este miembro choca con otro miembro ya activo con
+    // ese mismo contacto.
+    if (error?.code === '23505') {
+      throw new ConflictException('Ya hay otro miembro activo con ese mismo contacto');
+    }
     if (error) throw error;
     return data;
   }
