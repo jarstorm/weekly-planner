@@ -154,6 +154,14 @@ export default function BillingPage() {
       {checkoutResult === 'cancel' && <div className="card">{t('checkoutCancel')}</div>}
       {actionError && <p role="alert">{actionError}</p>}
 
+      {!status.plan_selected && (
+        <div className="card">
+          <h2 style={{ marginTop: 0 }}>{t('choosePlanTitle')}</h2>
+          <p style={{ margin: 0 }}>{t('choosePlanDesc')}</p>
+        </div>
+      )}
+
+      {status.plan_selected && (
       <div className="card">
         <span className="plan-badge">{t('currentPlan')}</span>
         <p style={{ margin: 0 }}>
@@ -186,6 +194,7 @@ export default function BillingPage() {
           </>
         )}
       </div>
+      )}
 
       {status.status === 'trial' && <p className="muted-link">{t('trialNote', { days: 30 })}</p>}
 
@@ -233,11 +242,11 @@ export default function BillingPage() {
       )}
 
       <ul className="pricing-grid">
-        <li className={status.plan === 'equipo' ? 'current-plan' : ''}>
+        <li className={status.plan_selected && status.plan === 'equipo' ? 'current-plan' : ''}>
           <strong>{t('planEquipo')}</strong>
           <span className="price">{t('perMonth', { price: 49 })}</span>
           <p style={{ margin: '0.5rem 0 1rem' }}>{t('teamPlanDesc')}</p>
-          {status.plan === 'equipo' ? (
+          {status.plan_selected && status.plan === 'equipo' ? (
             <span className="muted-link">{t('currentPlanBadge')}</span>
           ) : (
             <button type="button" className="btn btn-primary" disabled={pendingPlan === 'equipo'} onClick={() => subscribe('equipo')}>
@@ -245,11 +254,11 @@ export default function BillingPage() {
             </button>
           )}
         </li>
-        <li className={status.plan === 'organizacion' ? 'current-plan' : ''}>
+        <li className={status.plan_selected && status.plan === 'organizacion' ? 'current-plan' : ''}>
           <strong>{t('planOrganizacion')}</strong>
           <span className="price">{t('perMonth', { price: 149 })}</span>
           <p style={{ margin: '0.5rem 0 1rem' }}>{t('orgPlanDesc')}</p>
-          {status.plan === 'organizacion' ? (
+          {status.plan_selected && status.plan === 'organizacion' ? (
             <span className="muted-link">{t('currentPlanBadge')}</span>
           ) : (
             <button

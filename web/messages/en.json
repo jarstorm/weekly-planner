@@ -289,6 +289,8 @@
     "loading": "Loading...",
     "loadError": "Could not load the subscription status",
     "currentPlan": "Current plan",
+    "choosePlanTitle": "Choose your plan",
+    "choosePlanDesc": "To start using WeeklyFeedback, pick a plan and add your card. Nothing is charged until the trial ends.",
     "statusTrial": "Trial period",
     "statusActive": "Active",
     "statusCanceled": "Canceled",

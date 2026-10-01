@@ -289,6 +289,8 @@
     "loading": "Cargando...",
     "loadError": "No se pudo cargar el estado de la suscripción",
     "currentPlan": "Plan actual",
+    "choosePlanTitle": "Elige tu plan",
+    "choosePlanDesc": "Para empezar a usar WeeklyFeedback, elige un plan y añade tu tarjeta. No se cobra nada hasta que termine el periodo de prueba.",
     "statusTrial": "En periodo de prueba",
     "statusActive": "Activa",
     "statusCanceled": "Cancelada",
