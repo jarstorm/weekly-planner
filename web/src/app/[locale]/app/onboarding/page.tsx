@@ -8,6 +8,7 @@ import { api, ApiError, ChannelName, Team } from '@/lib/api';
 import { trackEvent } from '@/lib/analytics';
 import { useEnabledChannels } from '@/lib/useEnabledChannels';
 import { AppShell } from '@/components/AppShell';
+import { ContactInput } from '@/components/ContactInput';
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -49,14 +50,7 @@ export default function OnboardingPage() {
     setError(null);
     setLoading(true);
     try {
-      // Telegram se vincula después, desde la pantalla de miembros del
-      // equipo (deep link con el bot) — acá no se pide chat_id a mano.
-      await api.addMember(
-        team.id,
-        memberChannel === 'telegram'
-          ? { name: memberName, channel: memberChannel }
-          : { name: memberName, channel: memberChannel, contact: memberContact },
-      );
+      await api.addMember(team.id, { name: memberName, channel: memberChannel, contact: memberContact });
       setMembers((prev) => [...prev, memberName]);
       setMemberName('');
       setMemberContact('');
@@ -118,23 +112,12 @@ export default function OnboardingPage() {
           <select value={memberChannel} onChange={(e) => setMemberChannel(e.target.value as ChannelName)}>
             <option value="email">{tChannel('email')}</option>
             {enabledChannels.whatsapp && <option value="whatsapp">{tChannel('whatsapp')}</option>}
-            {enabledChannels.telegram && <option value="telegram">{tChannel('telegram')}</option>}
           </select>
         </label>
-        {memberChannel === 'telegram' ? (
-          <p className="field-hint">{t('telegramLinkAfterCreate')}</p>
-        ) : (
-          <label>
-            {t('memberContact')}
-            <input
-              type="text"
-              placeholder={t('memberContactEmailPlaceholder')}
-              value={memberContact}
-              onChange={(e) => setMemberContact(e.target.value)}
-              required
-            />
-          </label>
-        )}
+        <label>
+          {t('memberContact')}
+          <ContactInput channel={memberChannel} contact={memberContact} onChange={setMemberContact} />
+        </label>
         {error && <p role="alert">{error}</p>}
         <button type="submit" disabled={loading}>
           {loading ? t('addMemberSubmitLoading') : t('addMemberSubmit')}

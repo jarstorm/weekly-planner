@@ -9,6 +9,7 @@ import { api, ApiError, ChannelName } from '@/lib/api';
 import { trackEvent } from '@/lib/analytics';
 import { useEnabledChannels } from '@/lib/useEnabledChannels';
 import { AppShell } from '@/components/AppShell';
+import { ContactInput } from '@/components/ContactInput';
 
 export default function NewMemberPage() {
   const params = useParams<{ teamId: string }>();
@@ -29,9 +30,7 @@ export default function NewMemberPage() {
     setSaving(true);
     setError(null);
     try {
-      // Telegram no manda contact acá — se vincula solo cuando la persona
-      // abre el bot desde la pantalla de edición (deep link con su member.id).
-      await api.addMember(teamId, channel === 'telegram' ? { name, channel } : { name, channel, contact });
+      await api.addMember(teamId, { name, channel, contact });
       trackEvent('member_add', { channel, context: 'team' });
       router.push(`/app/team/${teamId}/members`);
     } catch (err) {
@@ -59,23 +58,12 @@ export default function NewMemberPage() {
             <select value={channel} onChange={(e) => setChannel(e.target.value as ChannelName)}>
               <option value="email">{tChannel('email')}</option>
               {enabledChannels.whatsapp && <option value="whatsapp">{tChannel('whatsapp')}</option>}
-              {enabledChannels.telegram && <option value="telegram">{tChannel('telegram')}</option>}
             </select>
           </label>
-          {channel === 'telegram' ? (
-            <p className="field-hint">{t('telegramLinkAfterCreate')}</p>
-          ) : (
-            <label>
-              {t('memberContact')}
-              <input
-                type="text"
-                placeholder={t('memberContactEmailPlaceholder')}
-                value={contact}
-                onChange={(e) => setContact(e.target.value)}
-                required
-              />
-            </label>
-          )}
+          <label>
+            {t('memberContact')}
+            <ContactInput channel={channel} contact={contact} onChange={setContact} />
+          </label>
           {error && <p role="alert">{error}</p>}
           <button type="submit" disabled={saving}>
             <UserPlus size={16} />

@@ -7,6 +7,7 @@ import { ArrowLeft, CheckCircle2, MailQuestion, Pencil, Trash2, UserPlus } from 
 import { Link } from '@/i18n/navigation';
 import { api, Member, Team } from '@/lib/api';
 import { trackEvent } from '@/lib/analytics';
+import { formatWhatsappContact } from '@/lib/whatsappCountries';
 import { AppShell } from '@/components/AppShell';
 import { FormSkeleton } from '@/components/Skeleton';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -103,7 +104,11 @@ export default function TeamMembersPage() {
                   <td className="muted-link">{tChannel(m.channel)}</td>
                   <td className="muted-link">
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-                      {m.contact ?? t('telegramNotLinked')}
+                      {m.contact
+                        ? m.channel === 'whatsapp'
+                          ? formatWhatsappContact(m.contact)
+                          : m.contact
+                        : t('telegramNotLinked')}
                       {m.channel === 'email' && m.contact && (
                         m.email_verified_at ? (
                           <span title={t('emailVerified')}>

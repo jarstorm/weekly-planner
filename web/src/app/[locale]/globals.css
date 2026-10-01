@@ -1452,6 +1452,27 @@ button[type='button'].btn-danger:hover {
   color: var(--color-text-muted);
 }
 
+/* Selector de país + número del contacto de WhatsApp (ContactInput). */
+.contact-whatsapp-row {
+  display: flex;
+  gap: 0.5rem;
+}
+.contact-whatsapp-row select {
+  flex: 0 0 auto;
+  max-width: 45%;
+}
+.contact-whatsapp-row input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.field-error {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-error-500);
+}
+
 /* --- app shell (dashboard) --- */
 
 .app-shell {

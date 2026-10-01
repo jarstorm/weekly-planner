@@ -14,6 +14,12 @@
     "whatsapp": "WhatsApp",
     "telegram": "Telegram"
   },
+  "ContactInput": {
+    "emailPlaceholder": "nombre@empresa.com",
+    "countryLabel": "País",
+    "whatsappPlaceholder": "670 99 56 09",
+    "whatsappInvalid": "Revisa el número: solo dígitos, entre 6 y 12 cifras sin el prefijo de país."
+  },
   "Day": {
     "0": "Domingo",
     "1": "Lunes",

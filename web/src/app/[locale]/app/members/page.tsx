@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { CheckCircle2, Mail, MailQuestion, MessageCircle, Pencil, Send, Trash2 } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { api, OrgMember } from '@/lib/api';
+import { formatWhatsappContact } from '@/lib/whatsappCountries';
 import { AppShell } from '@/components/AppShell';
 import { FormSkeleton } from '@/components/Skeleton';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -150,7 +151,11 @@ export default function AllMembersPage() {
                       </td>
                       <td className="muted-link">
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-                          {m.contact ?? tTeamManager('telegramNotLinked')}
+                          {m.contact
+                            ? m.channel === 'whatsapp'
+                              ? formatWhatsappContact(m.contact)
+                              : m.contact
+                            : tTeamManager('telegramNotLinked')}
                           {m.channel === 'email' && m.contact && (
                             m.email_verified_at ? (
                               <span title={tTeamManager('emailVerified')}>

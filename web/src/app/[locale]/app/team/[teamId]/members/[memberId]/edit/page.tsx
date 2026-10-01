@@ -10,6 +10,7 @@ import { trackEvent } from '@/lib/analytics';
 import { useEnabledChannels } from '@/lib/useEnabledChannels';
 import { AppShell } from '@/components/AppShell';
 import { FormSkeleton } from '@/components/Skeleton';
+import { ContactInput } from '@/components/ContactInput';
 
 export default function EditMemberPage() {
   const params = useParams<{ teamId: string; memberId: string }>();
@@ -129,9 +130,11 @@ export default function EditMemberPage() {
               {(enabledChannels.whatsapp || member.channel === 'whatsapp') && (
                 <option value="whatsapp">{tChannel('whatsapp')}</option>
               )}
-              {(enabledChannels.telegram || member.channel === 'telegram') && (
-                <option value="telegram">{tChannel('telegram')}</option>
-              )}
+              {/* Telegram no se ofrece para pasar a él desde acá — se
+                  vincula solo desde esta misma pantalla (botón abajo). Esta
+                  opción solo aparece para no perder la selección de un
+                  miembro que ya está en telegram. */}
+              {member.channel === 'telegram' && <option value="telegram">{tChannel('telegram')}</option>}
             </select>
           </label>
           {member.channel === 'telegram' ? (
@@ -155,12 +158,10 @@ export default function EditMemberPage() {
           ) : (
             <label>
               {t('memberContact')}
-              <input
-                type="text"
-                placeholder={t('memberContactEmailPlaceholder')}
-                value={member.contact ?? ''}
-                onChange={(e) => setMember({ ...member, contact: e.target.value })}
-                required
+              <ContactInput
+                channel={member.channel}
+                contact={member.contact ?? ''}
+                onChange={(contact) => setMember({ ...member, contact })}
               />
             </label>
           )}
