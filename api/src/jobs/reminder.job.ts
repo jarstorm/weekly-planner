@@ -11,7 +11,7 @@ import { reminderMessage } from '../account-language';
 // Plantillas de mensaje), una versión "es" y otra "en" — mismo nombre,
 // `language.code` distingue cuál usar. Subir la versión (v5, v6...) si se
 // edita el texto: Meta trata cada edición como plantilla nueva a re-aprobar.
-const REMINDER_TEMPLATE_NAME = 'weekly_reminder_v4';
+const REMINDER_TEMPLATE_NAME = 'weekly_reminder_v5';
 
 // Recorre todos los equipos cada 15 min y manda el recordatorio semanal a
 // los miembros activos de los que están en su día/hora configurados —
