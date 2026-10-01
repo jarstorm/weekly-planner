@@ -1,10 +1,15 @@
 import { ForbiddenException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { MemberVerifyService } from '../member-verify/member-verify.service';
+import { WhatsappChannel } from '../channels/whatsapp.channel';
 import { TeamsService } from './teams.service';
 
 function fakeMemberVerify(): MemberVerifyService {
   return { sendVerificationEmail: jest.fn().mockResolvedValue(undefined) } as unknown as MemberVerifyService;
+}
+
+function fakeWhatsapp(): WhatsappChannel {
+  return { sendTemplate: jest.fn().mockResolvedValue(undefined) } as unknown as WhatsappChannel;
 }
 
 // Cadena de queries de supabase-js (from().select().eq().single()/maybeSingle(),
@@ -40,7 +45,7 @@ describe('TeamsService — límites de plan', () => {
       { count: 2, error: null }, // teams count
       { data: { id: 'team-1', name: 'Marketing' }, error: null }, // insert
     ]);
-    const service = new TeamsService(supabase, fakeMemberVerify());
+    const service = new TeamsService(supabase, fakeMemberVerify(), fakeWhatsapp());
 
     const team = await service.createTeam(orgId, { name: 'Marketing' } as any);
     expect(team).toEqual({ id: 'team-1', name: 'Marketing' });
@@ -51,7 +56,7 @@ describe('TeamsService — límites de plan', () => {
       { data: { max_teams: 1 }, error: null },
       { count: 1, error: null },
     ]);
-    const service = new TeamsService(supabase, fakeMemberVerify());
+    const service = new TeamsService(supabase, fakeMemberVerify(), fakeWhatsapp());
 
     await expect(service.createTeam(orgId, { name: 'Marketing' } as any)).rejects.toThrow(ForbiddenException);
   });
@@ -61,7 +66,7 @@ describe('TeamsService — límites de plan', () => {
       { data: { max_teams: null }, error: null },
       { data: { id: 'team-1', name: 'Marketing' }, error: null }, // insert directo, sin count
     ]);
-    const service = new TeamsService(supabase, fakeMemberVerify());
+    const service = new TeamsService(supabase, fakeMemberVerify(), fakeWhatsapp());
 
     const team = await service.createTeam(orgId, { name: 'Marketing' } as any);
     expect(team).toEqual({ id: 'team-1', name: 'Marketing' });
@@ -73,7 +78,7 @@ describe('TeamsService — límites de plan', () => {
       { data: { max_members_per_team: 2 }, error: null }, // organizations.select
       { count: 2, error: null }, // members count
     ]);
-    const service = new TeamsService(supabase, fakeMemberVerify());
+    const service = new TeamsService(supabase, fakeMemberVerify(), fakeWhatsapp());
 
     await expect(
       service.addMember(orgId, 'team-1', { name: 'Ana', channel: 'email', contact: 'ana@x.com' } as any),
@@ -82,7 +87,7 @@ describe('TeamsService — límites de plan', () => {
 
   it('rechaza añadir miembro a un equipo de otra organización', async () => {
     const supabase = fakeSupabase([{ data: { id: 'team-1', organization_id: 'otra-org' }, error: null }]);
-    const service = new TeamsService(supabase, fakeMemberVerify());
+    const service = new TeamsService(supabase, fakeMemberVerify(), fakeWhatsapp());
 
     await expect(
       service.addMember(orgId, 'team-1', { name: 'Ana', channel: 'email', contact: 'ana@x.com' } as any),
@@ -95,7 +100,7 @@ describe('TeamsService — límites de plan', () => {
       { data: { id: 'member-1', team_id: 'team-1' }, error: null }, // assertMemberOwnership
       { data: { id: 'member-1', name: 'Ana Nueva' }, error: null }, // update
     ]);
-    const service = new TeamsService(supabase, fakeMemberVerify());
+    const service = new TeamsService(supabase, fakeMemberVerify(), fakeWhatsapp());
 
     const member = await service.updateMember(orgId, 'team-1', 'member-1', { name: 'Ana Nueva' } as any);
     expect(member).toEqual({ id: 'member-1', name: 'Ana Nueva' });
@@ -108,7 +113,7 @@ describe('TeamsService — límites de plan', () => {
       { data: { max_members_per_team: 2 }, error: null }, // organizations.select
       { count: 2, error: null }, // members count
     ]);
-    const service = new TeamsService(supabase, fakeMemberVerify());
+    const service = new TeamsService(supabase, fakeMemberVerify(), fakeWhatsapp());
 
     await expect(
       service.updateMember(orgId, 'team-1', 'member-1', { active: true } as any),
@@ -124,7 +129,7 @@ describe('TeamsService — límites de plan', () => {
       { count: 1, error: null }, // members count del equipo destino
       { data: { id: 'member-1', team_id: 'team-2' }, error: null }, // update
     ]);
-    const service = new TeamsService(supabase, fakeMemberVerify());
+    const service = new TeamsService(supabase, fakeMemberVerify(), fakeWhatsapp());
 
     const member = await service.updateMember(orgId, 'team-1', 'member-1', { team_id: 'team-2' } as any);
     expect(member).toEqual({ id: 'member-1', team_id: 'team-2' });
@@ -138,7 +143,7 @@ describe('TeamsService — límites de plan', () => {
       { data: { max_members_per_team: 1 }, error: null }, // organizations.select
       { count: 1, error: null }, // members count del equipo destino, ya lleno
     ]);
-    const service = new TeamsService(supabase, fakeMemberVerify());
+    const service = new TeamsService(supabase, fakeMemberVerify(), fakeWhatsapp());
 
     await expect(
       service.updateMember(orgId, 'team-1', 'member-1', { team_id: 'team-2' } as any),
@@ -151,7 +156,7 @@ describe('TeamsService — límites de plan', () => {
       { data: { id: 'member-1', team_id: 'team-1' }, error: null }, // assertMemberOwnership
       { data: { id: 'team-2', organization_id: 'otra-org' }, error: null }, // assertOwnership (team-2, destino ajeno)
     ]);
-    const service = new TeamsService(supabase, fakeMemberVerify());
+    const service = new TeamsService(supabase, fakeMemberVerify(), fakeWhatsapp());
 
     await expect(
       service.updateMember(orgId, 'team-1', 'member-1', { team_id: 'team-2' } as any),
@@ -164,7 +169,7 @@ describe('TeamsService — límites de plan', () => {
       { data: { id: 'member-1', team_id: 'team-1' }, error: null }, // assertMemberOwnership
       { data: { id: 'member-1', active: false }, error: null }, // update
     ]);
-    const service = new TeamsService(supabase, fakeMemberVerify());
+    const service = new TeamsService(supabase, fakeMemberVerify(), fakeWhatsapp());
 
     const member = await service.removeMember(orgId, 'team-1', 'member-1');
     expect(member).toEqual({ id: 'member-1', active: false });
@@ -175,7 +180,7 @@ describe('TeamsService — límites de plan', () => {
       { data: { id: 'team-1', organization_id: orgId }, error: null }, // assertOwnership (team-1 sí es mío)
       { data: { id: 'member-1', team_id: 'otro-team' }, error: null }, // pero el miembro es de otro equipo
     ]);
-    const service = new TeamsService(supabase, fakeMemberVerify());
+    const service = new TeamsService(supabase, fakeMemberVerify(), fakeWhatsapp());
 
     await expect(service.removeMember(orgId, 'team-1', 'member-1')).rejects.toThrow('Miembro no encontrado');
   });
@@ -191,7 +196,7 @@ describe('TeamsService — verificación de email de miembros', () => {
       { data: { id: 'member-1', name: 'Ana', contact: 'ana@x.com', channel: 'email' }, error: null }, // insert
     ]);
     const memberVerify = fakeMemberVerify();
-    const service = new TeamsService(supabase, memberVerify);
+    const service = new TeamsService(supabase, memberVerify, fakeWhatsapp());
 
     await service.addMember(orgId, 'team-1', { name: 'Ana', channel: 'email', contact: 'ana@x.com' } as any);
 
@@ -205,7 +210,7 @@ describe('TeamsService — verificación de email de miembros', () => {
       { data: { id: 'member-1', name: 'Ana', contact: null, channel: 'telegram' }, error: null },
     ]);
     const memberVerify = fakeMemberVerify();
-    const service = new TeamsService(supabase, memberVerify);
+    const service = new TeamsService(supabase, memberVerify, fakeWhatsapp());
 
     await service.addMember(orgId, 'team-1', { name: 'Ana', channel: 'telegram' } as any);
 
@@ -219,7 +224,7 @@ describe('TeamsService — verificación de email de miembros', () => {
       { data: { id: 'member-1', name: 'Ana', contact: 'ana@x.com', channel: 'email' }, error: null }, // select
     ]);
     const memberVerify = fakeMemberVerify();
-    const service = new TeamsService(supabase, memberVerify);
+    const service = new TeamsService(supabase, memberVerify, fakeWhatsapp());
 
     const result = await service.resendMemberVerification(orgId, 'team-1', 'member-1');
 
@@ -234,7 +239,7 @@ describe('TeamsService — verificación de email de miembros', () => {
       { data: { id: 'member-1', name: 'Ana', contact: null, channel: 'telegram' }, error: null },
     ]);
     const memberVerify = fakeMemberVerify();
-    const service = new TeamsService(supabase, memberVerify);
+    const service = new TeamsService(supabase, memberVerify, fakeWhatsapp());
 
     await expect(service.resendMemberVerification(orgId, 'team-1', 'member-1')).rejects.toThrow(ForbiddenException);
     expect(memberVerify.sendVerificationEmail).not.toHaveBeenCalled();
