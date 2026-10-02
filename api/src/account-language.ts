@@ -14,9 +14,9 @@ export function reminderMessage(language: AccountLanguage, memberName: string, t
 
 export function surveyMessage(language: AccountLanguage, memberName: string, organizationName: string, link: string): string {
   if (language === 'en') {
-    return `Hi ${memberName} 👋 ${organizationName}'s anonymous monthly survey. Your answers are never linked back to your name — no one at your company can see who answered what.\n\nAnswer here: ${link}`;
+    return `Hi ${memberName} 👋 ${organizationName}'s anonymous survey. Your answers are never linked back to your name — no one at your company can see who answered what.\n\nAnswer here: ${link}`;
   }
-  return `Hola ${memberName} 👋 Encuesta mensual anónima de ${organizationName}. Tus respuestas no quedan asociadas a tu nombre — nadie en tu empresa puede ver quién contestó qué.\n\nResponde aquí: ${link}`;
+  return `Hola ${memberName} 👋 Encuesta anónima de ${organizationName}. Tus respuestas no quedan asociadas a tu nombre — nadie en tu empresa puede ver quién contestó qué.\n\nResponde aquí: ${link}`;
 }
 
 export function memberVerifyEmailMessage(

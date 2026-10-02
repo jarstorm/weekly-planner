@@ -76,9 +76,9 @@ beforeEach(() => {
   applyPromoCodeMock.mockReset();
   pushMock.mockClear();
   (trackEvent as any).mockClear();
-  // @ts-expect-error jsdom no navega de verdad — se reemplaza por un objeto
-  // simple para poder comprobar a dónde se quiso redirigir sin que jsdom
-  // imprima "Not implemented: navigation".
+  // jsdom no navega de verdad — se reemplaza por un objeto simple para
+  // poder comprobar a dónde se quiso redirigir sin que jsdom imprima
+  // "Not implemented: navigation".
   delete (window as any).location;
   (window as any).location = { href: '' };
 });

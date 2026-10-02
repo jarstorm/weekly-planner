@@ -25,8 +25,8 @@ export class SurveyFormService {
     return secret;
   }
 
-  buildLink(memberId: string, period: string, language: AccountLanguage = 'es'): string {
-    const token = signSurveyToken({ memberId, period }, this.secret());
+  buildLink(memberId: string, surveyId: string, language: AccountLanguage = 'es'): string {
+    const token = signSurveyToken({ memberId, surveyId }, this.secret());
     const base = this.config.get<string>('APP_BASE_URL') ?? '';
     return `${base}${localePrefix(language)}/survey/${token}`;
   }
@@ -37,7 +37,7 @@ export class SurveyFormService {
 
     const { data: member, error } = await this.supabase.db
       .from('members')
-      .select('id, name, team_id, teams(organization_id, organizations(id, name, has_monthly_survey, survey_questions))')
+      .select('id, name, team_id, teams(organization_id, organizations(id, name))')
       .eq('id', decoded.memberId)
       .maybeSingle();
     if (error) throw error;
@@ -46,52 +46,58 @@ export class SurveyFormService {
     const org = (member as any).teams?.organizations;
     if (!org) throw new NotFoundException('Enlace inválido');
 
-    return { member, organization: org, period: decoded.period };
+    const { data: survey, error: surveyError } = await this.supabase.db
+      .from('surveys')
+      .select('id, organization_id, questions')
+      .eq('id', decoded.surveyId)
+      .maybeSingle();
+    if (surveyError) throw surveyError;
+    // El token lo firma siempre SurveyJob con el memberId/surveyId de la
+    // misma organización — esta comprobación es defensiva, no debería
+    // poder fallar con un token real, pero cierra la puerta a mezclar un
+    // memberId de una organización con una surveyId de otra.
+    if (!survey || survey.organization_id !== org.id) throw new NotFoundException('Enlace inválido');
+
+    return { member, organization: org, survey };
   }
 
   async getForm(token: string): Promise<SurveyFormInfo> {
-    const { member, organization, period } = await this.resolveMember(token);
-    if (!organization.has_monthly_survey) {
-      throw new NotFoundException('La encuesta mensual no está activa para esta cuenta');
-    }
+    const { member, organization, survey } = await this.resolveMember(token);
 
     const { data: existing, error } = await this.supabase.db
       .from('survey_submissions')
       .select('id')
       .eq('member_id', member.id)
-      .eq('period', period)
+      .eq('survey_id', survey.id)
       .maybeSingle();
     if (error) throw error;
 
     return {
       memberName: member.name,
       organizationName: organization.name,
-      questions: organization.survey_questions ?? [],
+      questions: survey.questions ?? [],
       alreadySubmitted: !!existing,
     };
   }
 
   async submit(dto: SubmitSurveyFormDto) {
-    const { member, organization, period } = await this.resolveMember(dto.token);
-    if (!organization.has_monthly_survey) {
-      throw new NotFoundException('La encuesta mensual no está activa para esta cuenta');
-    }
+    const { member, survey } = await this.resolveMember(dto.token);
 
-    const questions: string[] = organization.survey_questions ?? [];
+    const questions: string[] = survey.questions ?? [];
     if (dto.answers.length !== questions.length) {
       throw new BadRequestException('El número de respuestas no coincide con el de preguntas');
     }
 
     // Se registra la participación ANTES de guardar el contenido, y con
     // un insert simple (no upsert): si ya existe una fila para este
-    // member_id+period, el unique constraint lo rechaza y no se llega a
-    // guardar la respuesta — así nadie contesta dos veces el mismo mes.
+    // member_id+survey_id, el unique constraint lo rechaza y no se llega
+    // a guardar la respuesta — así nadie contesta dos veces la misma encuesta.
     const { error: submissionError } = await this.supabase.db
       .from('survey_submissions')
-      .insert({ organization_id: organization.id, member_id: member.id, period });
+      .insert({ survey_id: survey.id, member_id: member.id });
     if (submissionError) {
       if ((submissionError as any).code === '23505') {
-        throw new ForbiddenException('Ya has respondido la encuesta de este mes');
+        throw new ForbiddenException('Ya has respondido esta encuesta');
       }
       throw submissionError;
     }
@@ -100,8 +106,7 @@ export class SurveyFormService {
     // con la fila de survey_submissions de arriba más que haberse insertado
     // en la misma petición (no hay columna ni índice que las una).
     const { error: responseError } = await this.supabase.db.from('survey_responses').insert({
-      organization_id: organization.id,
-      period,
+      survey_id: survey.id,
       questions,
       answers: dto.answers,
     });

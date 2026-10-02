@@ -67,9 +67,6 @@ function org(overrides: Partial<{ has_executive_summary: boolean; max_teams: num
     language: 'es' as const,
     has_executive_summary: false,
     executive_summary_recipients: [],
-    has_monthly_survey: false,
-    survey_questions: [],
-    survey_day_of_month: 1,
     ...overrides,
   };
 }

@@ -29,19 +29,11 @@ export function dowInTimezone(now: Date, timezone: string): number {
   return map[weekday];
 }
 
-// Día del mes (1-31) en el timezone dado — para SurveyJob, que dispara por
-// organizations.survey_day_of_month en vez de un día de la semana.
-export function domInTimezone(now: Date, timezone: string): number {
-  const dateStr = new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(now); // YYYY-MM-DD
-  return Number(dateStr.split('-')[2]);
-}
-
-// Primer día del mes actual en el timezone dado, formato YYYY-MM-DD —
-// equivalente a currentWeekStart pero para la encuesta mensual.
-export function currentMonthStart(now: Date, timezone: string): string {
-  const dateStr = new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(now); // YYYY-MM-DD
-  const [year, month] = dateStr.split('-');
-  return `${year}-${month}-01`;
+// Fecha de calendario (YYYY-MM-DD) en el timezone dado — para SurveyJob,
+// que compara contra surveys.scheduled_date (la fecha propia de cada
+// encuesta de un solo envío, no un día del mes recurrente).
+export function dateInTimezone(now: Date, timezone: string): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(now); // YYYY-MM-DD
 }
 
 // Lunes de la semana actual en el timezone dado, formato YYYY-MM-DD.

@@ -50,10 +50,6 @@ create table if not exists organizations (
   history_retention_months integer,              -- 1 (equipo) | 6 (organización) | NULL sin límite (custom) — ver migración 0013 y RetentionJob
   has_executive_summary boolean not null default false,
   executive_summary_recipients text[] not null default '{}', -- emails que reciben el resumen ejecutivo, ver migración 0009 y sección 6.4 del doc de producto
-  has_monthly_survey boolean not null default false, -- encuesta mensual anónima, opción de Organización/Custom, ver migración 0010
-  survey_questions text[] not null default '{}', -- hasta 5, de cuenta (no por equipo)
-  survey_day_of_month smallint not null default 1
-    check (survey_day_of_month between 1 and 28),
   price_month numeric(10,2),                     -- 49.00 | 149.00 | NULL (custom, a medida)
   stripe_customer_id text,
   stripe_subscription_id text,                   -- id de la suscripción activa en Stripe, ver migración 0002
@@ -65,13 +61,6 @@ create table if not exists organizations (
   -- el resumen ejecutivo nunca puede activarse en Plan Equipo
   constraint org_exec_summary_plan_check check (
     not has_executive_summary or plan in ('organizacion', 'custom')
-  ),
-  -- la encuesta mensual, tampoco
-  constraint org_survey_plan_check check (
-    not has_monthly_survey or plan in ('organizacion', 'custom')
-  ),
-  constraint org_survey_questions_max check (
-    array_length(survey_questions, 1) is null or array_length(survey_questions, 1) <= 5
   )
 );
 
@@ -167,32 +156,54 @@ create unique index if not exists reports_org_week_unique
 create index if not exists idx_reports_org_week on reports(organization_id, week_start);
 
 -- ---------------------------------------------------------------------
--- survey_submissions: marca "esta persona ya respondió este mes", SIN
--- guardar qué contestó. survey_responses: el contenido, sin member_id ni
--- team_id de quien respondió — nada en la base de datos conecta una
--- persona con un contenido, ver migración 0010.
+-- surveys: encuesta anónima de un solo envío (no recurrente) — el admin
+-- elige fecha, hora y timezone propios de ESTA encuesta desde
+-- /app/survey/new, el cron la manda una vez y marca sent_at; nunca se
+-- repite sola. Solo una pendiente (sent_at is null) por organización a
+-- la vez, ver migración 0018.
 -- ---------------------------------------------------------------------
-create table if not exists survey_submissions (
+create table if not exists surveys (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null references organizations(id) on delete cascade,
-  member_id uuid not null references members(id) on delete cascade,
-  period date not null,
-  submitted_at timestamptz not null default now(),
-  unique (member_id, period)
+  questions text[] not null,                     -- hasta 5
+  scheduled_date date not null,
+  scheduled_time time not null,
+  timezone text not null,
+  sent_at timestamptz,                           -- null = todavía pendiente de mandar
+  created_at timestamptz not null default now(),
+  constraint surveys_questions_count check (
+    array_length(questions, 1) between 1 and 5
+  )
 );
 
-create index if not exists idx_survey_submissions_org_period on survey_submissions(organization_id, period);
+create unique index if not exists surveys_one_pending_per_org
+  on surveys(organization_id) where sent_at is null;
+create index if not exists idx_surveys_org on surveys(organization_id);
+
+-- survey_submissions: marca "esta persona ya respondió ESTA encuesta",
+-- SIN guardar qué contestó. survey_responses: el contenido, sin member_id
+-- ni team_id de quien respondió — nada en la base de datos conecta una
+-- persona con un contenido. Las dos cuelgan de survey_id (con cascade:
+-- borrar una encuesta vieja se lleva sus respuestas/participaciones solas).
+create table if not exists survey_submissions (
+  id uuid primary key default gen_random_uuid(),
+  survey_id uuid not null references surveys(id) on delete cascade,
+  member_id uuid not null references members(id) on delete cascade,
+  submitted_at timestamptz not null default now(),
+  unique (member_id, survey_id)
+);
+
+create index if not exists idx_survey_submissions_survey on survey_submissions(survey_id);
 
 create table if not exists survey_responses (
   id uuid primary key default gen_random_uuid(),
-  organization_id uuid not null references organizations(id) on delete cascade,
-  period date not null,
-  questions text[] not null,                     -- copia de las preguntas vigentes al responder
+  survey_id uuid not null references surveys(id) on delete cascade,
+  questions text[] not null,                     -- copia de las preguntas de la encuesta al responder
   answers text[] not null,                        -- mismo orden que questions
   created_at timestamptz not null default now()
 );
 
-create index if not exists idx_survey_responses_org_period on survey_responses(organization_id, period);
+create index if not exists idx_survey_responses_survey on survey_responses(survey_id);
 
 -- =====================================================================
 -- Row Level Security
@@ -202,6 +213,7 @@ alter table teams enable row level security;
 alter table members enable row level security;
 alter table checkins enable row level security;
 alter table reports enable row level security;
+alter table surveys enable row level security;
 alter table survey_submissions enable row level security;
 alter table survey_responses enable row level security;
 
@@ -243,13 +255,24 @@ create policy "owner puede ver los informes de sus equipos y su organización"
     or organization_id in (select id from organizations where owner_id = auth.uid())
   );
 
-create policy "owner puede ver las participaciones de su organización"
-  on survey_submissions for select
-  using (organization_id in (select id from organizations where owner_id = auth.uid()));
+create policy "owner puede ver y gestionar las encuestas de su organización"
+  on surveys for all
+  using (organization_id in (select id from organizations where owner_id = auth.uid()))
+  with check (organization_id in (select id from organizations where owner_id = auth.uid()));
 
-create policy "owner puede ver las respuestas anónimas de su organización"
+create policy "owner puede ver las participaciones de sus encuestas"
+  on survey_submissions for select
+  using (survey_id in (
+    select id from surveys
+    where organization_id in (select id from organizations where owner_id = auth.uid())
+  ));
+
+create policy "owner puede ver las respuestas anónimas de sus encuestas"
   on survey_responses for select
-  using (organization_id in (select id from organizations where owner_id = auth.uid()));
+  using (survey_id in (
+    select id from surveys
+    where organization_id in (select id from organizations where owner_id = auth.uid())
+  ));
 
 -- Nota: los INSERT de checkins, reports y de las tablas de encuesta los
 -- hace el backend con la service_role key (que salta RLS), no el usuario

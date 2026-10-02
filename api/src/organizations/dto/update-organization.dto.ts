@@ -1,5 +1,4 @@
 import {
-  ArrayMaxSize,
   IsArray,
   IsBoolean,
   IsEmail,
@@ -54,7 +53,7 @@ export class UpdateOrganizationDto {
   @IsTimeZone()
   timezone?: string;
 
-  // Idioma de la cuenta — preguntas del check-in, encuesta mensual e
+  // Idioma de la cuenta — preguntas del check-in, encuestas anónimas e
   // informes con IA. No controla el idioma de la interfaz del panel
   // (eso sigue siendo el selector de next-intl, por navegador).
   @IsOptional()
@@ -72,25 +71,4 @@ export class UpdateOrganizationDto {
   @IsArray()
   @IsEmail({}, { each: true })
   executive_summary_recipients?: string[];
-
-  // Encuesta mensual anónima — opción, no forzada por plan; el constraint
-  // org_survey_plan_check en schema.sql rechaza activarla fuera de Plan
-  // Organización/Custom (mismo criterio que has_executive_summary).
-  @IsOptional()
-  @IsBoolean()
-  has_monthly_survey?: boolean;
-
-  // Máximo 5 preguntas (org_survey_questions_max en schema.sql lo rechaza
-  // igual a nivel de base de datos) — de cuenta, no por equipo.
-  @IsOptional()
-  @IsArray()
-  @ArrayMaxSize(5)
-  @IsString({ each: true })
-  survey_questions?: string[];
-
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Max(28)
-  survey_day_of_month?: number;
 }

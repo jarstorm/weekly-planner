@@ -111,15 +111,12 @@ export const api = {
         | 'timezone'
         | 'has_executive_summary'
         | 'executive_summary_recipients'
-        | 'has_monthly_survey'
-        | 'survey_questions'
-        | 'survey_day_of_month'
       >
     >,
   ) => request<Organization>('/organizations/me', { method: 'PATCH', body: JSON.stringify(data) }),
 
-  // Formulario público de la encuesta mensual anónima — el token es la
-  // credencial, no hay sesión de por medio (mismo criterio que checkins/form).
+  // Formulario público de la encuesta anónima — el token es la credencial,
+  // no hay sesión de por medio (mismo criterio que checkins/form).
   getSurveyForm: (token: string) => request<SurveyFormInfo>(`/survey/form?token=${encodeURIComponent(token)}`),
   submitSurveyForm: (token: string, answers: string[]) =>
     request('/survey/form', { method: 'POST', body: JSON.stringify({ token, answers }) }),
@@ -127,9 +124,16 @@ export const api = {
   // Listado de todas las personas de la cuenta, de todos los equipos.
   listAllMembers: () => request<OrgMember[]>('/organizations/members'),
 
-  listSurveyPeriods: () => request<string[]>('/survey/periods'),
-  getSurveyResults: (period: string) =>
-    request<SurveyResults>(`/survey/results?period=${encodeURIComponent(period)}`),
+  // Encuesta anónima de un solo envío (no recurrente, ver migración 0018
+  // del backend) — createSurvey/getPendingSurvey para el flujo de alta en
+  // /app/feedback y /app/survey/new; listSurveys/getSurveyResults para el
+  // histórico de resultados en /app/survey.
+  createSurvey: (data: { questions: string[]; scheduledDate: string; scheduledTime: string; timezone: string }) =>
+    request<PendingSurvey>('/survey', { method: 'POST', body: JSON.stringify(data) }),
+  getPendingSurvey: () => request<PendingSurvey | null>('/survey/pending'),
+  listSurveys: () => request<SurveyListItem[]>('/survey/list'),
+  getSurveyResults: (surveyId: string) =>
+    request<SurveyResults>(`/survey/results?surveyId=${encodeURIComponent(surveyId)}`),
 
   getTelegramBotUsername: () => request<{ username: string | null }>('/telegram/bot-username'),
   getEnabledChannels: () => request<EnabledChannels>('/channels/enabled'),
@@ -227,20 +231,14 @@ export interface Organization {
   reminder_time: string;
   cutoff_time: string;
   timezone: string;
-  // Idioma de la cuenta (migración 0012) — preguntas del check-in, encuesta
-  // mensual e informes con IA. No es el idioma de la interfaz del panel
+  // Idioma de la cuenta (migración 0012) — preguntas del check-in, encuestas
+  // anónimas e informes con IA. No es el idioma de la interfaz del panel
   // (ese sigue siendo el selector de next-intl, por navegador).
   language: 'es' | 'en';
   // Resumen ejecutivo (paso 15) — opción, solo disponible en Plan
   // Organización/Custom (org_exec_summary_plan_check en schema.sql).
   has_executive_summary: boolean;
   executive_summary_recipients: string[];
-  // Encuesta mensual anónima — opción, solo disponible en Plan
-  // Organización/Custom (org_survey_plan_check en schema.sql). De cuenta,
-  // no por equipo: mismas preguntas para todos los equipos.
-  has_monthly_survey: boolean;
-  survey_questions: string[];
-  survey_day_of_month: number;
 }
 
 export interface SurveyFormInfo {
@@ -250,8 +248,23 @@ export interface SurveyFormInfo {
   alreadySubmitted: boolean;
 }
 
+export interface PendingSurvey {
+  id: string;
+  questions: string[];
+  scheduledDate: string;
+  scheduledTime: string;
+  timezone: string;
+}
+
+export interface SurveyListItem {
+  id: string;
+  scheduledDate: string;
+  sentAt: string;
+}
+
 export interface SurveyResults {
-  period: string;
+  surveyId: string;
+  scheduledDate: string;
   questions: string[];
   answersByQuestion: string[][];
   responseCount: number;

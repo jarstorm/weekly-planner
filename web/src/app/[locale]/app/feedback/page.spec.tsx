@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import esMessages from '../../../../../messages/es.json';
 import { ApiError } from '@/lib/api';
@@ -7,6 +7,7 @@ import { trackEvent } from '@/lib/analytics';
 
 const getOrganizationMock = vi.fn();
 const updateOrganizationMock = vi.fn();
+const getPendingSurveyMock = vi.fn();
 const billingStatusMock = vi.fn().mockResolvedValue({ plan_selected: true });
 
 vi.mock('@/i18n/navigation', () => ({
@@ -19,6 +20,7 @@ vi.mock('@/lib/api', () => ({
   api: {
     getOrganization: (...args: unknown[]) => getOrganizationMock(...args),
     updateOrganization: (...args: unknown[]) => updateOrganizationMock(...args),
+    getPendingSurvey: (...args: unknown[]) => getPendingSurveyMock(...args),
     billingStatus: (...args: unknown[]) => billingStatusMock(...args),
     logout: vi.fn(),
     me: vi.fn().mockRejectedValue(new Error('no session in test')),
@@ -44,7 +46,7 @@ function baseOrg() {
     country: 'ES',
     contact_name: null,
     email: 'a@b.com',
-    plan: 'equipo' as const,
+    plan: 'equipo' as 'equipo' | 'organizacion' | 'custom',
     max_teams: 1,
     max_members_per_team: 10,
     reminder_dow: 1,
@@ -54,9 +56,6 @@ function baseOrg() {
     language: 'es' as const,
     has_executive_summary: false,
     executive_summary_recipients: [] as string[],
-    has_monthly_survey: false,
-    survey_questions: [] as string[],
-    survey_day_of_month: 1,
   };
 }
 
@@ -68,28 +67,29 @@ function renderPage() {
   );
 }
 
-describe('FeedbackConfigPage — disponibilidad por plan', () => {
-  beforeEach(() => {
-    getOrganizationMock.mockReset();
-    updateOrganizationMock.mockReset();
-    (trackEvent as any).mockClear();
-  });
+beforeEach(() => {
+  getOrganizationMock.mockReset();
+  updateOrganizationMock.mockReset();
+  getPendingSurveyMock.mockReset().mockResolvedValue(null);
+  (trackEvent as any).mockClear();
+});
 
-  it('Plan Equipo: sin resumen ejecutivo ni encuesta mensual (con un equipo no hay nada que consolidar)', async () => {
+describe('FeedbackConfigPage — disponibilidad por plan', () => {
+  it('Plan Equipo: sin resumen ejecutivo ni encuesta anónima (con un equipo no hay nada que consolidar)', async () => {
     getOrganizationMock.mockResolvedValue(org({ plan: 'equipo' }));
     renderPage();
 
     await waitFor(() => expect(screen.getByLabelText('Hora del recordatorio')).toBeInTheDocument());
     expect(screen.queryByText('Activar resumen ejecutivo')).not.toBeInTheDocument();
-    expect(screen.queryByText('Activar encuesta mensual anónima')).not.toBeInTheDocument();
+    expect(screen.queryByText('Encuesta anónima')).not.toBeInTheDocument();
   });
 
-  it('Plan Organización: ofrece resumen ejecutivo y encuesta mensual', async () => {
+  it('Plan Organización: ofrece resumen ejecutivo y la sección de encuesta anónima', async () => {
     getOrganizationMock.mockResolvedValue(org({ plan: 'organizacion' }));
     renderPage();
 
     await waitFor(() => expect(screen.getByText('Activar resumen ejecutivo')).toBeInTheDocument());
-    expect(screen.getByText('Activar encuesta mensual anónima')).toBeInTheDocument();
+    expect(screen.getByText('Encuesta anónima')).toBeInTheDocument();
   });
 
   it('Plan Custom: igual que Organización', async () => {
@@ -97,17 +97,61 @@ describe('FeedbackConfigPage — disponibilidad por plan', () => {
     renderPage();
 
     await waitFor(() => expect(screen.getByText('Activar resumen ejecutivo')).toBeInTheDocument());
+    expect(screen.getByText('Encuesta anónima')).toBeInTheDocument();
   });
 });
 
-describe('FeedbackConfigPage — guardar', () => {
+describe('FeedbackConfigPage — encuesta anónima (de un solo envío, no recurrente)', () => {
+  beforeEach(() => {
+    getOrganizationMock.mockResolvedValue(org({ plan: 'organizacion' }));
+  });
+
+  it('sin ninguna pendiente: ofrece el botón de crear una nueva, que lleva a /app/survey/new', async () => {
+    getPendingSurveyMock.mockResolvedValue(null);
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Crear nueva encuesta')).toBeInTheDocument());
+    expect(screen.getByText('Crear nueva encuesta').closest('a')).toHaveAttribute('href', '/app/survey/new');
+  });
+
+  it('con una pendiente: muestra su fecha/hora/timezone, sin ofrecer el botón de crear otra', async () => {
+    getPendingSurveyMock.mockResolvedValue({
+      id: 'survey-1',
+      questions: ['¿Qué tal?', '¿Algo que mejorar?'],
+      scheduledDate: '2026-02-01',
+      scheduledTime: '10:00',
+      timezone: 'Europe/Madrid',
+    });
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText(/2026-02-01/)).toBeInTheDocument());
+    expect(screen.getByText(/10:00/)).toBeInTheDocument();
+    expect(screen.queryByText('Crear nueva encuesta')).not.toBeInTheDocument();
+  });
+
+  it('el link a resultados está siempre disponible, con o sin pendiente', async () => {
+    getPendingSurveyMock.mockResolvedValue(null);
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Ver resultados de encuestas anteriores')).toBeInTheDocument());
+    expect(screen.getByText('Ver resultados de encuestas anteriores').closest('a')).toHaveAttribute('href', '/app/survey');
+  });
+
+  it('si falla la comprobación de pendiente, no rompe el resto de la página (cae en "sin pendiente")', async () => {
+    getPendingSurveyMock.mockRejectedValue(new Error('network down'));
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Crear nueva encuesta')).toBeInTheDocument());
+  });
+});
+
+describe('FeedbackConfigPage — guardar el horario', () => {
   beforeEach(() => {
     getOrganizationMock.mockReset().mockResolvedValue(org({ plan: 'organizacion' }));
     updateOrganizationMock.mockReset();
-    (trackEvent as any).mockClear();
   });
 
-  it('guardar con éxito: trackea el evento y muestra "Cambios guardados"', async () => {
+  it('guardar con éxito: trackea el evento y muestra "Cambios guardados", sin tocar nada de encuestas', async () => {
     updateOrganizationMock.mockResolvedValue({});
     renderPage();
     await waitFor(() => expect(screen.getByLabelText('Hora del recordatorio')).toBeInTheDocument());
@@ -116,27 +160,14 @@ describe('FeedbackConfigPage — guardar', () => {
 
     await waitFor(() => expect(screen.getByText('Cambios guardados.')).toBeInTheDocument());
     expect(trackEvent).toHaveBeenCalledWith('feedback_schedule_update');
-    expect(updateOrganizationMock).toHaveBeenCalledWith(
-      expect.objectContaining({ reminder_dow: 1, reminder_time: '10:00', cutoff_time: '13:00', timezone: 'Europe/Madrid' }),
-    );
-  });
-
-  it('activar la encuesta mensual y añadir una pregunta viaja en el payload', async () => {
-    updateOrganizationMock.mockResolvedValue({});
-    renderPage();
-    await waitFor(() => expect(screen.getByText('Activar encuesta mensual anónima')).toBeInTheDocument());
-
-    fireEvent.click(screen.getByLabelText('Activar encuesta mensual anónima'));
-    const questionInput = screen.getByPlaceholderText('Escribe una pregunta');
-    fireEvent.change(questionInput, { target: { value: '¿Qué tal el mes?' } });
-    const questionsEditor = questionInput.closest('div')!.parentElement!;
-    fireEvent.click(within(questionsEditor).getByRole('button', { name: 'Añadir' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
-
-    await waitFor(() => expect(updateOrganizationMock).toHaveBeenCalled());
-    expect(updateOrganizationMock).toHaveBeenCalledWith(
-      expect.objectContaining({ has_monthly_survey: true, survey_questions: ['¿Qué tal el mes?'] }),
-    );
+    expect(updateOrganizationMock).toHaveBeenCalledWith({
+      reminder_dow: 1,
+      reminder_time: '10:00',
+      cutoff_time: '13:00',
+      timezone: 'Europe/Madrid',
+      has_executive_summary: false,
+      executive_summary_recipients: [],
+    });
   });
 
   it('fallo al guardar: muestra el mensaje real del backend, no el de "guardado"', async () => {

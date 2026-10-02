@@ -3,15 +3,14 @@ import { Cron } from '@nestjs/schedule';
 import { SupabaseService } from '../supabase/supabase.service';
 import { ChannelsService } from '../channels/channels.service';
 import { SurveyFormService } from '../survey/survey-form.service';
-import { currentMonthStart, domInTimezone, isWithinWindow } from './date.utils';
+import { dateInTimezone, isWithinWindow } from './date.utils';
 import { surveyMessage } from '../account-language';
 
-// Simétrico a ReminderJob (sección 4, paso 9) pero mensual: recorre las
-// organizaciones con has_monthly_survey activado y manda el link de la
-// encuesta a todos los miembros activos de TODOS sus equipos (la encuesta
-// es de cuenta, no por equipo) el día del mes configurado
-// (survey_day_of_month), a la hora del recordatorio semanal de la cuenta
-// (reminder_time) — no hace falta un horario propio para esto.
+// Encuesta anónima de un solo envío (no recurrente, ver migración 0018):
+// recorre las encuestas sin mandar todavía (surveys.sent_at is null) y, en
+// cuanto llega su fecha+hora+timezone propios (no los de la cuenta), la
+// manda a todos los miembros activos de todos los equipos de la
+// organización y la marca como enviada. Nunca vuelve a mandarse sola.
 @Injectable()
 export class SurveyJob {
   private readonly logger = new Logger(SurveyJob.name);
@@ -26,61 +25,72 @@ export class SurveyJob {
   async run() {
     const now = new Date();
 
-    const { data: orgs, error } = await this.supabase.db
-      .from('organizations')
-      .select('id, name, timezone, reminder_time, survey_day_of_month, survey_questions, language')
-      .eq('has_monthly_survey', true);
+    const { data: surveys, error } = await this.supabase.db
+      .from('surveys')
+      .select('id, organization_id, questions, scheduled_date, scheduled_time, timezone, organizations(name, language)')
+      .is('sent_at', null);
     if (error) throw error;
 
-    for (const org of orgs ?? []) {
-      if (domInTimezone(now, org.timezone) !== org.survey_day_of_month) continue;
-      if (!isWithinWindow(now, org.timezone, org.reminder_time)) continue;
-      if (!org.survey_questions?.length) continue;
+    for (const survey of surveys ?? []) {
+      if (!this.isDue(now, survey)) continue;
 
-      const period = currentMonthStart(now, org.timezone);
       try {
-        await this.sendToOrganization(org, period);
+        await this.sendSurvey(survey);
       } catch (err) {
-        this.logger.error(`Fallo mandando la encuesta mensual a la organización ${org.id}`, err as Error);
+        this.logger.error(`Fallo mandando la encuesta ${survey.id} (organización ${survey.organization_id})`, err as Error);
       }
     }
   }
 
-  private async sendToOrganization(org: any, period: string) {
+  // Si hoy es el día programado, solo dentro de la ventana de 15 min de la
+  // hora elegida (mismo mecanismo que ReminderJob/ReportJob). Si ya pasó el
+  // día programado (p. ej. el cron estuvo caído), se manda en el primer
+  // tick que la vea — mejor tarde que nunca, y sin esto una encuesta
+  // perdida se queda pendiente para siempre (solo se permite una pendiente
+  // por organización a la vez, sin función de cancelar).
+  private isDue(now: Date, survey: { scheduled_date: string; scheduled_time: string; timezone: string }): boolean {
+    const today = dateInTimezone(now, survey.timezone);
+    if (today < survey.scheduled_date) return false;
+    if (today > survey.scheduled_date) return true;
+    return isWithinWindow(now, survey.timezone, survey.scheduled_time);
+  }
+
+  private async sendSurvey(survey: any) {
+    const org = survey.organizations;
+
     const { data: teams, error: teamsError } = await this.supabase.db
       .from('teams')
       .select('id')
-      .eq('organization_id', org.id);
+      .eq('organization_id', survey.organization_id);
     if (teamsError) throw teamsError;
     const teamIds = (teams ?? []).map((t: any) => t.id);
-    if (teamIds.length === 0) return;
 
-    const { data: members, error: membersError } = await this.supabase.db
-      .from('members')
-      .select('id, name, channel, contact')
-      .in('team_id', teamIds)
-      .eq('active', true);
-    if (membersError) throw membersError;
+    if (teamIds.length > 0) {
+      const { data: members, error: membersError } = await this.supabase.db
+        .from('members')
+        .select('id, name, channel, contact')
+        .in('team_id', teamIds)
+        .eq('active', true);
+      if (membersError) throw membersError;
 
-    const { data: submitted, error: submittedError } = await this.supabase.db
-      .from('survey_submissions')
-      .select('member_id')
-      .eq('organization_id', org.id)
-      .eq('period', period);
-    if (submittedError) throw submittedError;
-    const alreadySubmitted = new Set((submitted ?? []).map((s: any) => s.member_id));
+      for (const member of members ?? []) {
+        if (!member.contact) continue; // Telegram sin vincular todavía
 
-    for (const member of members ?? []) {
-      if (!member.contact) continue; // Telegram sin vincular todavía
-      if (alreadySubmitted.has(member.id)) continue;
-
-      const link = this.surveyForm.buildLink(member.id, period, org.language);
-      const message = surveyMessage(org.language, member.name, org.name, link);
-      try {
-        await this.channels.get(member.channel).send(member.contact, message);
-      } catch (err) {
-        this.logger.error(`Fallo mandando la encuesta mensual a ${member.contact} (${member.channel})`, err as Error);
+        const link = this.surveyForm.buildLink(member.id, survey.id, org.language);
+        const message = surveyMessage(org.language, member.name, org.name, link);
+        try {
+          await this.channels.get(member.channel).send(member.contact, message);
+        } catch (err) {
+          this.logger.error(`Fallo mandando la encuesta a ${member.contact} (${member.channel})`, err as Error);
+        }
       }
     }
+
+    const { error: updateError } = await this.supabase.db
+      .from('surveys')
+      .update({ sent_at: new Date().toISOString() })
+      .eq('id', survey.id)
+      .is('sent_at', null);
+    if (updateError) throw updateError;
   }
 }

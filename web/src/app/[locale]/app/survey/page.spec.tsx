@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import esMessages from '../../../../../messages/es.json';
 
-const listSurveyPeriodsMock = vi.fn();
+const listSurveysMock = vi.fn();
 const getSurveyResultsMock = vi.fn();
 const billingStatusMock = vi.fn().mockResolvedValue({ plan_selected: true });
 
@@ -14,7 +14,7 @@ vi.mock('@/i18n/navigation', () => ({
 }));
 vi.mock('@/lib/api', () => ({
   api: {
-    listSurveyPeriods: (...args: unknown[]) => listSurveyPeriodsMock(...args),
+    listSurveys: (...args: unknown[]) => listSurveysMock(...args),
     getSurveyResults: (...args: unknown[]) => getSurveyResultsMock(...args),
     billingStatus: (...args: unknown[]) => billingStatusMock(...args),
     logout: vi.fn(),
@@ -24,10 +24,11 @@ vi.mock('@/lib/api', () => ({
 
 import SurveyResultsPage from './page';
 
-function results(overrides: Partial<{ period: string; questions: string[]; answersByQuestion: string[][]; submittedCount: number; totalActiveMembers: number; responseCount: number }> = {}) {
+function results(overrides: Partial<{ surveyId: string; scheduledDate: string; questions: string[]; answersByQuestion: string[][]; submittedCount: number; totalActiveMembers: number; responseCount: number }> = {}) {
   return {
-    period: '2026-01-01',
-    questions: ['¿Qué tal el mes?', '¿Algo que mejorar?'],
+    surveyId: 'survey-1',
+    scheduledDate: '2026-01-01',
+    questions: ['¿Qué tal?', '¿Algo que mejorar?'],
     answersByQuestion: [['Bien'], []],
     responseCount: 1,
     submittedCount: 1,
@@ -45,53 +46,59 @@ function renderPage() {
 }
 
 beforeEach(() => {
-  listSurveyPeriodsMock.mockReset();
+  listSurveysMock.mockReset();
   getSurveyResultsMock.mockReset();
 });
 
 describe('SurveyResultsPage', () => {
-  it('sin ningún período con respuestas: muestra el mensaje, sin selector ni resultados', async () => {
-    listSurveyPeriodsMock.mockResolvedValue([]);
+  it('sin ninguna encuesta enviada: muestra el mensaje, sin selector ni resultados', async () => {
+    listSurveysMock.mockResolvedValue([]);
     renderPage();
 
-    await waitFor(() => expect(screen.getByText('Todavía no hay respuestas de ningún mes.')).toBeInTheDocument());
-    expect(screen.queryByLabelText('Mes')).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('Todavía no se ha mandado ninguna encuesta.')).toBeInTheDocument());
+    expect(screen.queryByLabelText('Encuesta')).not.toBeInTheDocument();
   });
 
-  it('carga el período más reciente por defecto y pide sus resultados', async () => {
-    listSurveyPeriodsMock.mockResolvedValue(['2026-02-01', '2026-01-01']);
+  it('carga la encuesta más reciente por defecto y pide sus resultados', async () => {
+    listSurveysMock.mockResolvedValue([
+      { id: 'survey-2', scheduledDate: '2026-02-01', sentAt: '2026-02-01T10:00:00Z' },
+      { id: 'survey-1', scheduledDate: '2026-01-01', sentAt: '2026-01-01T10:00:00Z' },
+    ]);
     getSurveyResultsMock.mockResolvedValue(results());
     renderPage();
 
-    await waitFor(() => expect(getSurveyResultsMock).toHaveBeenCalledWith('2026-02-01'));
-    const select = screen.getByLabelText('Mes') as HTMLSelectElement;
-    expect(select.value).toBe('2026-02-01');
+    await waitFor(() => expect(getSurveyResultsMock).toHaveBeenCalledWith('survey-2'));
+    const select = screen.getByLabelText('Encuesta') as HTMLSelectElement;
+    expect(select.value).toBe('survey-2');
   });
 
   it('muestra la participación y agrupa las respuestas por pregunta, nunca por persona', async () => {
-    listSurveyPeriodsMock.mockResolvedValue(['2026-01-01']);
+    listSurveysMock.mockResolvedValue([{ id: 'survey-1', scheduledDate: '2026-01-01', sentAt: '2026-01-01T10:00:00Z' }]);
     getSurveyResultsMock.mockResolvedValue(results({ submittedCount: 2, totalActiveMembers: 3, answersByQuestion: [['Bien', 'Regular'], []] }));
     renderPage();
 
-    await waitFor(() => expect(screen.getByText('2 de 3 personas respondieron este mes')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('2 de 3 personas respondieron')).toBeInTheDocument());
     expect(screen.getByText('Bien')).toBeInTheDocument();
     expect(screen.getByText('Regular')).toBeInTheDocument();
     expect(screen.getByText('Sin respuestas todavía para esta pregunta.')).toBeInTheDocument();
   });
 
-  it('cambiar de período pide los resultados de ese mes', async () => {
-    listSurveyPeriodsMock.mockResolvedValue(['2026-02-01', '2026-01-01']);
+  it('cambiar de encuesta en el selector pide los resultados de esa encuesta', async () => {
+    listSurveysMock.mockResolvedValue([
+      { id: 'survey-2', scheduledDate: '2026-02-01', sentAt: '2026-02-01T10:00:00Z' },
+      { id: 'survey-1', scheduledDate: '2026-01-01', sentAt: '2026-01-01T10:00:00Z' },
+    ]);
     getSurveyResultsMock.mockResolvedValue(results());
     renderPage();
-    await waitFor(() => expect(getSurveyResultsMock).toHaveBeenCalledWith('2026-02-01'));
+    await waitFor(() => expect(getSurveyResultsMock).toHaveBeenCalledWith('survey-2'));
 
-    fireEvent.change(screen.getByLabelText('Mes'), { target: { value: '2026-01-01' } });
+    fireEvent.change(screen.getByLabelText('Encuesta'), { target: { value: 'survey-1' } });
 
-    await waitFor(() => expect(getSurveyResultsMock).toHaveBeenCalledWith('2026-01-01'));
+    await waitFor(() => expect(getSurveyResultsMock).toHaveBeenCalledWith('survey-1'));
   });
 
-  it('fallo al cargar los períodos: muestra el error', async () => {
-    listSurveyPeriodsMock.mockRejectedValue(new Error('404'));
+  it('fallo al cargar el listado de encuestas: muestra el error', async () => {
+    listSurveysMock.mockRejectedValue(new Error('404'));
     renderPage();
 
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('No se pudieron cargar los resultados de la encuesta.'));

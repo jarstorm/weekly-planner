@@ -90,18 +90,17 @@ export class RetentionJob {
       .lt('week_start', cutoff);
     if (orgReportsError) throw orgReportsError;
 
-    const { error: surveyResponsesError } = await this.supabase.db
-      .from('survey_responses')
+    // Borrar la encuesta se lleva sus respuestas/participaciones en
+    // cascada (survey_responses/survey_submissions.survey_id references
+    // surveys(id) on delete cascade, migración 0018) — ya no hace falta
+    // un delete aparte por tabla. Solo las ya enviadas (sent_at not null):
+    // una pendiente, aunque esté vieja, nunca debería borrarse sola.
+    const { error: surveysError } = await this.supabase.db
+      .from('surveys')
       .delete()
       .eq('organization_id', organizationId)
-      .lt('period', cutoff);
-    if (surveyResponsesError) throw surveyResponsesError;
-
-    const { error: surveySubmissionsError } = await this.supabase.db
-      .from('survey_submissions')
-      .delete()
-      .eq('organization_id', organizationId)
-      .lt('period', cutoff);
-    if (surveySubmissionsError) throw surveySubmissionsError;
+      .not('sent_at', 'is', null)
+      .lt('scheduled_date', cutoff);
+    if (surveysError) throw surveysError;
   }
 }

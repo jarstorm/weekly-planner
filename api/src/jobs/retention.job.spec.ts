@@ -43,8 +43,7 @@ describe('RetentionJob', () => {
       { data: null, error: null }, // delete checkins
       { data: null, error: null }, // delete reports (team)
       { data: null, error: null }, // delete reports (organization, resumen ejecutivo)
-      { data: null, error: null }, // delete survey_responses
-      { data: null, error: null }, // delete survey_submissions
+      { data: null, error: null }, // delete surveys (se lleva en cascada sus respuestas/participaciones)
     ]);
     const audio = fakeAudio();
     const job = new RetentionJob(supabase, audio);
@@ -52,7 +51,7 @@ describe('RetentionJob', () => {
     await job.run();
 
     const calls = (supabase.db.from as jest.Mock).mock.calls.map((c) => c[0]);
-    expect(calls).toEqual(['organizations', 'teams', 'checkins', 'checkins', 'reports', 'reports', 'survey_responses', 'survey_submissions']);
+    expect(calls).toEqual(['organizations', 'teams', 'checkins', 'checkins', 'reports', 'reports', 'surveys']);
     expect(audio.remove).toHaveBeenCalledWith(['a.ogg', 'b.ogg']);
 
     const checkinsDeleteBuilder = (supabase.db.from as jest.Mock).mock.results[3].value;
@@ -68,8 +67,7 @@ describe('RetentionJob', () => {
       { data: null, error: null }, // delete checkins
       { data: null, error: null }, // delete reports (team)
       { data: null, error: null }, // delete reports (organization)
-      { data: null, error: null }, // delete survey_responses
-      { data: null, error: null }, // delete survey_submissions
+      { data: null, error: null }, // delete surveys
     ]);
     const audio = fakeAudio();
     const job = new RetentionJob(supabase, audio);
@@ -84,8 +82,7 @@ describe('RetentionJob', () => {
       { data: [{ id: 'org-1', history_retention_months: 6 }], error: null },
       { data: [], error: null }, // sin equipos
       { data: null, error: null }, // delete reports (organization)
-      { data: null, error: null }, // delete survey_responses
-      { data: null, error: null }, // delete survey_submissions
+      { data: null, error: null }, // delete surveys
     ]);
     const audio = fakeAudio();
     const job = new RetentionJob(supabase, audio);
@@ -93,7 +90,7 @@ describe('RetentionJob', () => {
     await job.run();
 
     const calls = (supabase.db.from as jest.Mock).mock.calls.map((c) => c[0]);
-    expect(calls).toEqual(['organizations', 'teams', 'reports', 'survey_responses', 'survey_submissions']);
+    expect(calls).toEqual(['organizations', 'teams', 'reports', 'surveys']);
     expect(audio.remove).not.toHaveBeenCalled();
   });
 
@@ -103,14 +100,13 @@ describe('RetentionJob', () => {
       { data: null, error: { message: 'boom' } }, // teams de org-1 falla
       { data: [], error: null }, // teams de org-2, sin equipos
       { data: null, error: null }, // delete reports (organization) de org-2
-      { data: null, error: null }, // delete survey_responses de org-2
-      { data: null, error: null }, // delete survey_submissions de org-2
+      { data: null, error: null }, // delete surveys de org-2
     ]);
     const job = new RetentionJob(supabase, fakeAudio());
 
     await job.run();
 
     const calls = (supabase.db.from as jest.Mock).mock.calls.map((c) => c[0]);
-    expect(calls).toEqual(['organizations', 'teams', 'teams', 'reports', 'survey_responses', 'survey_submissions']);
+    expect(calls).toEqual(['organizations', 'teams', 'teams', 'reports', 'surveys']);
   });
 });

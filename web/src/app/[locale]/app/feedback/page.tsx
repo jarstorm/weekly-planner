@@ -2,17 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CalendarPlus } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
-import { api, ApiError, Organization } from '@/lib/api';
+import { api, ApiError, Organization, PendingSurvey } from '@/lib/api';
 import { trackEvent } from '@/lib/analytics';
 import { AppShell } from '@/components/AppShell';
 import { FormSkeleton } from '@/components/Skeleton';
 import { RecipientsEditor } from '@/components/RecipientsEditor';
-import { QuestionsEditor } from '@/components/QuestionsEditor';
 
 const DOW_KEYS = ['0', '1', '2', '3', '4', '5', '6'] as const;
-const DAY_OF_MONTH_OPTIONS = Array.from({ length: 28 }, (_, i) => i + 1);
 // Lista de IANA timezones del propio runtime (Node 18+/navegadores modernos)
 // en vez de mantener una lista hardcodeada que se desactualiza.
 const TIMEZONE_OPTIONS = Intl.supportedValuesOf('timeZone');
@@ -23,9 +21,11 @@ const TIMEZONE_OPTIONS = Intl.supportedValuesOf('timeZone');
 // dashboard (sección 0.15 del doc técnico), no queda escondida entre
 // nombre/país/contacto de la cuenta. El destino de cada informe de equipo
 // pasó a configurarse por equipo (report_recipients, migración 0009) —
-// acá solo queda el horario, común a toda la cuenta, y el resumen
-// ejecutivo (paso 15), que sigue siendo de cuenta porque consolida todos
-// los equipos.
+// acá solo queda el horario, común a toda la cuenta, el resumen ejecutivo
+// (paso 15), que sigue siendo de cuenta porque consolida todos los
+// equipos, y la encuesta anónima de un solo envío (migración 0018: ya no
+// es "mensual recurrente", se crea una vez desde /app/survey/new y se
+// manda una vez).
 export default function FeedbackConfigPage() {
   const t = useTranslations('Settings');
   const tDay = useTranslations('Day');
@@ -35,8 +35,15 @@ export default function FeedbackConfigPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  // undefined = todavía cargando, null = no hay ninguna pendiente.
+  const [pendingSurvey, setPendingSurvey] = useState<PendingSurvey | null | undefined>(undefined);
+
   useEffect(() => {
     api.getOrganization().then(setOrg).catch(() => setError(t('loadError')));
+    api
+      .getPendingSurvey()
+      .then(setPendingSurvey)
+      .catch(() => setPendingSurvey(null));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -54,9 +61,6 @@ export default function FeedbackConfigPage() {
         timezone: org.timezone,
         has_executive_summary: org.has_executive_summary,
         executive_summary_recipients: org.executive_summary_recipients,
-        has_monthly_survey: org.has_monthly_survey,
-        survey_questions: org.survey_questions,
-        survey_day_of_month: org.survey_day_of_month,
       });
       setOrg({ ...org, ...updated });
       setSaved(true);
@@ -83,13 +87,13 @@ export default function FeedbackConfigPage() {
     );
   }
 
-  // Resumen ejecutivo: opción, nunca disponible en Plan Equipo — con un
-  // solo equipo no hay nada que consolidar (org_exec_summary_plan_check
-  // en schema.sql lo rechaza a nivel de base de datos igual).
+  // Resumen ejecutivo y encuesta anónima: nunca disponibles en Plan
+  // Equipo — con un solo equipo no hay nada que consolidar, y la encuesta
+  // es de cuenta, no por equipo (org_exec_summary_plan_check en schema.sql;
+  // la disponibilidad de la encuesta se valida en SurveyService.createSurvey,
+  // ver migración 0018).
   const executiveSummaryAvailable = org.plan === 'organizacion' || org.plan === 'custom';
-  // Encuesta mensual anónima: misma disponibilidad que el resumen
-  // ejecutivo (org_survey_plan_check en schema.sql).
-  const monthlySurveyAvailable = org.plan === 'organizacion' || org.plan === 'custom';
+  const surveyAvailable = org.plan === 'organizacion' || org.plan === 'custom';
 
   return (
     <AppShell>
@@ -171,47 +175,6 @@ export default function FeedbackConfigPage() {
             </>
           )}
 
-          {monthlySurveyAvailable && (
-            <>
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={org.has_monthly_survey}
-                  onChange={(e) => setOrg({ ...org, has_monthly_survey: e.target.checked })}
-                />
-                {t('monthlySurveyToggle')}
-              </label>
-              <p className="field-hint">{t('monthlySurveyHint')}</p>
-              <label>
-                {t('monthlySurveyDayOfMonth')}
-                <select
-                  value={org.survey_day_of_month}
-                  onChange={(e) => setOrg({ ...org, survey_day_of_month: Number(e.target.value) })}
-                >
-                  {DAY_OF_MONTH_OPTIONS.map((day) => (
-                    <option key={day} value={day}>
-                      {day}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                {t('monthlySurveyQuestions')}
-                <QuestionsEditor
-                  questions={org.survey_questions}
-                  onChange={(survey_questions) => setOrg({ ...org, survey_questions })}
-                  placeholder={t('monthlySurveyQuestionsPlaceholder')}
-                  addLabel={t('monthlySurveyQuestionsAdd')}
-                  emptyHint={t('monthlySurveyQuestionsEmpty')}
-                  limitHint={t('monthlySurveyQuestionsLimit')}
-                />
-              </label>
-              <Link href="/app/survey" className="muted-link">
-                {t('monthlySurveyResultsLink')}
-              </Link>
-            </>
-          )}
-
           {error && <p role="alert">{error}</p>}
           {saved && <p className="muted-link">{t('saved')}</p>}
           <button type="submit" disabled={saving}>
@@ -219,6 +182,42 @@ export default function FeedbackConfigPage() {
           </button>
         </form>
       </div>
+
+      {surveyAvailable && (
+        <>
+          <h2 className="dashboard-section-title">{t('surveyTitle')}</h2>
+          <div className="card">
+            {pendingSurvey === undefined ? (
+              <p className="muted-link">{t('loading')}</p>
+            ) : pendingSurvey ? (
+              <>
+                <p style={{ margin: 0 }}>
+                  {t('surveyPendingInfo', {
+                    date: pendingSurvey.scheduledDate,
+                    time: pendingSurvey.scheduledTime,
+                    timezone: pendingSurvey.timezone,
+                    count: pendingSurvey.questions.length,
+                  })}
+                </p>
+                <p className="field-hint">{t('surveyPendingHint')}</p>
+              </>
+            ) : (
+              <>
+                <p className="field-hint">{t('surveyEmptyHint')}</p>
+                <Link href="/app/survey/new" className="btn btn-primary">
+                  <CalendarPlus size={16} />
+                  {t('surveyCreateButton')}
+                </Link>
+              </>
+            )}
+            <p style={{ marginTop: '1rem' }}>
+              <Link href="/app/survey" className="muted-link">
+                {t('surveyResultsLink')}
+              </Link>
+            </p>
+          </div>
+        </>
+      )}
     </AppShell>
   );
 }

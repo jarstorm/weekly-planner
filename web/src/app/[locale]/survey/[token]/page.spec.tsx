@@ -60,7 +60,7 @@ describe('SurveyFormPage', () => {
     getSurveyFormMock.mockResolvedValue(baseInfo());
     renderPage();
 
-    await waitFor(() => expect(screen.getByText('Encuesta mensual de Acme')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Encuesta de Acme')).toBeInTheDocument());
     expect(screen.getByText(/Tus respuestas son anónimas/)).toBeInTheDocument();
     expect(screen.getByLabelText('¿Qué tal el mes?')).toBeInTheDocument();
     expect(screen.getByLabelText('¿Algo que mejorar?')).toBeInTheDocument();

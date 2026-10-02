@@ -20,6 +20,7 @@ function fakeSupabase(responses: Array<{ data?: any; error?: any }>): SupabaseSe
     const builder: any = {
       select: jest.fn(() => builder),
       eq: jest.fn(() => builder),
+      is: jest.fn(() => builder),
       order: jest.fn(() => builder),
       update: jest.fn(() => builder),
       delete: jest.fn(() => builder),
@@ -130,6 +131,7 @@ describe('BillingService — changePlan', () => {
     const supabase = fakeSupabase([
       { data: { plan: 'organizacion', stripe_customer_id: 'cus_1', stripe_subscription_id: 'sub_1' }, error: null }, // organizations.select
       { data: null, error: null }, // organizations.update
+      { data: null, error: null }, // surveys.delete (pendientes, Equipo no admite encuesta)
       { data: [{ id: 'team-1' }, { id: 'team-2' }, { id: 'team-3' }], error: null }, // teams.select ordenado por created_at
       { data: null, error: null }, // teams.delete
     ]);
@@ -143,14 +145,15 @@ describe('BillingService — changePlan', () => {
     // No se toca trial_end al bajar de plan.
     expect(mockSubscriptionsUpdate.mock.calls[0][1]).not.toHaveProperty('trial_end');
 
-    const teamsBuilder = (supabase.db.from as jest.Mock).mock.results[3].value;
+    const teamsBuilder = (supabase.db.from as jest.Mock).mock.results[4].value;
     expect(teamsBuilder.in).toHaveBeenCalledWith('id', ['team-2', 'team-3']);
   });
 
-  it('bajar de plan desactiva resumen ejecutivo y encuesta mensual (Equipo no los admite)', async () => {
+  it('bajar de plan desactiva el resumen ejecutivo y borra cualquier encuesta pendiente (Equipo no los admite)', async () => {
     const supabase = fakeSupabase([
       { data: { plan: 'organizacion', stripe_customer_id: 'cus_1', stripe_subscription_id: 'sub_1' }, error: null },
       { data: null, error: null }, // organizations.update
+      { data: null, error: null }, // surveys.delete
       { data: [{ id: 'team-1' }], error: null },
     ]);
     mockSubscriptionsRetrieve.mockResolvedValue({ items: { data: [{ id: 'si_1' }] } });
@@ -160,9 +163,13 @@ describe('BillingService — changePlan', () => {
     await service.changePlan(orgId, 'equipo', 'a@b.com');
 
     const updateBuilder = (supabase.db.from as jest.Mock).mock.results[1].value;
-    expect(updateBuilder.update).toHaveBeenCalledWith(
-      expect.objectContaining({ has_executive_summary: false, has_monthly_survey: false }),
-    );
+    expect(updateBuilder.update).toHaveBeenCalledWith(expect.objectContaining({ has_executive_summary: false }));
+
+    const surveysBuilder = (supabase.db.from as jest.Mock).mock.results[2].value;
+    expect((supabase.db.from as jest.Mock).mock.calls[2][0]).toBe('surveys');
+    expect(surveysBuilder.delete).toHaveBeenCalled();
+    expect(surveysBuilder.eq).toHaveBeenCalledWith('organization_id', orgId);
+    expect(surveysBuilder.is).toHaveBeenCalledWith('sent_at', null);
   });
 
   it('si el update de organizations falla, no borra equipos (antes se perdían igual)', async () => {
@@ -190,6 +197,7 @@ describe('BillingService — changePlan', () => {
     const supabase = fakeSupabase([
       { data: { plan: 'organizacion', stripe_customer_id: 'cus_1', stripe_subscription_id: 'sub_1' }, error: null },
       { data: null, error: null },
+      { data: null, error: null }, // surveys.delete
       { data: [{ id: 'team-1' }], error: null }, // ya tiene solo 1 equipo
     ]);
     mockSubscriptionsRetrieve.mockResolvedValue({ items: { data: [{ id: 'si_1' }] } });
@@ -198,8 +206,8 @@ describe('BillingService — changePlan', () => {
 
     await service.changePlan(orgId, 'equipo', 'a@b.com');
 
-    // Nunca se llegó a llamar from('teams').delete() — solo 3 from() en total.
-    expect((supabase.db.from as jest.Mock).mock.calls.length).toBe(3);
+    // Nunca se llegó a llamar from('teams').delete() — solo 4 from() en total.
+    expect((supabase.db.from as jest.Mock).mock.calls.length).toBe(4);
   });
 });
 
@@ -217,7 +225,10 @@ describe('BillingService — handleEvent (checkout.session.completed)', () => {
   }
 
   it('bug real de producción: baja a Equipo con el resumen ejecutivo activo — el update ahora lo desactiva en la misma llamada', async () => {
-    const supabase = fakeSupabase([{ data: null, error: null }]); // organizations.update
+    const supabase = fakeSupabase([
+      { data: null, error: null }, // organizations.update
+      { data: null, error: null }, // surveys.delete (pendientes, Equipo no admite encuesta)
+    ]);
     const service = new BillingService(fakeConfig(), supabase);
 
     await service.handleEvent({
@@ -226,13 +237,15 @@ describe('BillingService — handleEvent (checkout.session.completed)', () => {
     } as any);
 
     const updateBuilder = (supabase.db.from as jest.Mock).mock.results[0].value;
-    expect(updateBuilder.update).toHaveBeenCalledWith(
-      expect.objectContaining({ plan: 'equipo', has_executive_summary: false, has_monthly_survey: false }),
-    );
+    expect(updateBuilder.update).toHaveBeenCalledWith(expect.objectContaining({ plan: 'equipo', has_executive_summary: false }));
+    expect((supabase.db.from as jest.Mock).mock.calls[1][0]).toBe('surveys');
   });
 
   it('marca plan_selected en true — así AppShell deja de forzar /app/billing', async () => {
-    const supabase = fakeSupabase([{ data: null, error: null }]);
+    const supabase = fakeSupabase([
+      { data: null, error: null },
+      { data: null, error: null }, // surveys.delete
+    ]);
     const service = new BillingService(fakeConfig(), supabase);
 
     await service.handleEvent({

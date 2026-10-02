@@ -4,39 +4,41 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
-import { api, ApiError, SurveyResults } from '@/lib/api';
+import { api, SurveyListItem, SurveyResults } from '@/lib/api';
 import { AppShell } from '@/components/AppShell';
 import { FormSkeleton } from '@/components/Skeleton';
 
-// Panel de resultados de la encuesta mensual — muestra las respuestas
-// agrupadas por pregunta, nunca por persona: la tabla survey_responses no
-// guarda member_id/team_id (ver migración 0010), así que no hay forma de
-// listar "quién dijo qué" ni aunque quisiéramos.
+// Panel de resultados de la encuesta anónima — muestra las respuestas
+// agrupadas por pregunta, nunca por persona: survey_responses no guarda
+// member_id/team_id (ver migración 0010/0018), así que no hay forma de
+// listar "quién dijo qué" ni aunque quisiéramos. Cada encuesta es de un
+// solo envío (migración 0018) — el selector lista las ya enviadas, más
+// reciente primero.
 export default function SurveyResultsPage() {
   const t = useTranslations('Survey');
 
-  const [periods, setPeriods] = useState<string[] | null>(null);
-  const [period, setPeriod] = useState<string>('');
+  const [surveys, setSurveys] = useState<SurveyListItem[] | null>(null);
+  const [surveyId, setSurveyId] = useState<string>('');
   const [results, setResults] = useState<SurveyResults | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     api
-      .listSurveyPeriods()
+      .listSurveys()
       .then((list) => {
-        setPeriods(list);
-        if (list.length > 0) setPeriod(list[0]);
+        setSurveys(list);
+        if (list.length > 0) setSurveyId(list[0].id);
       })
       .catch(() => setError(t('loadError')));
   }, [t]);
 
   useEffect(() => {
-    if (!period) return;
+    if (!surveyId) return;
     api
-      .getSurveyResults(period)
+      .getSurveyResults(surveyId)
       .then(setResults)
       .catch(() => setError(t('loadError')));
-  }, [period, t]);
+  }, [surveyId, t]);
 
   return (
     <AppShell>
@@ -49,18 +51,18 @@ export default function SurveyResultsPage() {
 
       {error && <p role="alert">{error}</p>}
 
-      {periods === null && <FormSkeleton rows={4} />}
+      {surveys === null && <FormSkeleton rows={4} />}
 
-      {periods !== null && periods.length === 0 && <p className="muted-link">{t('noPeriods')}</p>}
+      {surveys !== null && surveys.length === 0 && <p className="muted-link">{t('noSurveysYet')}</p>}
 
-      {periods !== null && periods.length > 0 && (
+      {surveys !== null && surveys.length > 0 && (
         <div className="card">
           <label>
-            {t('periodLabel')}
-            <select value={period} onChange={(e) => setPeriod(e.target.value)}>
-              {periods.map((p) => (
-                <option key={p} value={p}>
-                  {p.slice(0, 7)}
+            {t('surveyLabel')}
+            <select value={surveyId} onChange={(e) => setSurveyId(e.target.value)}>
+              {surveys.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {t('surveyOptionLabel', { date: s.scheduledDate })}
                 </option>
               ))}
             </select>

@@ -29,12 +29,7 @@ function fakeConfig(): ConfigService {
   } as unknown as ConfigService;
 }
 
-const org = {
-  id: 'org-1',
-  name: 'Acme',
-  has_monthly_survey: true,
-  survey_questions: ['¿Cómo te sientes con la carga de trabajo?', '¿Algo que el equipo debería saber?'],
-};
+const org = { id: 'org-1', name: 'Acme' };
 
 const memberRow = {
   id: 'member-1',
@@ -43,20 +38,30 @@ const memberRow = {
   teams: { organization_id: 'org-1', organizations: org },
 };
 
+const surveyRow = {
+  id: 'survey-1',
+  organization_id: 'org-1',
+  questions: ['¿Cómo te sientes con la carga de trabajo?', '¿Algo que el equipo debería saber?'],
+};
+
+function tokenFor(surveyId = 'survey-1') {
+  return signSurveyToken({ memberId: 'member-1', surveyId }, SECRET);
+}
+
 describe('SurveyFormService', () => {
-  it('getForm devuelve las preguntas vigentes y si ya respondió', async () => {
-    const token = signSurveyToken({ memberId: 'member-1', period: '2026-09-01' }, SECRET);
+  it('getForm devuelve las preguntas de la encuesta y si ya respondió', async () => {
     const supabase = fakeSupabase([
-      { data: memberRow, error: null }, // resolveMember
+      { data: memberRow, error: null }, // resolveMember: member
+      { data: surveyRow, error: null }, // resolveMember: survey
       { data: null, error: null }, // survey_submissions lookup — no respondió
     ]);
     const service = new SurveyFormService(fakeConfig(), supabase);
 
-    const form = await service.getForm(token);
+    const form = await service.getForm(tokenFor());
     expect(form).toEqual({
       memberName: 'Ana',
       organizationName: 'Acme',
-      questions: org.survey_questions,
+      questions: surveyRow.questions,
       alreadySubmitted: false,
     });
   });
@@ -66,44 +71,57 @@ describe('SurveyFormService', () => {
     await expect(service.getForm('token-basura')).rejects.toThrow(NotFoundException);
   });
 
-  it('rechaza si el número de respuestas no coincide con el de preguntas', async () => {
-    const token = signSurveyToken({ memberId: 'member-1', period: '2026-09-01' }, SECRET);
-    const supabase = fakeSupabase([{ data: memberRow, error: null }]);
+  it('rechaza si la encuesta del token no pertenece a la organización del member (defensivo)', async () => {
+    const supabase = fakeSupabase([
+      { data: memberRow, error: null },
+      { data: { ...surveyRow, organization_id: 'org-ajena' }, error: null },
+    ]);
     const service = new SurveyFormService(fakeConfig(), supabase);
 
-    await expect(service.submit({ token, answers: ['solo una'] })).rejects.toThrow(BadRequestException);
+    await expect(service.getForm(tokenFor())).rejects.toThrow(NotFoundException);
+  });
+
+  it('rechaza si el número de respuestas no coincide con el de preguntas', async () => {
+    const supabase = fakeSupabase([
+      { data: memberRow, error: null },
+      { data: surveyRow, error: null },
+    ]);
+    const service = new SurveyFormService(fakeConfig(), supabase);
+
+    await expect(service.submit({ token: tokenFor(), answers: ['solo una'] })).rejects.toThrow(BadRequestException);
   });
 
   it('guarda la respuesta sin member_id/team_id y marca la participación', async () => {
-    const token = signSurveyToken({ memberId: 'member-1', period: '2026-09-01' }, SECRET);
     const supabase = fakeSupabase([
-      { data: memberRow, error: null }, // resolveMember
+      { data: memberRow, error: null }, // resolveMember: member
+      { data: surveyRow, error: null }, // resolveMember: survey
       { data: null, error: null }, // insert survey_submissions
       { data: null, error: null }, // insert survey_responses
     ]);
     const service = new SurveyFormService(fakeConfig(), supabase);
 
-    await expect(
-      service.submit({ token, answers: ['bien', 'nada en particular'] }),
-    ).resolves.toEqual({ ok: true });
+    await expect(service.submit({ token: tokenFor(), answers: ['bien', 'nada en particular'] })).resolves.toEqual({ ok: true });
 
-    // insert de survey_responses no debe llevar member_id ni team_id.
+    // insert de survey_responses no debe llevar member_id ni team_id —
+    // solo survey_id, preguntas y respuestas.
     const insertCalls = (supabase.db.from as jest.Mock).mock.results;
-    const responsesBuilder = insertCalls[2].value;
+    const submissionsBuilder = insertCalls[2].value;
+    const responsesBuilder = insertCalls[3].value;
+    expect(submissionsBuilder.insert).toHaveBeenCalledWith({ survey_id: 'survey-1', member_id: 'member-1' });
     const insertedPayload = responsesBuilder.insert.mock.calls[0][0];
     expect(insertedPayload).not.toHaveProperty('member_id');
     expect(insertedPayload).not.toHaveProperty('team_id');
-    expect(insertedPayload.organization_id).toBe('org-1');
+    expect(insertedPayload.survey_id).toBe('survey-1');
   });
 
-  it('rechaza responder dos veces el mismo mes (unique constraint en survey_submissions)', async () => {
-    const token = signSurveyToken({ memberId: 'member-1', period: '2026-09-01' }, SECRET);
+  it('rechaza responder dos veces la misma encuesta (unique constraint en survey_submissions)', async () => {
     const supabase = fakeSupabase([
-      { data: memberRow, error: null }, // resolveMember
+      { data: memberRow, error: null },
+      { data: surveyRow, error: null },
       { data: null, error: { code: '23505' } }, // insert survey_submissions choca con el unique
     ]);
     const service = new SurveyFormService(fakeConfig(), supabase);
 
-    await expect(service.submit({ token, answers: ['bien', 'nada'] })).rejects.toThrow(ForbiddenException);
+    await expect(service.submit({ token: tokenFor(), answers: ['bien', 'nada'] })).rejects.toThrow(ForbiddenException);
   });
 });

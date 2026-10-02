@@ -36,7 +36,15 @@ function member(overrides: Partial<ReturnType<typeof baseMember>> = {}) {
   return { ...baseMember(), ...overrides };
 }
 function baseMember() {
-  return { id: 'm-1', team_id: 'team-1', name: 'Ana', channel: 'email' as const, contact: 'ana@example.com', active: true, email_verified_at: null as string | null };
+  return {
+    id: 'm-1',
+    team_id: 'team-1',
+    name: 'Ana',
+    channel: 'email' as 'email' | 'whatsapp' | 'telegram',
+    contact: 'ana@example.com' as string | null,
+    active: true,
+    email_verified_at: null as string | null,
+  };
 }
 
 function renderPage() {

@@ -14,9 +14,9 @@ interface QuestionsEditorProps {
   limitHint: string;
 }
 
-// Hasta 5 preguntas de texto libre para la encuesta mensual — mismo
+// Hasta 5 preguntas de texto libre para la encuesta anónima — mismo
 // patrón de lista editable que RecipientsEditor, pero sin validar formato
-// (son preguntas, no emails) y con tope de 5 (org_survey_questions_max en
+// (son preguntas, no emails) y con tope de 5 (surveys_questions_count en
 // schema.sql lo rechaza igual a nivel de base de datos).
 export function QuestionsEditor({ questions, onChange, placeholder, addLabel, emptyHint, limitHint }: QuestionsEditorProps) {
   const [draft, setDraft] = useState('');
