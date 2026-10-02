@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { LayoutDashboard, LogOut, CreditCard, Building2, Users } from 'lucide-react';
+import { LayoutDashboard, LogOut, CreditCard, Building2, Users, FileText, ClipboardList } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, Link } from '@/i18n/navigation';
 import { api } from '@/lib/api';
@@ -47,6 +47,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link href="/app/members" className={pathname === '/app/members' ? 'active' : ''}>
             <Users size={18} />
             <span>{t('members')}</span>
+          </Link>
+          <Link href="/app/reports" className={pathname === '/app/reports' ? 'active' : ''}>
+            <FileText size={18} />
+            <span>{t('reports')}</span>
+          </Link>
+          <Link href="/app/survey" className={pathname?.startsWith('/app/survey') ? 'active' : ''}>
+            <ClipboardList size={18} />
+            <span>{t('survey')}</span>
           </Link>
           <Link href="/app/billing" className={pathname === '/app/billing' ? 'active' : ''}>
             <CreditCard size={18} />

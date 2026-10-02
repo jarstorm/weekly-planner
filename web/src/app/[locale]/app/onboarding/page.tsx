@@ -67,7 +67,7 @@ export default function OnboardingPage() {
       <AppShell>
         <h1>{t('createTeamTitle')}</h1>
         <p className="muted-link">
-          {t('feedbackConfigNote')} <Link href="/app/feedback">{t('feedbackConfigLink')}</Link>.
+          {t('feedbackConfigNote')} <Link href="/app/reports/schedule">{t('feedbackConfigLink')}</Link>.
         </p>
         <div className="card">
           <form onSubmit={handleCreateTeam}>

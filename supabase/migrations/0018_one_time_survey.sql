@@ -59,6 +59,12 @@ alter table survey_submissions add constraint survey_submissions_member_survey_u
 create index if not exists idx_survey_submissions_survey on survey_submissions(survey_id);
 create index if not exists idx_survey_responses_survey on survey_responses(survey_id);
 
+-- Las políticas RLS viejas de estas dos tablas usan organization_id en su
+-- USING — hay que soltarlas ANTES de poder borrar la columna, si no
+-- Postgres rechaza el drop ("other objects depend on it").
+drop policy if exists "owner puede ver las participaciones de su organización" on survey_submissions;
+drop policy if exists "owner puede ver las respuestas anónimas de su organización" on survey_responses;
+
 -- Ya no hace falta organization_id en estas dos tablas — se llega a la
 -- organización a través de survey_id → surveys.organization_id, y
 -- mantenerlo abría la puerta a que se desincronizara del de la encuesta.
@@ -71,9 +77,6 @@ create policy "owner puede ver y gestionar las encuestas de su organización"
   on surveys for all
   using (organization_id in (select id from organizations where owner_id = auth.uid()))
   with check (organization_id in (select id from organizations where owner_id = auth.uid()));
-
-drop policy if exists "owner puede ver las participaciones de su organización" on survey_submissions;
-drop policy if exists "owner puede ver las respuestas anónimas de su organización" on survey_responses;
 
 create policy "owner puede ver las participaciones de sus encuestas"
   on survey_submissions for select

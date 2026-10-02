@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { ArrowLeft, CalendarPlus } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
-import { api, ApiError, Organization, PendingSurvey } from '@/lib/api';
+import { api, ApiError, Organization } from '@/lib/api';
 import { trackEvent } from '@/lib/analytics';
 import { AppShell } from '@/components/AppShell';
 import { FormSkeleton } from '@/components/Skeleton';
@@ -15,19 +15,11 @@ const DOW_KEYS = ['0', '1', '2', '3', '4', '5', '6'] as const;
 // en vez de mantener una lista hardcodeada que se desactualiza.
 const TIMEZONE_OPTIONS = Intl.supportedValuesOf('timeZone');
 
-// Configuración del "loop de feedback" — pantalla propia, no una sección
-// más dentro de "Datos de la empresa" (pedido explícito): es lo primero
-// que alguien quiere tocar/revisar, así que tiene su propio link desde el
-// dashboard (sección 0.15 del doc técnico), no queda escondida entre
-// nombre/país/contacto de la cuenta. El destino de cada informe de equipo
-// pasó a configurarse por equipo (report_recipients, migración 0009) —
-// acá solo queda el horario, común a toda la cuenta, el resumen ejecutivo
-// (paso 15), que sigue siendo de cuenta porque consolida todos los
-// equipos, y la encuesta anónima de un solo envío (migración 0018: ya no
-// es "mensual recurrente", se crea una vez desde /app/survey/new y se
-// manda una vez).
-export default function FeedbackConfigPage() {
-  const t = useTranslations('Settings');
+// Pantalla propia, a la que se llega desde la card "Planificar informe" en
+// /app/reports (pedido explícito) — no el formulario inline en el propio
+// dashboard de informes.
+export default function ReportSchedulePage() {
+  const t = useTranslations('ReportSchedule');
   const tDay = useTranslations('Day');
 
   const [org, setOrg] = useState<Organization | null>(null);
@@ -35,15 +27,8 @@ export default function FeedbackConfigPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  // undefined = todavía cargando, null = no hay ninguna pendiente.
-  const [pendingSurvey, setPendingSurvey] = useState<PendingSurvey | null | undefined>(undefined);
-
   useEffect(() => {
     api.getOrganization().then(setOrg).catch(() => setError(t('loadError')));
-    api
-      .getPendingSurvey()
-      .then(setPendingSurvey)
-      .catch(() => setPendingSurvey(null));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -87,22 +72,19 @@ export default function FeedbackConfigPage() {
     );
   }
 
-  // Resumen ejecutivo y encuesta anónima: nunca disponibles en Plan
-  // Equipo — con un solo equipo no hay nada que consolidar, y la encuesta
-  // es de cuenta, no por equipo (org_exec_summary_plan_check en schema.sql;
-  // la disponibilidad de la encuesta se valida en SurveyService.createSurvey,
-  // ver migración 0018).
+  // El resumen ejecutivo nunca está disponible en Plan Equipo — con un
+  // solo equipo no hay nada que consolidar (org_exec_summary_plan_check
+  // en schema.sql).
   const executiveSummaryAvailable = org.plan === 'organizacion' || org.plan === 'custom';
-  const surveyAvailable = org.plan === 'organizacion' || org.plan === 'custom';
 
   return (
     <AppShell>
-      <Link href="/app" className="back-link">
+      <Link href="/app/reports" className="back-link">
         <ArrowLeft size={16} />
-        {t('feedbackConfigBack')}
+        {t('back')}
       </Link>
-      <h1>{t('feedbackConfigTitle')}</h1>
-      <p className="muted-link">{t('feedbackConfigDescription')}</p>
+      <h1>{t('title')}</h1>
+      <p className="muted-link">{t('description')}</p>
       <div className="card">
         <form onSubmit={handleSubmit}>
           <label>
@@ -182,42 +164,6 @@ export default function FeedbackConfigPage() {
           </button>
         </form>
       </div>
-
-      {surveyAvailable && (
-        <>
-          <h2 className="dashboard-section-title">{t('surveyTitle')}</h2>
-          <div className="card">
-            {pendingSurvey === undefined ? (
-              <p className="muted-link">{t('loading')}</p>
-            ) : pendingSurvey ? (
-              <>
-                <p style={{ margin: 0 }}>
-                  {t('surveyPendingInfo', {
-                    date: pendingSurvey.scheduledDate,
-                    time: pendingSurvey.scheduledTime,
-                    timezone: pendingSurvey.timezone,
-                    count: pendingSurvey.questions.length,
-                  })}
-                </p>
-                <p className="field-hint">{t('surveyPendingHint')}</p>
-              </>
-            ) : (
-              <>
-                <p className="field-hint">{t('surveyEmptyHint')}</p>
-                <Link href="/app/survey/new" className="btn btn-primary">
-                  <CalendarPlus size={16} />
-                  {t('surveyCreateButton')}
-                </Link>
-              </>
-            )}
-            <p style={{ marginTop: '1rem' }}>
-              <Link href="/app/survey" className="muted-link">
-                {t('surveyResultsLink')}
-              </Link>
-            </p>
-          </div>
-        </>
-      )}
     </AppShell>
   );
 }

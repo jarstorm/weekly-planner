@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { AlertTriangle, CheckCircle2, ChevronRight, Clock, FileText, Mail, Plus, Users, UsersRound } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronRight, Clock, FileText, Mail, MessageCircle, Plus, Users, UsersRound } from 'lucide-react';
 import { useRouter, Link } from '@/i18n/navigation';
 import { api, ApiError, ChannelName, CheckinStatus, Member, Organization, Report, Team } from '@/lib/api';
 import { AppShell } from '@/components/AppShell';
@@ -171,7 +171,7 @@ export default function TeamsPage() {
           {org && (
             <div>
               <h2 className="dashboard-section-title">{t('scheduleBannerTitle')}</h2>
-              <Link href="/app/feedback" className="schedule-banner">
+              <Link href="/app/reports/schedule" className="schedule-banner">
                 <span className="stat-icon"><Clock size={18} /></span>
                 <div className="schedule-banner-body">
                   <span className="muted-link">
@@ -198,6 +198,7 @@ export default function TeamsPage() {
               <div className="stat-card stat-card-channels">
                 <div className="stat-channels-list">
                   <span><Mail size={14} /> {tChannel('email')} <strong>{membersByChannel.email}</strong></span>
+                  <span><MessageCircle size={14} /> {tChannel('whatsapp')} <strong>{membersByChannel.whatsapp}</strong></span>
                 </div>
               </div>
             </div>

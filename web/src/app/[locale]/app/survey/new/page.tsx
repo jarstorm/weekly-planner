@@ -43,7 +43,7 @@ export default function NewSurveyPage() {
     try {
       await api.createSurvey({ questions, scheduledDate, scheduledTime, timezone });
       trackEvent('survey_create');
-      router.push('/app/feedback');
+      router.push('/app/survey');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t('createError'));
     } finally {
@@ -53,7 +53,7 @@ export default function NewSurveyPage() {
 
   return (
     <AppShell>
-      <Link href="/app/feedback" className="back-link">
+      <Link href="/app/survey" className="back-link">
         <ArrowLeft size={16} />
         {t('back')}
       </Link>

@@ -140,6 +140,20 @@ describe('TeamsPage — con equipos', () => {
     expect(screen.getByText('Respuesta esta semana').previousElementSibling).toHaveTextContent('100%');
   });
 
+  it('"Miembros por canal" cuenta email y whatsapp — telegram no se ofrece, deshabilitado en toda la UI', async () => {
+    listMembersMock.mockResolvedValue([
+      { id: 'm-1', team_id: 'team-1', name: 'Ana', channel: 'email', contact: 'ana@example.com', active: true, email_verified_at: null },
+      { id: 'm-2', team_id: 'team-1', name: 'Bruno', channel: 'whatsapp', contact: '34670995609', active: true, email_verified_at: null },
+      { id: 'm-3', team_id: 'team-1', name: 'Carla', channel: 'whatsapp', contact: '34670995610', active: true, email_verified_at: null },
+    ]);
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText('Miembros por canal')).toBeInTheDocument());
+    expect(screen.getByText('Email').closest('span')).toHaveTextContent('1');
+    expect(screen.getByText('WhatsApp').closest('span')).toHaveTextContent('2');
+    expect(screen.queryByText('Telegram')).not.toBeInTheDocument();
+  });
+
   it('ningún equipo con destinatarios configurados: muestra el aviso', async () => {
     listTeamsMock.mockResolvedValue([team({ report_recipients: [] })]);
     renderPage();

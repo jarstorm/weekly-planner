@@ -126,8 +126,8 @@ export const api = {
 
   // Encuesta anónima de un solo envío (no recurrente, ver migración 0018
   // del backend) — createSurvey/getPendingSurvey para el flujo de alta en
-  // /app/feedback y /app/survey/new; listSurveys/getSurveyResults para el
-  // histórico de resultados en /app/survey.
+  // /app/survey y /app/survey/new; listSurveys/getSurveyResults para el
+  // histórico de resultados, en la misma página.
   createSurvey: (data: { questions: string[]; scheduledDate: string; scheduledTime: string; timezone: string }) =>
     request<PendingSurvey>('/survey', { method: 'POST', body: JSON.stringify(data) }),
   getPendingSurvey: () => request<PendingSurvey | null>('/survey/pending'),

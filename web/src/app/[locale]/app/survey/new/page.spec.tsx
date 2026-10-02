@@ -68,7 +68,7 @@ describe('NewSurveyPage', () => {
     expect(createSurveyMock).not.toHaveBeenCalled();
   });
 
-  it('con fecha, hora, timezone y al menos una pregunta: crea la encuesta, trackea y vuelve a /app/feedback', async () => {
+  it('con fecha, hora, timezone y al menos una pregunta: crea la encuesta, trackea y vuelve a /app/survey', async () => {
     createSurveyMock.mockResolvedValue({ id: 'survey-1', questions: ['¿Qué tal?'], scheduledDate: '2099-01-01', scheduledTime: '10:00', timezone: 'Europe/Madrid' });
     renderPage();
     fillBaseFields();
@@ -77,7 +77,7 @@ describe('NewSurveyPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Crear encuesta' }));
 
-    await waitFor(() => expect(pushMock).toHaveBeenCalledWith('/app/feedback'));
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith('/app/survey'));
     expect(createSurveyMock).toHaveBeenCalledWith({
       questions: ['¿Qué tal?'],
       scheduledDate: '2099-01-01',
