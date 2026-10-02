@@ -232,3 +232,36 @@ describe('AuthService — resetPassword', () => {
     expect(supabase.db.auth.admin.updateUserById).not.toHaveBeenCalled();
   });
 });
+
+describe('AuthService — resolveUser (usado por AuthGuard en cada request autenticado)', () => {
+  function fakeSupabaseForResolveUser(overrides: { getUser?: any; org?: any }): SupabaseService {
+    const getUser = jest.fn().mockResolvedValue(overrides.getUser ?? { data: { user: { id: 'user-1', email: 'a@b.com' } }, error: null });
+    const single = jest.fn().mockResolvedValue(overrides.org ?? { data: { id: 'org-1' }, error: null });
+    const from = jest.fn(() => ({ select: jest.fn(() => ({ eq: jest.fn(() => ({ single })) })) }));
+    return { authClient: { auth: { getUser } }, db: { from } } as unknown as SupabaseService;
+  }
+
+  it('token válido con organización asociada: devuelve userId/email/organizationId', async () => {
+    const supabase = fakeSupabaseForResolveUser({});
+    const service = new AuthService(supabase, fakeConfig(), fakeChannels().channels);
+
+    const result = await service.resolveUser('access-token-real');
+
+    expect(result).toEqual({ userId: 'user-1', email: 'a@b.com', organizationId: 'org-1' });
+  });
+
+  it('token inválido o expirado: 401, sin llegar a consultar organizations', async () => {
+    const supabase = fakeSupabaseForResolveUser({ getUser: { data: { user: null }, error: { message: 'invalid JWT' } } });
+    const service = new AuthService(supabase, fakeConfig(), fakeChannels().channels);
+
+    await expect(service.resolveUser('token-caducado')).rejects.toThrow(UnauthorizedException);
+    expect(supabase.db.from).not.toHaveBeenCalled();
+  });
+
+  it('usuario válido pero sin organización asociada (fila huérfana): 401, no 500', async () => {
+    const supabase = fakeSupabaseForResolveUser({ org: { data: null, error: null } });
+    const service = new AuthService(supabase, fakeConfig(), fakeChannels().channels);
+
+    await expect(service.resolveUser('access-token-real')).rejects.toThrow('Usuario sin organización asociada');
+  });
+});
