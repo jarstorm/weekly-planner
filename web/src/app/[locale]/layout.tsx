@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import { Inter, Fraunces } from 'next/font/google';
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { notFound } from 'next/navigation';
-import Script from 'next/script';
 import { routing } from '@/i18n/routing';
+import { AnalyticsPageview } from '@/components/AnalyticsPageview';
+import { GoatCounterScript } from '@/components/GoatCounterScript';
 import { SITE_URL, ogLocale } from '@/lib/seo';
 import './globals.css';
 
@@ -56,14 +57,15 @@ export default async function RootLayout({
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
         {/* GoatCounter self-hosted (sin cookies, sin banner GDPR necesario)
             — solo se carga si NEXT_PUBLIC_GOATCOUNTER_URL está seteada
-            (producción); en local dev queda sin analytics. */}
+            (producción); en local dev queda sin analytics. no_onload
+            desactiva su conteo automático del primer load: en una SPA de
+            Next.js las navegaciones siguientes son client-side y ese
+            conteo nunca se repetiría, así que AnalyticsPageview es la
+            única fuente de pageviews (primero y siguientes). */}
         {process.env.NEXT_PUBLIC_GOATCOUNTER_URL && (
-          <Script
-            data-goatcounter={`${process.env.NEXT_PUBLIC_GOATCOUNTER_URL}/count`}
-            src={`${process.env.NEXT_PUBLIC_GOATCOUNTER_URL}/count.js`}
-            strategy="afterInteractive"
-          />
+          <GoatCounterScript url={process.env.NEXT_PUBLIC_GOATCOUNTER_URL} />
         )}
+        <AnalyticsPageview />
       </body>
     </html>
   );
