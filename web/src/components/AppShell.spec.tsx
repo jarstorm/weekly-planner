@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import esMessages from '../../messages/es.json';
 
@@ -10,7 +10,11 @@ let currentPathname = '/app';
 vi.mock('@/i18n/navigation', () => ({
   usePathname: () => currentPathname,
   useRouter: () => ({ replace: replaceMock, push: pushMock }),
-  Link: ({ children, href }: { children: React.ReactNode; href: string }) => <a href={href}>{children}</a>,
+  Link: ({ children, href, className }: { children: React.ReactNode; href: string; className?: string }) => (
+    <a href={href} className={className}>
+      {children}
+    </a>
+  ),
 }));
 
 const billingStatusMock = vi.fn();
@@ -73,5 +77,30 @@ describe('AppShell — wizard de plan tras el login', () => {
 
     await waitFor(() => expect(billingStatusMock).toHaveBeenCalledTimes(1));
     expect(replaceMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('AppShell — nav', () => {
+  beforeEach(() => {
+    billingStatusMock.mockReset().mockResolvedValue({ plan_selected: true });
+    currentPathname = '/app';
+  });
+
+  it('tiene un link a cada sección, con el href correcto', () => {
+    renderShell();
+
+    expect(screen.getByText('Panel').closest('a')).toHaveAttribute('href', '/app');
+    expect(screen.getByText('Miembros').closest('a')).toHaveAttribute('href', '/app/members');
+    expect(screen.getByText('Informes').closest('a')).toHaveAttribute('href', '/app/reports');
+    expect(screen.getByText('Encuesta').closest('a')).toHaveAttribute('href', '/app/survey');
+    expect(screen.getByText('Facturación').closest('a')).toHaveAttribute('href', '/app/billing');
+    expect(screen.getByText('Empresa').closest('a')).toHaveAttribute('href', '/app/settings');
+  });
+
+  it('"Encuesta" queda activo también en su subpágina /app/survey/new', () => {
+    currentPathname = '/app/survey/new';
+    renderShell();
+
+    expect(screen.getByText('Encuesta').closest('a')).toHaveClass('active');
   });
 });
