@@ -7,6 +7,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsTimeZone,
   Length,
   Matches,
   Max,
@@ -50,7 +51,7 @@ export class UpdateOrganizationDto {
   cutoff_time?: string;
 
   @IsOptional()
-  @IsString()
+  @IsTimeZone()
   timezone?: string;
 
   // Idioma de la cuenta — preguntas del check-in, encuesta mensual e

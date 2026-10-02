@@ -13,6 +13,9 @@ import { QuestionsEditor } from '@/components/QuestionsEditor';
 
 const DOW_KEYS = ['0', '1', '2', '3', '4', '5', '6'] as const;
 const DAY_OF_MONTH_OPTIONS = Array.from({ length: 28 }, (_, i) => i + 1);
+// Lista de IANA timezones del propio runtime (Node 18+/navegadores modernos)
+// en vez de mantener una lista hardcodeada que se desactualiza.
+const TIMEZONE_OPTIONS = Intl.supportedValuesOf('timeZone');
 
 // Configuración del "loop de feedback" — pantalla propia, no una sección
 // más dentro de "Datos de la empresa" (pedido explícito): es lo primero
@@ -131,13 +134,17 @@ export default function FeedbackConfigPage() {
           </label>
           <label>
             {t('timezone')}
-            <input
-              type="text"
+            <select
               value={org.timezone}
               onChange={(e) => setOrg({ ...org, timezone: e.target.value })}
-              placeholder="Europe/Madrid"
               required
-            />
+            >
+              {TIMEZONE_OPTIONS.map((tz) => (
+                <option key={tz} value={tz}>
+                  {tz}
+                </option>
+              ))}
+            </select>
           </label>
 
           {executiveSummaryAvailable && (
