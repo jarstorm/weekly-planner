@@ -87,7 +87,6 @@ async function main() {
       max_members_per_team: 20,
       history_retention_months: 6,
       has_executive_summary: true,
-      has_monthly_survey: true,
     })
     .eq('id', org.id)
     .select();

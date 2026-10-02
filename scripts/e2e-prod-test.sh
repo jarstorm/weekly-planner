@@ -1,12 +1,13 @@
 #!/bin/bash
 # Ciclo de pruebas E2E contra producción (https://weeklyfeedback.com):
 # login, crea equipos/miembros (si no existen ya), manda checkins manuales
-# de la semana actual, dispara el cron (informes por equipo + resumen
-# ejecutivo + encuesta mensual) y descarga los PDFs generados.
+# de la semana actual, programa una encuesta anónima de un solo envío para
+# el mismo tick (si no hay ya una pendiente), dispara el cron (informes
+# por equipo + resumen ejecutivo + encuesta) y descarga los PDFs generados.
 #
 # Requiere que la cuenta YA esté en plan Organización con resumen ejecutivo
-# y encuesta mensual activados — eso es un paso de un solo uso, ver
-# scripts/e2e-setup-account.js. Este script es el que se repite.
+# activado — eso es un paso de un solo uso, ver scripts/e2e-setup-account.js.
+# Este script es el que se repite.
 #
 # Uso:
 #   E2E_EMAIL=... E2E_PASSWORD=... ./scripts/e2e-prod-test.sh
@@ -140,7 +141,22 @@ echo "  próximo tick: $TICK_CLOCK ($TIMEZONE), dow=$DOW, reminder_time=$REMINDE
 
 curl -sS -b "$COOKIES" -X PATCH "$API_BASE/organizations/me" \
   -H 'Content-Type: application/json' \
-  -d "{\"reminder_dow\": $DOW, \"reminder_time\": \"$REMINDER_TIME\", \"cutoff_time\": \"$CUTOFF_TIME\", \"survey_day_of_month\": $(TZ="$TIMEZONE" date +%-d)}" > "$OUT_DIR/org_scheduled.json"
+  -d "{\"reminder_dow\": $DOW, \"reminder_time\": \"$REMINDER_TIME\", \"cutoff_time\": \"$CUTOFF_TIME\"}" > "$OUT_DIR/org_scheduled.json"
+
+echo "== 5b. Programo (o reaprovecho) una encuesta anónima para el mismo tick =="
+# De un solo envío (ver migración 0018) — createSurvey rechaza fecha/hora
+# ya pasada, así que se reusa el mismo margen que cutoff_time (tick+4min).
+PENDING_SURVEY=$(curl -sS -b "$COOKIES" "$API_BASE/survey/pending")
+if [ "$PENDING_SURVEY" = "null" ]; then
+  TICK_DATE=$(TZ="$TIMEZONE" date +%F)
+  curl -sS -b "$COOKIES" -X POST "$API_BASE/survey" \
+    -H 'Content-Type: application/json' \
+    -d "{\"questions\":[\"¿Qué tal el mes?\",\"¿Algo que el equipo debería saber?\"],\"scheduledDate\":\"$TICK_DATE\",\"scheduledTime\":\"$CUTOFF_TIME\",\"timezone\":\"$TIMEZONE\"}" \
+    > "$OUT_DIR/survey_scheduled.json"
+  echo "  encuesta programada para $TICK_DATE $CUTOFF_TIME $TIMEZONE"
+else
+  echo "  ya había una encuesta pendiente, se reaprovecha: $PENDING_SURVEY"
+fi
 
 echo "== 6. Esperando el tick de cron ($TICK_CLOCK $TIMEZONE + margen)... =="
 until [ "$(TZ="$TIMEZONE" date +%H%M)" -ge "$(echo "$TICK_CLOCK" | tr -d ':' | cut -c1-4)" ]; do sleep 5; done
@@ -177,9 +193,20 @@ else
   echo "  resumen ejecutivo -> no generado (necesita informe de los 5 equipos en la misma semana)"
 fi
 
-echo "== 8. Encuesta mensual =="
-curl -sS -b "$COOKIES" "$API_BASE/survey/results" > "$OUT_DIR/survey_results.json"
-cat "$OUT_DIR/survey_results.json"
+echo "== 8. Encuesta anónima =="
+SURVEYS=$(curl -sS -b "$COOKIES" "$API_BASE/survey/list")
+echo "$SURVEYS" > "$OUT_DIR/surveys.json"
+LATEST_SURVEY_ID=$(echo "$SURVEYS" | python3 -c "
+import json, sys
+r = json.load(sys.stdin)
+print(r[0]['id'] if r else '')
+")
+if [ -n "$LATEST_SURVEY_ID" ]; then
+  curl -sS -b "$COOKIES" "$API_BASE/survey/results?surveyId=$LATEST_SURVEY_ID" > "$OUT_DIR/survey_results.json"
+  cat "$OUT_DIR/survey_results.json"
+else
+  echo "  sin ninguna encuesta enviada todavía (puede necesitar otro tick)"
+fi
 echo
 
 rm -f "$COOKIES"

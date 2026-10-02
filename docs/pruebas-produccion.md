@@ -1,7 +1,7 @@
 # Pruebas E2E contra producción
 
 Cómo probar el flujo completo (equipos, miembros, checkins, informes,
-resumen ejecutivo, encuesta mensual) contra `https://weeklyfeedback.com`
+resumen ejecutivo, encuesta anónima) contra `https://weeklyfeedback.com`
 real, usando una cuenta de pruebas dedicada.
 
 ## Bugs encontrados en la primera corrida (2026-09-28)
@@ -182,7 +182,10 @@ respondió).
 
 `javierabadrodriguez@gmail.com`, organización "Javier Abad" (id
 `0c158a9a-382e-4a83-8f6c-04150e1effff`), plan Organización (5 equipos, 20
-miembros/equipo), resumen ejecutivo y encuesta mensual activados. Todos los
+miembros/equipo), resumen ejecutivo activado. La encuesta anónima ya no es
+una configuración persistente de la cuenta (migración 0018) — `e2e-prod-test.sh`
+programa una de un solo envío en cada corrida, si no hay ya una pendiente.
+Todos los
 miembros de prueba usan ese mismo email como contacto — es seguro reutilizar
 un email en varios miembros (el matching de respuestas es por token/enlace
 firmado por miembro, no por dirección — ver `EmailChannel.parseIncoming`,
@@ -203,9 +206,11 @@ que revienta con 500 si dos miembros comparten el mismo número/chat_id.
 - **`scripts/e2e-prod-test.sh`** — el ciclo que se repite. Solo usa la API
   pública (login, `/api/teams`, `/api/teams/:id/members`,
   `/api/checkins/manual`, `PATCH /api/organizations/me`,
+  `/api/survey/pending`, `/api/survey` (POST), `/api/survey/list`,
   `/api/reports*`, `/api/survey/results`) — sin tocar la BD. Es idempotente
-  en equipos/miembros (no duplica si ya existen). Descarga los PDFs
-  generados a `/tmp/wf-e2e-<fecha>/`.
+  en equipos/miembros (no duplica si ya existen) y en la encuesta (reusa
+  la pendiente si ya hay una). Descarga los PDFs generados a
+  `/tmp/wf-e2e-<fecha>/`.
 
 ## Uso
 
@@ -233,10 +238,12 @@ cada vez, o métela en un `.env` local tuyo fuera de git.
    que caiga justo ahí — no hay endpoint manual para disparar
    `ReportJob`/`ReminderJob`/`SurveyJob`, son 100% cron
    (`api/src/jobs/*.job.ts`).
-5. Espera el tick + margen.
-6. Descarga el PDF de cada informe de equipo, el del resumen ejecutivo (si
-   los 5 equipos ya tienen informe de esa semana) y el estado de la
-   encuesta mensual.
+5. Si no hay ya una encuesta pendiente, programa una de un solo envío
+   (migración 0018) para ese mismo tick.
+6. Espera el tick + margen.
+7. Descarga el PDF de cada informe de equipo, el del resumen ejecutivo (si
+   los 5 equipos ya tienen informe de esa semana) y los resultados de la
+   última encuesta enviada.
 
 ## Avisos
 
