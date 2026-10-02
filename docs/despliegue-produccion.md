@@ -57,9 +57,11 @@ Config real en `/etc/nginx/sites-available/weeklyfeedback` (symlink en `sites-en
 No hay CI/CD todavía — el proceso es manual, desde el Mac de desarrollo:
 
 ```bash
-# 1. Build local del frontend (con la URL de producción del backend)
+# 1. Build local del frontend (con la URL de producción del backend y de analytics)
 cd web
-NEXT_PUBLIC_API_BASE_URL=http://79.143.90.186/api npm run build
+NEXT_PUBLIC_API_BASE_URL=https://weeklyfeedback.com/api \
+NEXT_PUBLIC_GOATCOUNTER_URL=https://stats.weeklyfeedback.com \
+npm run build
 
 # 2. Build local del backend
 cd ../api
@@ -82,6 +84,8 @@ ssh -i ~/.ssh/clouding_rsa root@79.143.90.186 "systemctl restart wf-api wf-web"
 
 Ver logs en vivo: `ssh ... "journalctl -u wf-api -f"` (o `wf-web`).
 
+**Resuelto (2026-10-02), el build de producción no llevaba `NEXT_PUBLIC_GOATCOUNTER_URL`.** El comando de build documentado en el paso 1 solo fijaba `NEXT_PUBLIC_API_BASE_URL`, nunca la variable de GoatCounter, así que el script de tracking (`web/src/app/[locale]/layout.tsx:60-66`, condicional a esa env var en build time) nunca se renderizaba en el HTML servido: cero visitas llegaban a GoatCounter, para cualquier día, no solo "hoy". Además, `NEXT_PUBLIC_API_BASE_URL` seguía con el valor viejo basado en IP (`http://79.143.90.186/api`), que ya no funciona desde que nginx solo acepta el dominio (sección 3). Corregido fijando ambas variables en el paso 1 (arriba) y verificado con curl contra `https://weeklyfeedback.com/` (script presente en el HTML) y una visita real reflejada en la base de datos de GoatCounter (`hit_counts`).
+
 **Resuelto (2026-09-28) — el paso 3 original no subía `supabase/migrations/`.** `MigrationRunnerService` (`api/src/supabase/migration-runner.service.ts`) resuelve la carpeta de migraciones como tres niveles por encima de su propio `__dirname` compilado (`dist/supabase/` → `/opt/weeklyfeedback/`) + `supabase/migrations` — o sea, espera encontrarla en `/opt/weeklyfeedback/supabase/migrations/`, no dentro de `api/`. El rsync original solo subía `api/dist/`, así que esa carpeta nunca existió en el servidor: cada arranque de `wf-api` logueaba `ENOENT: no such file or directory, scandir '/opt/weeklyfeedback/supabase/migrations'` (el `try/catch` de `onModuleInit` lo atrapa y el backend sigue arrancando igual, así que pasó desapercibido). No causó pérdida de datos porque las 14 migraciones existentes ya se habían aplicado contra la misma Supabase real desde local (local y producción comparten `DATABASE_URL`) — pero una migración *nueva* nunca se habría aplicado sola en producción hasta corregir esto. Arreglado subiendo la carpeta una vez a mano y añadido el rsync que falta al paso 3 (arriba, línea nueva). A partir de ahora cada deploy debe incluir ese rsync si hay migraciones nuevas.
 
 ## 5. Analytics: GoatCounter (self-hosted)
@@ -91,10 +95,10 @@ Decisión (ver `especificaciones-tecnicas.md`, sección 6): nada de Google Analy
 - **Por qué GoatCounter y no Plausible:** Plausible CE (la opción self-host oficial) corre sobre Docker + Postgres + **ClickHouse**, que recomienda mínimo 2GB RAM — inviable junto al resto en esta VPS de 1GB. GoatCounter es un único binario Go con SQLite embebido, sin Docker, sin base de datos aparte: ~38MB de RAM en reposo.
 - **Instalación:** binario en `/usr/local/bin/goatcounter` (descargado de GitHub releases, sin compilar), corre como usuario propio `goatcounter` (sin privilegios), base de datos SQLite en `/opt/goatcounter/db/goatcounter.sqlite3`.
 - **Servicio:** `goatcounter.service` (systemd), escucha en `127.0.0.1:8082`.
-- **Exposición:** GoatCounter enruta internamente por el header `Host` (vhost), no por path de URL — no se puede colgar de un subpath de nginx en el mismo puerto 80 que ya usan frontend/backend (todos compartirían el mismo `Host: 79.143.90.186`, sin forma de diferenciar). Solución: puerto propio. Nginx tiene un `server` aparte escuchando en `8081` que hace de proxy a `127.0.0.1:8082`; el sitio en GoatCounter está dado de alta con `-vhost 79.143.90.186` (sin puerto — GoatCounter valida que el vhost sea un dominio válido y rechaza el `:8081` con un error explícito, pero igual matchea bien porque compara el `Host` sin el puerto).
-- **Dashboard:** `http://79.143.90.186:8081/` — login con el email `javierabadrodriguez@gmail.com` y la contraseña generada en el momento de crear el sitio (visible en el historial de esta sesión; cambiarla desde el propio dashboard tras el primer login, GoatCounter no tiene flujo de "olvidé mi contraseña" por email configurado).
-- **Tracking en la web:** `web/src/app/[locale]/layout.tsx` carga el script (`next/script`, `strategy="afterInteractive"`) solo si `NEXT_PUBLIC_GOATCOUNTER_URL` está seteada en build time — en local dev queda desactivado. En producción se builda con `NEXT_PUBLIC_GOATCOUNTER_URL=http://79.143.90.186:8081`.
-- **Cuando haya dominio:** dar de alta un site nuevo en GoatCounter con `-vhost stats.tudominio.com` (o el que sea), certbot para TLS en ese vhost también, y reconstruir la web con la nueva URL.
+- **Exposición:** GoatCounter enruta internamente por el header `Host` (vhost), no por path de URL, así que no se puede colgar de un subpath de nginx en el mismo puerto 80 que ya usan frontend/backend. Solución: puerto propio detrás, `127.0.0.1:8082`.
+- **Resuelto (2026-10-02), migrado de IP:puerto a dominio propio.** El site en GoatCounter ahora está dado de alta con `-vhost stats.weeklyfeedback.com` (antes era `-vhost 79.143.90.186`, sin TLS, en el puerto `8081`). Nginx tiene dos configs en `sites-available`: `goatcounter` (la vieja, `listen 8081`, proxy a `127.0.0.1:8082`, sigue activa por compatibilidad pero ya no la usa el frontend) y `goatcounter-stats` (la actual, `server_name stats.weeklyfeedback.com`, `listen 443 ssl` con certificado Certbot propio para ese subdominio, proxy al mismo `127.0.0.1:8082`).
+- **Dashboard:** `https://stats.weeklyfeedback.com/`, login con el email `javierabadrodriguez@gmail.com` y la contraseña generada en el momento de crear el sitio (visible en el historial de esta sesión; cambiarla desde el propio dashboard tras el primer login, GoatCounter no tiene flujo de "olvidé mi contraseña" por email configurado).
+- **Tracking en la web:** `web/src/app/[locale]/layout.tsx:60-66` carga el script (`next/script`, `strategy="afterInteractive"`) solo si `NEXT_PUBLIC_GOATCOUNTER_URL` está seteada en build time, en local dev queda desactivado. En producción se builda con `NEXT_PUBLIC_GOATCOUNTER_URL=https://stats.weeklyfeedback.com` (ver paso 1 de la sección 4, variable que faltaba hasta el fix del 2026-10-02 de arriba).
 
 ## 6. Lo que falta (conocido, no bloqueante para probar)
 
