@@ -9,11 +9,12 @@ import { signPasswordResetToken } from './password-reset-token.util';
 const SECRET = 'test-secret';
 const RESET_SECRET = 'test-reset-secret';
 
-function fakeConfig(): ConfigService {
+function fakeConfig(overrides: Record<string, string> = {}): ConfigService {
   const values: Record<string, string> = {
     EMAIL_VERIFICATION_TOKEN_SECRET: SECRET,
     PASSWORD_RESET_TOKEN_SECRET: RESET_SECRET,
     APP_BASE_URL: 'https://weeklyfeedback.com',
+    ...overrides,
   };
   return { get: (key: string) => values[key] } as unknown as ConfigService;
 }
@@ -117,6 +118,40 @@ describe('AuthService — register', () => {
 
     expect(supabase.db.auth.admin.deleteUser).toHaveBeenCalledWith('user-1');
     expect(send).not.toHaveBeenCalled();
+  });
+
+  it('con ADMIN_NOTIFICATION_EMAIL configurada, avisa al admin del registro nuevo', async () => {
+    const supabase = fakeSupabase({});
+    const { channels, send } = fakeChannels();
+    const config = fakeConfig({ ADMIN_NOTIFICATION_EMAIL: 'javierabadrodriguez@gmail.com' });
+    const service = new AuthService(supabase, config, channels);
+
+    await service.register({ email: 'a@b.com', password: 'password123', orgName: 'Acme' });
+
+    expect(send).toHaveBeenCalledWith('javierabadrodriguez@gmail.com', expect.stringContaining('Acme'));
+  });
+
+  it('sin ADMIN_NOTIFICATION_EMAIL, el registro sigue funcionando (solo se salta el aviso)', async () => {
+    const supabase = fakeSupabase({});
+    const { channels, send } = fakeChannels();
+    const service = new AuthService(supabase, fakeConfig(), channels);
+
+    await service.register({ email: 'a@b.com', password: 'password123', orgName: 'Acme' });
+
+    expect(send).toHaveBeenCalledTimes(1); // solo el email de bienvenida, nada al admin
+  });
+
+  it('si falla mandando el aviso al admin, el registro no se ve afectado', async () => {
+    const supabase = fakeSupabase({});
+    const send = jest
+      .fn()
+      .mockResolvedValueOnce(undefined) // email de bienvenida
+      .mockRejectedValueOnce(new Error('Resend caído')); // aviso al admin
+    const channels = { get: () => ({ send }) } as unknown as ChannelsService;
+    const config = fakeConfig({ ADMIN_NOTIFICATION_EMAIL: 'javierabadrodriguez@gmail.com' });
+    const service = new AuthService(supabase, config, channels);
+
+    await expect(service.register({ email: 'a@b.com', password: 'password123', orgName: 'Acme' })).resolves.toBeUndefined();
   });
 });
 

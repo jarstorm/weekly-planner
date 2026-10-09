@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SupabaseService } from '../supabase/supabase.service';
 import { ChannelsService } from '../channels/channels.service';
@@ -21,6 +21,8 @@ export interface AuthedUser {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly supabase: SupabaseService,
     private readonly config: ConfigService,
@@ -82,6 +84,28 @@ export class AuthService {
     // que no hay nada más específico que consultar en este momento.
     const link = `${baseUrl}${localePrefix('es')}/verify-email/${token}`;
     await this.channels.get('email').send(dto.email, welcomeVerifyEmailMessage('es', dto.orgName, link));
+
+    await this.notifyAdminOfNewSignup(dto.orgName, dto.email);
+  }
+
+  // Aviso a Javi de cada registro nuevo (trial, antes de verificar email o
+  // pagar — el aviso de "cliente de pago" es otro evento distinto, ver
+  // BillingService.handleEvent/checkout.session.completed). Nunca debe
+  // tumbar el registro: si Resend falla o falta la env var, se loguea y
+  // se sigue, la persona ya tiene su cuenta creada igual.
+  private async notifyAdminOfNewSignup(orgName: string, email: string): Promise<void> {
+    const adminEmail = this.config.get<string>('ADMIN_NOTIFICATION_EMAIL');
+    if (!adminEmail) {
+      this.logger.warn('ADMIN_NOTIFICATION_EMAIL no configurada, aviso de nuevo registro no mandado');
+      return;
+    }
+    try {
+      await this.channels
+        .get('email')
+        .send(adminEmail, `Nuevo registro en WeeklyFeedback 🎉\n\nOrganización: ${orgName}\nEmail: ${email}`);
+    } catch (err) {
+      this.logger.error('Fallo mandando el aviso de nuevo registro al admin', err as Error);
+    }
   }
 
   async verifyEmail(token: string): Promise<void> {
