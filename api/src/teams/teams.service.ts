@@ -282,26 +282,34 @@ export class TeamsService {
   // config del resumen ejecutivo (migración 0009) y lo aplana sobre el
   // equipo, así ReminderJob/ReportJob no tienen que saber de dónde sale
   // cada campo. `report_recipients` ya viene del `*` de teams.
+  //
+  // Excluye equipos de organizaciones con status='canceled' (baja o impago
+  // — BillingService.handleEvent ya pone ese status vía webhook de Stripe,
+  // ver billing.service.ts) para que ReminderJob/ReportJob dejen de mandar
+  // en cuanto se cancela, sin que cada job tenga que comprobarlo por su
+  // cuenta. 'trial' sigue mandando a propósito, solo 'canceled' frena.
   async listAll() {
     const { data, error } = await this.supabase.db
       .from('teams')
       .select(
-        '*, organizations(reminder_dow, reminder_time, cutoff_time, timezone, language, has_executive_summary, executive_summary_recipients)',
+        '*, organizations(status, reminder_dow, reminder_time, cutoff_time, timezone, language, has_executive_summary, executive_summary_recipients)',
       );
     if (error) throw error;
-    return (data ?? []).map((t: any) => {
-      const { organizations: org, ...team } = t;
-      return {
-        ...team,
-        reminder_dow: org.reminder_dow,
-        reminder_time: org.reminder_time,
-        cutoff_time: org.cutoff_time,
-        timezone: org.timezone,
-        language: org.language,
-        has_executive_summary: org.has_executive_summary,
-        executive_summary_recipients: org.executive_summary_recipients,
-      };
-    });
+    return (data ?? [])
+      .filter((t: any) => t.organizations.status !== 'canceled')
+      .map((t: any) => {
+        const { organizations: org, ...team } = t;
+        return {
+          ...team,
+          reminder_dow: org.reminder_dow,
+          reminder_time: org.reminder_time,
+          cutoff_time: org.cutoff_time,
+          timezone: org.timezone,
+          language: org.language,
+          has_executive_summary: org.has_executive_summary,
+          executive_summary_recipients: org.executive_summary_recipients,
+        };
+      });
   }
 
   async listMembers(teamId: string) {

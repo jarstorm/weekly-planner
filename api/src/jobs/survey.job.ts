@@ -27,11 +27,15 @@ export class SurveyJob {
 
     const { data: surveys, error } = await this.supabase.db
       .from('surveys')
-      .select('id, organization_id, questions, scheduled_date, scheduled_time, timezone, organizations(name, language)')
+      .select('id, organization_id, questions, scheduled_date, scheduled_time, timezone, organizations(name, language, status)')
       .is('sent_at', null);
     if (error) throw error;
 
     for (const survey of surveys ?? []) {
+      // Baja o impago (BillingService.handleEvent pone status='canceled'
+      // vía webhook de Stripe) — misma regla que TeamsService.listAll,
+      // 'trial' sigue mandando a propósito, solo 'canceled' frena.
+      if ((survey.organizations as any).status === 'canceled') continue;
       if (!this.isDue(now, survey)) continue;
 
       try {

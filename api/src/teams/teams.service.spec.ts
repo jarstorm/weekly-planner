@@ -245,3 +245,23 @@ describe('TeamsService — verificación de email de miembros', () => {
     expect(memberVerify.sendVerificationEmail).not.toHaveBeenCalled();
   });
 });
+
+describe('TeamsService#listAll', () => {
+  it('excluye equipos de organizaciones con status=canceled (baja o impago)', async () => {
+    const supabase = fakeSupabase([
+      {
+        data: [
+          { id: 'team-1', organization_id: 'org-1', organizations: { status: 'active' } },
+          { id: 'team-2', organization_id: 'org-2', organizations: { status: 'canceled' } },
+          { id: 'team-3', organization_id: 'org-3', organizations: { status: 'trial' } },
+        ],
+        error: null,
+      },
+    ]);
+    const service = new TeamsService(supabase, fakeMemberVerify(), fakeWhatsapp());
+
+    const teams = await service.listAll();
+
+    expect(teams.map((t: any) => t.id)).toEqual(['team-1', 'team-3']);
+  });
+});

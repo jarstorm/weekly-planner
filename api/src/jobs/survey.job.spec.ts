@@ -87,6 +87,17 @@ describe('SurveyJob', () => {
     expect(send).not.toHaveBeenCalled();
   });
 
+  it('organización con status=canceled (baja o impago): no manda aunque esté dentro de la ventana', async () => {
+    const supabase = fakeSupabase([{ data: [surveyRow({ organizations: { name: 'Org', language: 'es', status: 'canceled' } })], error: null }]);
+    const { channels, send } = fakeChannels();
+    const job = new SurveyJob(supabase, channels, fakeSurveyForm().surveyForm);
+
+    await job.run();
+
+    expect(send).not.toHaveBeenCalled();
+    expect((supabase.db.from as jest.Mock).mock.calls.map((c) => c[0])).toEqual(['surveys']);
+  });
+
   it('el mismo día, dentro de la ventana: manda a cada miembro activo con contacto y marca sent_at', async () => {
     const supabase = fakeSupabase([
       { data: [surveyRow()], error: null }, // surveys
