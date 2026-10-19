@@ -53,6 +53,13 @@ npm test
 
 Con Vitest + Testing Library: utilidades de fecha y estado de respuesta (`src/components/ResponseStatus.spec.tsx`) y el cliente de API (`src/lib/api.spec.ts`). Cobertura parcial — la mayoría de páginas todavía no tiene tests propios.
 
+```bash
+cd e2e
+npm test
+```
+
+Test e2e completo con Playwright (`e2e/tests/full-flow.spec.ts`): registro, Stripe en modo test, equipos, check-ins, informes con Claude y encuesta anónima, de punta a punta. Usa la Supabase de `api/.env` y limpia lo que crea. Ver `e2e/README.md` antes de lanzarlo.
+
 ## CI
 
 `.github/workflows/ci.yml` corre en cada push/PR a `main`: type-check + tests del backend, build del frontend.
